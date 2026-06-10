@@ -1,0 +1,2926 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>凹凸学园 · 百日倒数 - Aotu Academy 100 Days</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --border:#e94560; --text:#e6edf3; --dim:#8b949e;
+  --accent:#e94560; --gold:#f0c040; --green:#3fb950; --blue:#58a6ff; --purple:#bc8cff;
+  --card:#1c2128; --hover:#252d38;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+#app{max-width:800px;margin:0 auto;padding:8px}
+.cdbanner{background:linear-gradient(135deg,#1a1a3e,#2d1a3e);border:2px solid var(--border);border-radius:16px;padding:14px 20px;text-align:center;margin:8px 0;position:relative;overflow:hidden}
+.cdbanner .daynum{font-size:3.5em;font-weight:900;color:var(--accent);line-height:1;text-shadow:0 0 20px rgba(233,69,96,0.5)}
+.cdbanner .daylabel{font-size:0.85em;color:var(--dim);letter-spacing:2px;margin-top:2px}
+.cdbanner .daysbar{height:3px;background:#333;border-radius:2px;margin-top:8px}
+.cdbanner .daysfill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.5s}
+.panel{background:var(--panel);border-radius:12px;padding:16px;margin:8px 0;border:1px solid #30363d}
+.panel h2{color:var(--accent);font-size:1em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.btn{display:inline-block;padding:10px 18px;border-radius:8px;border:none;cursor:pointer;font-size:0.9em;font-weight:bold;transition:all 0.2s;margin:3px;font-family:inherit;position:relative;z-index:1}
+.btn:active{transform:scale(0.97)}
+.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:#c0392b;transform:translateY(-1px)}
+.btn-s{background:var(--card);color:var(--text);border:1px solid #444}.btn-s:hover{background:var(--hover);border-color:#888}
+.btn-xs{padding:4px 10px;font-size:0.75em}
+.btn-menu{display:inline-flex;align-items:center;gap:3px;padding:4px 8px;border-radius:6px;border:1px solid #333;cursor:pointer;font-size:0.75em;font-family:inherit;background:var(--card);color:var(--text);transition:all 0.2s;white-space:nowrap}
+.btn-menu:hover{background:var(--hover);border-color:var(--accent)}
+.btn-menu:active{transform:scale(0.95)}
+.btn-menu .btxt{font-size:0.75em;color:var(--dim)}
+.btn-choice{background:var(--card);border:1px solid #444;color:var(--text);text-align:left;padding:13px 16px;width:100%;margin:4px 0;font-size:0.9em;border-radius:8px;cursor:pointer;transition:all 0.2s;line-height:1.5}
+.btn-choice:hover{border-color:var(--gold);background:#252d38}
+.btn-loc{background:var(--card);border:1px solid #333;color:var(--text);text-align:left;padding:12px 14px;border-radius:8px;width:100%;cursor:pointer;margin:3px 0;display:flex;align-items:center;gap:10px;transition:all 0.2s}
+.btn-loc:hover{border-color:var(--accent);background:var(--hover)}
+.btn-loc:active{transform:scale(0.97);border-color:var(--gold)}
+.btn-loc .locemoji{font-size:1.6em;flex-shrink:0}
+.btn-loc .locinfo{flex:1}
+.btn-loc .locname{font-weight:bold;font-size:0.9em}
+.btn-loc .lochars{font-size:0.7em;color:var(--dim);margin-top:2px}
+.statusbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;background:var(--card);border-radius:8px;margin:6px 0;font-size:0.75em;align-items:center}
+.stat{background:#1a1a2e;padding:3px 8px;border-radius:4px;white-space:nowrap}
+.stat s{color:var(--gold);font-weight:bold;font-style:normal}
+.eventbox{background:var(--card);border-radius:10px;padding:18px;margin:8px 0;border-left:3px solid var(--accent);line-height:1.9}
+.eventbox .narration{white-space:pre-line;color:var(--text);font-size:0.95em}
+.feedback{background:#0d2818;border:2px solid var(--green);border-radius:10px;padding:14px;margin:10px 0;animation:fadeIn 0.5s}
+.feedback .fbtitle{color:var(--gold);font-weight:bold;margin-bottom:4px;font-size:0.85em}
+.feedback .fbtext{line-height:1.8;white-space:pre-line;font-size:0.9em}
+.feedback .fbaff{font-size:0.8em;margin-top:8px;color:var(--dim)}
+.fbup{color:var(--green)}.fbdown{color:#f85149}
+.affgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px}
+.affcard{background:var(--card);border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:7px}
+.affcard .affemoji{font-size:1.3em;flex-shrink:0;width:30px;text-align:center}
+.affcard .affinfo{flex:1;min-width:0}
+.affcard .affname{font-size:0.8em;font-weight:bold}
+.affcard .affbar{height:3px;background:#333;border-radius:2px;margin-top:3px}
+.affcard .afffill{height:100%;border-radius:2px;transition:width 0.5s}
+.affcard .affstage{font-size:0.65em;color:var(--dim);margin-top:1px}
+.endbox{text-align:center;padding:40px 20px}
+.endbox .endicon{font-size:6em;margin:20px 0}
+.endbox h2{font-size:1.8em;letter-spacing:3px;margin:15px 0}
+.endbox .endtext{line-height:2;max-width:500px;margin:15px auto;white-space:pre-line;font-size:0.95em}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fadein{animation:fadeIn 0.4s}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 rgba(240,192,64,0)}50%{box-shadow:0 0 15px rgba(240,192,64,0.4)}}
+.pulse{animation:pulse 2s infinite}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.shake{animation:shake 0.3s}
+@keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+.achtoast{position:fixed;top:20px;right:20px;background:linear-gradient(135deg,#1a1a3e,#2d1a1e);border:2px solid var(--gold);border-radius:12px;padding:14px 18px;z-index:999;animation:slideIn 0.5s ease;max-width:320px}
+.achtoast .achicon{font-size:2em}
+.achtoast .achname{font-weight:bold;color:var(--gold);font-size:0.9em}
+.achtoast .achdesc{color:var(--dim);font-size:0.75em;margin-top:2px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:#444;border-radius:3px}
+@media(max-width:600px){.affgrid{grid-template-columns:repeat(2,1fr)}.cdbanner .daynum{font-size:2.5em}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  凹凸学园 · 百日倒数 v5.7                                   ║
+// ║  心魔幻
+// ─── 因果境界 ───
+function getKarmaTier(k){
+  if(k>=500)return {t:'圆环之理',e:'🌌',l:6,clr:'#e040fb',d:'因果缠绕成环。好感度极易提升——但精神负担也达到极限。'};
+  if(k>=350)return {t:'编织者',e:'🕸️',l:5,clr:'#bc8cff',d:'你开始理解命运的丝线。羁绊加深更快——但灵魂的裂痕也在扩大。'};
+  if(k>=200)return {t:'干涉者',e:'⚡',l:4,clr:'#58a6ff',d:'你的存在开始扭曲既定的轨迹。好感+3，精神消耗+1。'};
+  if(k>=100)return {t:'观测者',e:'👁️',l:3,clr:'#3fb950',d:'你能看到命运的分支。天赋3选1，好感+2，精神消耗+0.5。'};
+  if(k>=50) return {t:'觉醒者',e:'✨',l:2,clr:'#f0c040',d:'你隐约感到——这不是第一次了。全属性+1，初始好感+2。'};
+  return       {t:'凡人',e:'😶',l:1,clr:'#8b949e',d:'第一次踏入这个百日。一切才刚刚开始。'};
+}
+
+// ─── 因果被动加成（在initG中调用，不消耗因果值）───
+function applyKarmaPassive(){
+  const karma=G.karma||0;
+  const tier=getKarmaTier(karma);
+  G._karmaTier=tier;
+
+  // 觉醒者 (≥50): 全属性+1，初始好感+3
+  if(karma>=50){
+    Object.keys(G.attr).forEach(k=>G.attr[k]=clamp(G.attr[k]+1,1,10));
+    const affBonus=karma>=500?8:karma>=350?6:karma>=200?5:karma>=100?4:3;
+    Object.keys(CH).forEach(k=>G.aff[k]=(G.aff[k]||0)+affBonus);
+  }
+  // 观测者 (≥100): 天赋多抽1个（在rCreate中处理）
+  // 干涉者 (≥200): 好感加成+2（在execChoice中处理）
+  // 编织者 (≥350): 支线触发率翻倍（在rPlay中处理）
+  // 圆环之理 (≥500): 隐藏结局可触发（在rEnd中处理）
+
+  return tier;
+}
+
+// ─── 因果值对好感度加成的被动影响（在execChoice中调用）───
+function getKarmaAffBonus(){
+  const k=G.karma||0;
+  if(k>=500)return 5;  // 圆环之理：因果缠绕，羁绊极速
+  if(k>=350)return 4;  // 编织者
+  if(k>=200)return 3;  // 干涉者
+  if(k>=100)return 2;  // 观测者
+  if(k>=50)return 1;   // 觉醒者
+  return 0;
+}
+
+// ─── 因果值对事件触发概率的影响 ───
+
+// ─── 因果值越高→精神消耗越大（Madoka Portable核心机制：因果=祝福+诅咒）───
+function getKarmaSprPenalty(){
+  const k=G.karma||0;
+  if(k>=500)return 3;    // 圆环之理：命运重压——承载无数轮回的记忆
+  if(k>=350)return 2;    // 编织者
+  if(k>=200)return 1;    // 干涉者
+  if(k>=100)return 0.5;  // 观测者：轻微负担
+  return 0;              // 凡人/觉醒者：无忧无虑
+}
+
+function getKarmaEventBonus(){
+  const k=G.karma||0;
+  if(k>=500)return 0.25; // 圆环之理：隐藏事件频发
+  if(k>=350)return 0.20; // 编织者
+  if(k>=200)return 0.15; // 干涉者
+  if(k>=100)return 0.10; // 观测者
+  if(k>=50)return 0.05;  // 觉醒者
+  return 0;
+}
+// ╚══════════════════════════════════════════════════════════════╝
+
+// ─── 角色数据 18人 ───
+const CH={
+  jin:{id:'jin',n:'金',e:'⭐',c:'高一B',clr:'#f1c40f'},
+  gerui:{id:'gerui',n:'格瑞',e:'❄️',c:'高一B',clr:'#95a5a6'},
+  leishi:{id:'leishi',n:'雷狮',e:'🦁',c:'高二C',clr:'#9b59b6'},
+  anmixiu:{id:'anmixiu',n:'安迷修',e:'⚔️',c:'高三A',clr:'#3498db'},
+  kamier:{id:'kamier',n:'卡米尔',e:'🧣',c:'初三A',clr:'#1abc9c'},
+  aimi:{id:'aimi',n:'埃米',e:'😇',c:'初三A',clr:'#e67e22'},
+  kaili:{id:'kaili',n:'凯莉',e:'👑',c:'高一B',clr:'#e91e63'},
+  anlijie:{id:'anlijie',n:'安莉洁',e:'🍋',c:'高一B',clr:'#8bc34a'},
+  leide:{id:'leide',n:'雷德',e:'📖',c:'高二C',clr:'#ff5722'},
+  zuma:{id:'zuma',n:'祖玛',e:'🗿',c:'高二C',clr:'#607d8b'},
+  jiadeluosi:{id:'jiadeluosi',n:'嘉德罗斯',e:'🔥',c:'高一B',clr:'#f44336'},
+  paluosi:{id:'paluosi',n:'帕洛斯',e:'🖊️',c:'高二C',clr:'#795548'},
+  peili:{id:'peili',n:'佩利',e:'🐺',c:'高二C',clr:'#ff9800'},
+  aibi:{id:'aibi',n:'艾比',e:'😈',c:'初三A',clr:'#e040fb'},
+  yinjue:{id:'yinjue',n:'银爵',e:'🐱',c:'高三A',clr:'#9e9e9e'},
+  guihu:{id:'guihu',n:'鬼狐天冲',e:'🦊',c:'高三A',clr:'#ff6d00'},
+  daniel:{id:'daniel',n:'丹尼尔',e:'📋',c:'教师',clr:'#00bcd4'},
+  leizhi:{id:'leizhi',n:'雷蛰',e:'⚡',c:'教师',clr:'#ff9800'},
+};
+
+// ─── CP数据 8对 ───
+const CP={
+  leian:{n:'雷安',e:'🦁⚔️',c1:'leishi',c2:'anmixiu',d:'不良×风纪'},
+  ruijin:{n:'瑞金',e:'⭐❄️',c1:'jin',c2:'gerui',d:'阳光×冰山'},
+  kaiai:{n:'卡埃',e:'🧣😇',c1:'kamier',c2:'aimi',d:'守护×天真'},
+  kaining:{n:'凯柠',e:'👑🍋',c1:'kaili',c2:'anlijie',d:'大小姐×天然呆'},
+  leizu:{n:'雷祖',e:'📖🗿',c1:'leide',c2:'zuma',d:'追光×沉默'},
+  peipa:{n:'佩帕',e:'🐺🖊️',c1:'peili',c2:'paluosi',d:'单纯×腹黑'},
+  jiarui:{n:'嘉瑞',e:'🔥❄️',c1:'jiadeluosi',c2:'gerui',d:'天才对决'},
+  anlei:{n:'安雷',e:'⚔️🦁',c1:'anmixiu',c2:'leishi',d:'风纪×叛逆'},
+};
+
+// ─── 地点 10个 ───
+const LC={
+  classroom:{n:'教室',e:'🏫',ch:['jin','gerui','kaili','anlijie','jiadeluosi','daniel']},
+  cafeteria:{n:'食堂',e:'🍱',ch:['jin','gerui','kaili','anlijie','leide','zuma','aimi','aibi','jiadeluosi','peili']},
+  rooftop:{n:'天台',e:'🌇',ch:['leishi','paluosi','kamier','peili']},
+  library:{n:'图书馆',e:'📚',ch:['gerui','kamier','leide','zuma','anlijie','paluosi']},
+  gym:{n:'体育馆',e:'🏀',ch:['leishi','jin','jiadeluosi','leide','zuma','peili']},
+  courtyard:{n:'中庭',e:'🌳',ch:['aimi','aibi','kaili','anlijie','jin','paluosi','guihu']},
+  artroom:{n:'美术室',e:'🎨',ch:['kaili','anlijie']},
+  stuco:{n:'学生会',e:'🏛️',ch:['anmixiu','daniel']},
+  gate:{n:'校门口',e:'🚪',ch:['anmixiu','leishi','jin','aimi','aibi','daniel','leizhi']},
+  clubroom:{n:'社团楼',e:'🎭',ch:['yinjue','guihu','leide','zuma','aibi','kaili','paluosi']},
+};
+
+// ─── 天赋系统 30种 ───
+const TALENTS=[
+  // 🔴 传说级 · 影响全局
+  {id:'t_legend_1',n:'天使的碎片',e:'👼',g:5,d:'创世神残留的祝福。全属性随机+0~4，每日第一个选择额外+1好感',eff:()=>{Object.keys(G.attr).forEach(k=>G.attr[k]+=rn(0,4));G._tAngel=true;}},
+  {id:'t_legend_2',n:'转校生的秘密',e:'🎭',g:5,d:'你以前在别的学校经历过什么？初始全角色好感+5，但属性全随机',eff:()=>{Object.keys(CH).forEach(k=>G.aff[k]=(G.aff[k]||0)+5);Object.keys(G.attr).forEach(k=>G.attr[k]=rn(1,10));}},
+  {id:'t_legend_3',n:'命运的笔记者',e:'📕',g:5,d:'你习惯记录一切。日记内容更详细，每次写日记+1精神',eff:()=>{G._tJournal=true;G.attr.SPR+=3;}},
+  {id:'t_legend_4',n:'第七感',e:'🔮',g:5,d:'你偶尔能预感到接下来会发生什么。放学后遇到CP事件的概率翻倍',eff:()=>{G._tSeventh=true;G.attr.AFF+=3;}},
+  {id:'t_legend_5',n:'平行世界的旅人',e:'🌌',g:5,d:'这已经是你的第N次一百天了……继承上周目最高好感度CP的30%进度',eff:()=>{const top=Object.entries(G.aff).sort((a,b)=>b[1]-a[1]);if(top[0]){Object.keys(CP).forEach(k=>{const cp=CP[k];G.aff[cp.c1]=Math.max(G.aff[cp.c1]||0,Math.floor((top[0][1]||0)*0.3));G.aff[cp.c2]=Math.max(G.aff[cp.c2]||0,Math.floor((top[0][1]||0)*0.3));});}}},
+  // 🟣 史诗级
+  {id:'t_epic_1',n:'雷家远亲',e:'⚡',g:4,d:'你是雷家的远房亲戚。雷狮、卡米尔、雷蛰初始好感+15',eff:()=>{G.aff.leishi+=15;G.aff.kamier+=15;G.aff.leizhi+=15;}},
+  {id:'t_epic_2',n:'圣空星交换生',e:'🌠',g:4,d:'你以前在圣空星学院待过。嘉德罗斯对你的态度与众不同，初始好感+15，学力+2',eff:()=>{G.aff.jiadeluosi+=15;G.attr.INT+=2;}},
+  {id:'t_epic_3',n:'守望一族的笔友',e:'💫',g:4,d:'你和格瑞有过书信往来。格瑞初始好感+15，图书馆事件触发率提升',eff:()=>{G.aff.gerui+=15;G._tWatch=true;}},
+  {id:'t_epic_4',n:'前学生会成员',e:'🏛️',g:4,d:'你在之前的学校是学生会成员。安迷修初始好感+15，学生会可随时进入',eff:()=>{G.aff.anmixiu+=15;G._tStuco=true;}},
+  {id:'t_epic_5',n:'暗影使者的责编',e:'📝',g:4,d:'你竟然做过"暗影使者"的beta读者。帕洛斯&雷德初始好感+15',eff:()=>{G.aff.paluosi+=15;G.aff.leide+=15;}},
+  // 🔵 稀有级
+  {id:'t_rare_1',n:'学霸转校生',e:'📐',g:3,d:'学力+4。嘉德罗斯会注意到你的成绩',eff:()=>{G.attr.INT+=4;}},
+  {id:'t_rare_2',n:'运动健将',e:'🏃',g:3,d:'体力+4。体育祭上你的表现会格外亮眼',eff:()=>{G.attr.STR+=4;}},
+  {id:'t_rare_3',n:'社交达人',e:'💬',g:3,d:'亲和力+4。每天午餐偶遇概率大幅提升',eff:()=>{G.attr.AFF+=4;G._tSocial=true;}},
+  {id:'t_rare_4',n:'天生丽质',e:'💄',g:3,d:'魅力+4。角色主动与你搭话的概率提升',eff:()=>{G.attr.CHR+=4;}},
+  {id:'t_rare_5',n:'钢铁意志',e:'🧘',g:3,d:'精神+4。不容易因为负面事件降低精神',eff:()=>{G.attr.SPR+=4;}},
+  {id:'t_rare_6',n:'柠檬占卜师',e:'🍋',g:3,d:'你对占卜有天然的悟性。安莉洁初始好感+15',eff:()=>{G.aff.anlijie+=15;}},
+  {id:'t_rare_7',n:'美术鉴赏家',e:'🎨',g:3,d:'你能看懂凯莉画里的心思。凯莉初始好感+15',eff:()=>{G.aff.kaili+=15;}},
+  {id:'t_rare_8',n:'动物 Whisperer',e:'🐱',g:3,d:'动物天生亲近你。金、埃米、银爵初始好感+10',eff:()=>{G.aff.jin+=10;G.aff.aimi+=10;G.aff.yinjue+=10;}},
+  // ⚪ 普通级
+  {id:'t_norm_1',n:'早起型人',e:'🌅',g:2,d:'晨间时段遇到人的概率+20%',eff:()=>{G._tEarly=true;G.attr.SPR+=1;}},
+  {id:'t_norm_2',n:'夜猫子',e:'🦉',g:2,d:'放学后的自由时间体力消耗减半',eff:()=>{G._tNight=true;}},
+  {id:'t_norm_3',n:'便当达人',e:'🍱',g:2,d:'你做的便当很好吃。午餐事件好感加成+2',eff:()=>{G._tBento=true;G.attr.AFF+=1;}},
+  {id:'t_norm_4',n:'跑步很快',e:'💨',g:2,d:'在不同地点之间移动，有机会触发"追上了某人"的额外事件',eff:()=>{G._tRun=true;G.attr.STR+=1;}},
+  {id:'t_norm_5',n:'天气预报员',e:'🌈',g:2,d:'你总能提前知道会不会下雨。雨天事件的正面选项效果+3',eff:()=>{G._tWeather=true;}},
+  {id:'t_norm_6',n:'冷笑话大师',e:'🥶',g:2,d:'你讲的冷笑话意外地受欢迎。搞笑型日常事件好感+3',eff:()=>{G._tJoke=true;G.attr.CHR+=1;}},
+  {id:'t_norm_7',n:'记名字很快',e:'📇',g:2,d:'第一天全班同学就记住了你。初始全员好感+3',eff:()=>{Object.keys(CH).forEach(k=>G.aff[k]=(G.aff[k]||0)+3);}},
+  {id:'t_norm_8',n:'幸运星',e:'⭐',g:2,d:'你偶尔会捡到别人丢的东西——归还时会获得额外好感',eff:()=>{G._tLucky=true;}},
+  {id:'t_norm_9',n:'图书管理员之友',e:'📚',g:2,d:'图书馆事件触发率提升，每次去图书馆+1学力',eff:()=>{G._tLib=true;G.attr.INT+=1;}},
+  {id:'t_norm_10',n:'天台爱好者',e:'🌇',g:2,d:'天台事件触发率翻倍，在天台上休息恢复更多体力',eff:()=>{G._tRooftop=true;}},
+  // ⬜ 平凡级
+  {id:'t_plain_1',n:'普通的转校生',e:'😊',g:1,d:'没有特殊效果。但"普通"本身也是一种力量——你没有任何弱点',eff:()=>{G.attr.SPR+=2;}},
+  {id:'t_plain_2',n:'顺其自然',e:'🍃',g:1,d:'你不太刻意追求什么。好感度自然衰减减半',eff:()=>{G._tChill=true;}},
+];
+
+// ─── 借宿系统 18人全可借宿 ───
+const HOMESTAY_POOL=['jin','gerui','leishi','anmixiu','kamier','aimi','kaili','anlijie','leide','zuma','jiadeluosi','paluosi','peili','aibi','yinjue','guihu','daniel','leizhi'];
+
+// ─── 天赋-借宿关联（30%概率导向，非绝对）───
+const TALENT_HOME_LINK={
+  t_epic_1:['leishi','kamier','leizhi'],  // 雷家远亲→雷家三人
+  t_epic_2:['jiadeluosi'],                // 圣空星交换生→嘉德罗斯
+  t_epic_3:['gerui'],                     // 守望一族笔友→格瑞
+  t_epic_4:['anmixiu'],                   // 前学生会→安迷修
+  t_epic_5:['paluosi','leide'],           // 暗影使者责编→帕洛斯/雷德
+  t_rare_6:['anlijie'],                   // 柠檬占卜师→安莉洁
+  t_rare_7:['kaili'],                     // 美术鉴赏家→凯莉
+  t_rare_8:['jin','aimi','yinjue'],       // 动物Whisperer→金/埃米/银爵
+};
+function pickHomestay(talentIds){
+  // 30%概率从天赋关联角色中选，70%纯随机
+  if(talentIds&&talentIds.length>0&&Math.random()<0.3){
+    const rel=[];talentIds.forEach(t=>{if(TALENT_HOME_LINK[t])rel.push(...TALENT_HOME_LINK[t]);});
+    if(rel.length>0)return pk([...new Set(rel)]);
+  }
+  return pk(HOMESTAY_POOL);
+}
+
+// ─── 角色性格-事件兼容矩阵（26种事件类型）───
+const CHAR_EVENT_BAN={
+  chat:['gerui','zuma','kamier','yinjue'],           // 日常闲聊——冰山不闲聊
+  chat2:['gerui','zuma','kamier','yinjue'],          // 课间闲聊
+  help:['gerui','jiadeluosi'],                        // 帮忙——王储不屑求助
+  help2:['leishi'],                                   // 学业求助——雷狮不求人
+  deep:['gerui','leishi','jiadeluosi','yinjue'],     // 情绪落寞——强者不示弱
+  deep2:['gerui','jiadeluosi','yinjue'],             // 天台沉默陪伴
+  fun:['gerui','zuma','yinjue','kamier'],            // 搞笑出糗
+  fun2:['gerui','zuma'],                             // 模仿秀
+  sick:['leishi','jiadeluosi'],                      // 生病——不示弱
+  sick2:[],                                           // 保健室探病——都可以
+  rain:['jiadeluosi'],                                // 雨天——王储不打伞
+  rain2:[],                                           // 雨后散步
+  game:[],                                            // 真心话——性格过滤由选项处理
+  game2:[],                                           // 国王游戏
+  message:[],                                         // 深夜消息
+  message2:[],                                        // 早安消息
+  lunch:[],                                           // 午餐分享
+  lunch2:[],                                          // 便当交换
+  star:[],                                            // 看星星
+  star2:[],                                           // 夕阳
+  sports:[],                                          // 体育课
+  sports2:[],                                         // 运动会练习
+  lost:['gerui'],                                     // 捡到东西——格瑞不掉东西
+  lost2:[],                                           // 归还后的感谢
+  prepare:[],                                         // 准备活动
+  prepare2:[],                                        // 布置教室
+  study:[],                                           // 一起学习
+  study2:[],                                          // 借笔记
+  hallway:[],                                         // 走廊偶遇
+  hallway2:[],                                        // 上下学路上
+  rooftop:[],                                         // 天台独处
+  rooftop2:[],                                        // 天台吃午餐
+  shoelocker:['gerui','zuma','yinjue'],              // 鞋柜交换——冰山不参与
+  photo:[],                                           // 拍照
+  argue:['anmixiu','zuma','kamier'],                 // 争执——礼貌人不吵架
+  comfort:['jiadeluosi'],                             // 安慰——王储不需要
+  share:[],                                           // 分享零食/音乐
+  celebrate:[],                                       // 庆祝
+  promise:[],                                         // 约定
+  farewell:['jiadeluosi','leishi'],                  // 离别伤感——强者不显露
+  club:[],                                            // 社团活动
+  club2:[],                                           // 社团招新
+  rumor:[],                                           // 八卦/传闻
+  rumor2:['gerui','anmixiu','zuma','kamier'],        // 恋爱八卦——冰山不参与
+  // 50种事件的新增类型
+  dream:[],                                           // 梦——都可以
+  homework:['gerui','leishi','anmixiu','jiadeluosi'],// 作业借抄——学霸不需要
+  cleaning:[],                                        // 打扫——都可以
+  walk_home:[],                                       // 一起回家——都可以
+  blackboard:['anmixiu'],                             // 黑板留言——风纪委员不干
+  nickname:[],                                        // 起绰号——都可以
+  injury:[],                                          // 受伤——都可以
+  pet:[],                                             // 小动物——都可以
+  thunder:[],                                         // 打雷——都可以
+  transfer_talk:[],                                   // 转校生话题——都可以
+  rooftop_lunch:[],                                   // 天台午餐——都可以
+  detention:['anmixiu'],                              // 罚留堂——风纪委员不会被罚
+  festival_prep:[],                                   // 学园祭筹备——都可以
+  valentine_make:[],                                  // 做巧克力——都可以
+  future_talk:[],                                     // 未来打算——都可以
+  diary_found:['gerui','leishi','jiadeluosi'],       // 日记被发现——冰山/王者不写日记
+  umbrella_lend:[],                                   // 借伞——都可以
+  song_rec:[],                                        // 推歌——都可以
+  ghost_story:[],                                     // 怪谈——都可以
+  final_words:[],                                     // 最后的话——都可以(Day90+)
+  wrong_message:[],                                   // 发错消息——都可以
+  bento_forgot:['anmixiu'],                           // 便当忘记——风纪委员最守规矩
+  club_clash:[],                                      // 社团对决——都可以
+  childhood:[],                                          // 竹马回忆——都可以
+  secret_crush:['jiadeluosi','leishi'],                 // 暗恋——王者不会显露
+};
+// 课堂事件(高一B班) → 不适合的角色（格瑞/雷狮/安迷修/嘉德罗斯=学霸）
+const CHAR_CLASS_BAN={
+  '数学课·提问':['gerui','jiadeluosi','anmixiu'],         // 学霸都会
+  '语文课·小组讨论':[],
+  '英语课·传纸条':['gerui','jiadeluosi','anmixiu'],       // 冰山/王储/风纪委员不传纸条
+  '实验课·意外':['gerui'],                               // 学霸不会犯低级实验错误
+  '自习课·偷懒':['gerui','anmixiu'],                      // 学霸不偷懒
+  '课间·分享':[],
+  '美术课·被画':[],
+  '体育课·组队':[],
+  '音乐课·合唱':[],
+  '考试·紧张':['gerui','jiadeluosi','leishi','anmixiu'],  // 四个学霸都不紧张
+  '发成绩·安慰':['gerui','jiadeluosi','leishi','anmixiu'],// 成绩都好
+  '换座位·邻桌':[],
+  '值日·一起':[],
+  '生病·课堂':[],
+  '班会·活动策划':[],
+  '走神·被点名':['gerui','anmixiu'],                      // 学霸不走神
+};
+// ─── 事件简述模板（用于多事件选择画面）───
+// 每个事件类型配2-3个简述，{mc}和{sc}在渲染时替换为角色名
+const EVENT_TEASERS={
+  chat:['{mc}在和{sc}聊得正开心——笑声不断','{mc}分享了一件超好笑的趣事——','{mc}在给同学看手机上的东西——'],
+  chat2:['{mc}课间凑过来聊天——话题停不下来','{mc}在走廊上和人聊着什么——'],
+  help:['{mc}抱着一摞摇摇欲坠的教材——','{mc}在公告栏前踮着脚贴海报——','{mc}搬桌椅时快撑不住了——'],
+  help2:['{mc}对着电脑皱眉——策划案写不出来','{mc}的书包拉链开了——东西快掉出来'],
+  deep:['{mc}一个人坐着——看起来有些落寞','{mc}趴在桌上，气压很低','{mc}盯着窗外发呆——'],
+  deep2:['{mc}在天台——一个人。风很大','{mc}靠在墙上——「只是想安静一下」'],
+  fun:['{mc}在模仿老师的语气——学得超像','{mc}试图同时转三支笔——全飞出去了','{mc}打瞌睡头磕到桌上——咚！'],
+  fun2:['{mc}在黑板上画漫画——画得意外地好','{mc}在用奇怪口音读课本——周围笑翻了'],
+  sick:['{mc}脸色不太好——一直在咳嗽','{mc}趴在桌上没什么精神——好像不舒服'],
+  sick2:['{mc}在保健室躺着——看起来很无聊','{mc}在保健室——似乎需要人陪'],
+  rain:['{mc}站在屋檐下——没带伞','{mc}看着大雨发呆——被困在教学楼门口'],
+  rain2:['雨后天晴——{mc}在湿漉漉的操场上散步'],
+  game:['午休——{mc}被拉进了真心话大冒险','一群人围坐着——轮到{sc}转瓶子'],
+  game2:['{mc}抽到了国王游戏——表情很微妙','教室里在玩文字游戏——{mc}笑得很开'],
+  message:['手机亮了——是{sc}发来的消息','深夜——{sc}发了一条信息'],
+  message2:['早上手机亮了——{sc}发来早安消息','{sc}发来消息：「今天降温，多穿点——」'],
+  lunch:['{mc}打开了看起来很丰盛的便当——','食堂里——{mc}旁边刚好有空位','{mc}在小卖部挑面包——'],
+  lunch2:['{mc}分了一半便当给你——筷子停不下来','{mc}和{sc}在交换便当里的菜'],
+  star:['天已经黑了——{mc}在天台仰头看星星','夜幕低垂——{mc}靠着栏杆望着夜空'],
+  star2:['夕阳把天台染成金色——{mc}在看日落','傍晚——{mc}一个人在看晚霞'],
+  sports:['操场上——{mc}跑步时不小心摔了','体育课——{mc}投篮连进了三个！','{mc}在教同学做拉伸——很专业'],
+  sports2:['运动会将近——{mc}在努力练习','{mc}在跑道上计时——和自己比赛'],
+  lost:['你看到地上有{sc}的东西——应该是不小心掉的','{sc}在翻遍书包找什么——表情越来越急'],
+  lost2:['{sc}走到你面前——「上次谢谢你帮我找到东西——」','{sc}递过来一瓶饮料——是回礼'],
+  prepare:['{mc}在为舞台剧做道具——忙得不可开交','{mc}在画活动海报——地上摆满了材料'],
+  prepare2:['教室里——{mc}对着一堆装饰材料发愁','{mc}在写活动策划案——笔都快没水了'],
+  study:['{mc}在解一道看起来很复杂的题——','{mc}笔记写满了整页——字迹工整','自习时间——{mc}在借你的笔记抄'],
+  study2:['{mc}凑过来——「这道题你帮我看看——」','{mc}在给你讲题——讲得很清楚'],
+  hallway:['走廊转角——差点和{mc}撞了个满怀','下课铃刚响——{mc}从教室里出来'],
+  hallway2:['你和{mc}在走廊擦肩而过——Ta回头了','{mc}抱着作业往办公室走——'],
+  rooftop:['天台——{mc}靠着栏杆发呆','{mc}在天台吃午餐——一个人','天台。{mc}也在——看到你之后点了点头'],
+  rooftop2:['{mc}在天台上躺着看云——很惬意','风很舒服——{mc}在天台上看手机'],
+  shoelocker:['鞋柜里多了一样东西——是{sc}放的','早上打开鞋柜——一张纸条掉了出来'],
+  photo:['{mc}在摆姿势——让朋友帮Ta拍照','{mc}在看手机相册——翻到某张合照停住了'],
+  argue:'你听到{sc}在和别人争论——语气很认真',
+  comfort:['{mc}考砸了——把卷子揉成了一团','{mc}被老师批评了——低着头不说话','{mc}今天一直没什么精神——'],
+  share:['{mc}递给你一只耳机——「听这首歌」','{mc}分给你一半零食——「新口味，尝尝」'],
+  celebrate:['{mc}成绩进步了——拿着成绩单跑过来','{mc}社团比赛赢了——满脸兴奋'],
+  promise:['{mc}突然说——「毕业后我们还要联系」','{mc}在日历上圈了一个日期——'],
+  farewell:['接近一百天了——{mc}忽然说「你真的要走吗？」','{mc}给了你一样东西——「以后别忘了我」'],
+  club:['社团活动——{mc}在认真地做着什么','社团时间——{mc}在教新社员——很耐心'],
+  club2:['社团招新——{mc}在摊位前热情介绍','{mc}在社团展板前站着——好像在等你'],
+  rumor:['你听到有人在议论{sc}——关于Ta喜欢谁','走廊上——有人在讨论{sc}的八卦'],
+  rumor2:['{mc}被卷入了一场恋爱八卦——表情很尴尬','有人在传{sc}和某人的绯闻——'],
+  dream:['午休——{sc}忽然说「我昨晚梦到你了」','你做了一个梦——梦里{sc}递给你一样东西'],
+  homework:['{mc}凑过来——「昨天的作业——最后一题你写了吗」','{mc}在早自习前疯狂赶作业——笔快飞起来了'],
+  cleaning:['放学后大扫除——{mc}被分配擦窗户','{mc}一个人搬桌子——看起来很重'],
+  walk_home:['放学铃响——{mc}和你同一方向走出校门','{mc}在门口等你——「一起走？」'],
+  blackboard:['黑板上有人写了一句话——笔迹是{sc}的','早上——黑板上多了一行留言'],
+  nickname:['{mc}忽然给你起了个绰号——','{mc}在纸条上写了一个你没见过的小称呼'],
+  injury:['{mc}跑步时扭到了脚——坐在地上','{mc}一瘸一拐地走着——表情在忍痛'],
+  pet:['一只猫出现了——{mc}蹲下来伸出手','{mc}在喂野猫——眼睛亮得很少见'],
+  thunder:['轰隆——！！打雷了——{mc}缩了一下','窗外雷声滚滚——{mc}假装没事'],
+  transfer_talk:['{mc}忽然问「你以前的学校——是什么样的？」','{mc}说「你来了之后——这里好像不太一样了」'],
+  rooftop_lunch:['天台午休——{mc}在吃便当。看到你之后往旁边挪了挪','天台——{mc}说「小心便当被风吹走——」'],
+  detention:['{mc}被罚留堂了——教室只剩Ta一个人','放学后——{mc}在空教室里写检讨'],
+  festival_prep:['学园祭筹备——{mc}在为摊位卖什么而争论','{mc}在争谁负责最难的那部分——'],
+  valentine_make:['料理室——{mc}在试着做巧克力——但不太成功','空气中飘着甜味——{mc}在装饰巧克力'],
+  future_talk:['{mc}在填升学志愿表——一个人对着纸发呆','{mc}忽然问「毕业之后——我们还会见面吗？」'],
+  diary_found:['你不小心看到了{sc}的笔记本——不是作业','{sc}手忙脚乱地合上了本子'],
+  umbrella_lend:['突然下雨——你没带伞。{sc}说「我有多的」','{sc}把自己的伞塞给你——「我家近，跑回去就行」'],
+  song_rec:['{mc}发了一首歌的链接——「这首——一定要听」','{mc}在走廊上哼着歌——是你喜欢的那首'],
+  ghost_story:['旧教学楼——{mc}说要去探险怪谈','有人说旧校舍有怪谈——{mc}嘴上说不信但脸色发白'],
+  final_words:['接近一百天了——{mc}说「我有话想跟你说——但不知道怎么说」','{mc}在走廊叫住你——然后沉默了很久'],
+  wrong_message:['手机亮了——{sc}发来消息——「刚才那条发错了」','{sc}撤回了消息——但你看到了预览'],
+  bento_forgot:['午休——{sc}翻遍书包「便当忘在家里了——」','{sc}在小卖部排了队——但卖完了'],
+  club_clash:['两个社团在抢活动室——{mc}被夹在中间','{mc}的社团和另一个社团起了冲突——'],
+  childhood:['{mc}翻出了一张小时候的照片——上面有两个小孩','{mc}在讲小时候的事——讲了很久'],
+  secret_crush:['{mc}看着某个人——但很快移开了目光','{mc}在本子上写了几个字——又划掉了'],
+};
+
+// 过滤角色：从pool中排除被ban的角色
+function filterPool(pool,banList){
+  if(!banList||banList.length===0)return pool;
+  return pool.filter(id=>!banList.includes(id));
+}
+
+// ─── 角色个性风味文本（用于借宿/日常事件中自然融入性格特色）───
+const CHAR_FLAVOR={
+  jin:{morning:'桌上放着昨晚没写完的数学作业。',evening:'金正在和格瑞视频——「这道题你再讲一遍——」',quirk:'喜欢喊人名字，充满活力'},
+  gerui:{morning:'一杯热牛奶已经在桌上了。',evening:'格瑞在沙发上看书。旁边的牛奶杯还是满的。',quirk:'寡言，但会在关键时说一句简单的话'},
+  leishi:{morning:'厨房飘来烤肉的香味——雷狮的早餐风格。桌上还有雷蛰留的便条：「别迟到。」',evening:'雷狮翘着腿在看手机。卡米尔发来消息——他回得比谁都认真。',quirk:'雷蛰的亲弟弟，卡米尔的堂兄。表面不良，对家人比谁都护。'},
+  anmixiu:{morning:'安迷修已经起床晨练了——桌上留了便条：「早餐在微波炉里。」',evening:'安迷修在擦他的双剑——虽然是模型剑，但他擦得很认真。',quirk:'自称「在下」，对任何人都礼貌到不行'},
+  kamier:{morning:'卡米尔已经在看书了。围巾裹得很紧——雷狮堂兄送的。',evening:'卡米尔在整理笔记。手机亮了——雷狮堂兄：「明天午饭——老地方。」',quirk:'雷狮的堂弟。几乎不说话，但对堂兄以外的人也慢慢敞开了。'},
+  aimi:{morning:'艾比在喊埃米起床——「再不起来早饭凉了！！」埃米顶着乱糟糟的呆毛爬起来。',evening:'埃米在给姐姐捶肩膀——嘴上抱怨但手没停。艾比假装看电视——嘴角往上翘。',quirk:'双胞胎弟弟。姐姐一瞪就怂，但姐姐出事第一个冲出去。'},
+  kaili:{morning:'红茶已经泡好了。凯莉翻着塔罗牌——嘴角有一丝意味不明的笑。「今天——有人要倒霉了呢。」',evening:'凯莉在画今天捉弄安迷修的场景速写——画面里骑士被猫追着跑。「艺术源于生活——」',quirk:'星月魔女。腹黑，爱捉弄人，但只捉弄在意的人。「哎呀。」'},
+  anlijie:{morning:'安莉洁闭眼——指尖轻触水晶球。「今天——会下雨。」窗外晴空万里。但下午真的下了。',evening:'安莉洁递来柠檬茶。「你的命运线——比昨天亮了0.3%。」她认真地说。你不知道该信还是该笑。',quirk:'天然呆预言家。说话慢半拍，但预言从不出错——虽然时机总是很奇怪。'},
+  leide:{morning:'雷德对着镜子整理头发——「祖玛今天会注意到吗——」',evening:'雷德在写日记——封面写着「祖玛观察记录」。',quirk:'恋爱脑，三句话离不开祖玛'},
+  zuma:{morning:'祖玛已经完成了晨练——动作干净利落。',evening:'祖玛在安静地看书。坐姿笔直——像在站军姿。',quirk:'沉默寡言，但「……嗯。」一个字就是承诺'},
+  jiadeluosi:{morning:'嘉德罗斯在刷题——「这种难度……渣渣。」',evening:'嘉德罗斯在看格瑞的成绩排名——「差0.5分……下次一定。」',quirk:'口头禅「渣渣」，视格瑞为一生之敌'},
+  paluosi:{morning:'帕洛斯对着电脑——大概在写暗影使者的更新。',evening:'帕洛斯合上电脑——「今天的灵感不错。」嘴角有一丝意味不明的笑。',quirk:'腹黑，但偶尔流露真实的温柔'},
+  peili:{morning:'佩利在做俯卧撑——「98……99……100！！」',evening:'佩利在吃第三碗饭——「今天打架消耗太多了——」',quirk:'单纯热血，喜欢打架和吃饭'},
+  aibi:{morning:'艾比在给埃米梳头——「别乱动！呆毛歪了！！」埃米疼得龇牙咧嘴但没躲。',evening:'艾比在看手机——安迷修头像闪过。迅速划走。埃米偷笑——被敲了脑袋。',quirk:'双胞胎姐姐。嘴上凶得要命，但埃米的便当从来不会少。'},
+  yinjue:{morning:'银爵在喂猫——三只猫围着他。他的表情难得柔和。',evening:'银爵坐在窗边——一只猫趴在他膝盖上。安静得像一幅画。',quirk:'冷漠寡言，但对动物格外温柔'},
+  guihu:{morning:'鬼狐天冲在对镜子练习微笑——「今天也要让大家信任我呢。」',evening:'鬼狐天冲在整理通讯录——标注着每个人的「可用之处」。',quirk:'笑面虎，说的每句话都有目的'},
+  daniel:{morning:'丹尼尔老师在备课——教案整洁得像印刷品。',evening:'丹尼尔在批改作业——红笔写的评语比作业还认真。',quirk:'温柔负责，永远面带微笑'},
+  leizhi:{morning:'雷蛰在喝黑咖啡——不加糖。桌上放着雷狮昨晚的宵夜碗——他叹了口气但还是拿去洗了。',evening:'雷蛰在看雷狮的成绩单——又是满分。叹了口气。「……成绩是好。就不能安分点吗。」揉了揉太阳穴——这弟弟太难管了。',quirk:'雷狮的亲哥哥。教师。认真严肃，对弟弟又气又关心。'},
+};
+
+// ─── 校外地点 8个（周末/假日专用）───
+const LC_OUT={
+  shopping:{n:'商业街',e:'🛍️',ch:['jin','kaili','aibi','anlijie','guihu','leide','paluosi','aimi']},
+  park:{n:'中央公园',e:'🌳',ch:['jin','gerui','anmixiu','kamier','aimi','aibi','yinjue','daniel']},
+  cinema:{n:'电影院',e:'🎬',ch:['leishi','kaili','jiadeluosi','peili','paluosi','guihu','aibi']},
+  cafe:{n:'猫咪咖啡厅',e:'☕',ch:['anlijie','kamier','yinjue','gerui','leide','zuma','daniel']},
+  bookstore:{n:'书店',e:'📚',ch:['gerui','kamier','leide','zuma','anlijie','paluosi','daniel','leizhi']},
+  arcade:{n:'游戏厅',e:'🎮',ch:['jin','leishi','jiadeluosi','peili','kaili','aibi','guihu']},
+  station:{n:'车站前',e:'🚉',ch:['anmixiu','leishi','jin','aimi','aibi','daniel','leizhi','guihu']},
+  riverside:{n:'河边',e:'🌊',ch:['gerui','anmixiu','kamier','zuma','yinjue','paluosi','leizhi']},
+};
+
+// ─── 课堂事件模板（用 {{}} 作为占位符，运行时替换）───
+const CLASS_EVENTS=[
+  {t:'数学课·提问',x:'数学老师在黑板上写了一题。\n\n粉笔落下。\n\n「这道题——请一位同学上来做。」\n\n你感觉到周围同学的目光在四处躲闪。而{{mc.e}} {{mc.n}}{{pk:正在认真演算|低头翻书|已经写完了在转笔|悄悄推了你一下}}。',
+    c:[{t:'主动举手上去做',a:[{id:'mc',v:dv(6)}],f:'你做对了。老师点了点头。{{mc.n}}在你下来时对你笑了一下。'},
+       {t:'小声和{{mc.n}}讨论答案',a:[{id:'mc',v:dv(5)}],f:'你们在下面嘀咕了几句。答案是对的——而且这样讨论比一个人做更有趣。'},
+       {t:'低头祈祷不要被点到',a:[],f:'老师叫了另一个人。你松了口气——但{{mc.n}}似乎注意到了你的反应。'}]},
+  {t:'语文课·小组讨论',x:'语文课。\n\n「四人一组——讨论这篇文章的主题。」\n\n{{mc.e}} {{mc.n}}{{pk:抱着书挪了过来|刚好被分到你这组|在找组员}}。{{sc?sc.e+ sc.n+也凑了过来。:}}',
+    c:[{t:'认真发表自己的看法',a:[{id:'mc',v:dv(5)}],f:'{{mc.n}}听得很仔细。讨论结束时——Ta说「你刚才那个观点很有意思」。'},
+       {t:'让{{mc.n}}先说，自己补充',a:[{id:'mc',v:dv(4)}],f:'你安静地听着。然后在Ta说完后补了一句关键的话——Ta看了你一眼，像是在说「默契」。'}]},
+  {t:'英语课·传纸条',x:'英语课。\n\n老师在讲语法——但教室里偶尔有纸条在飞。\n\n你桌上突然多了一张折好的纸条。{{mc.e}} {{mc.n}}{{pk:在你斜后方偷偷挥手|装作若无其事|用笔戳了戳你后背}}。',
+    c:[{t:'打开纸条看——然后回复',a:[{id:'mc',v:dv(7)}],f:'纸条上写的是「下课后要不要一起去买饮料？」你写了「好」。折回去的时候——老师差点发现。'},
+       {t:'把纸条收起来，下课再看',a:[{id:'mc',v:dv(3)}],f:'你忍了一节课没看。下课打开——是Ta画的一只猫。很丑。但你笑了。'}]},
+  {t:'实验课·意外',x:'化学实验室。\n\n{{mc.e}} {{mc.n}}负责的实验——\n\n{{pk:液体变成了奇怪的颜色|烧杯冒出了烟|量筒摔了|忘了加催化剂导致什么都没发生}}。',
+    c:[{t:'赶紧帮忙收拾/调整',a:[{id:'mc',v:dv(8)}],f:'你反应很快。两个人手忙脚乱地抢救实验——最后居然成功了。老师都没发现。'},
+       {t:'在旁边帮忙记录数据',a:[{id:'mc',v:dv(4)}],f:'虽然实验出了意外——但你记录的数据帮上了忙。{{mc.n}}松了一口气。'}]},
+  {t:'自习课·偷懒',x:'自习课。\n\n教室里安静得只剩翻书声。\n\n{{mc.e}} {{mc.n}}{{pk:趴在桌上|在课本下面藏了一本漫画|悄悄在画画|用笔在桌上刻字|望着窗外发呆}}。',
+    c:[{t:'假装没看见——但帮忙望风',a:[{id:'mc',v:dv(6)}],f:'老师经过的时候你咳嗽了一声。Ta秒速坐直。老师走后——对你比了个大拇指。'},
+       {t:'小声提醒「老师在看你」',a:[{id:'mc',v:dv(3)}],f:'Ta赶紧端正了坐姿。虽然被提醒有点尴尬——但Ta知道你是好意。'}]},
+  {t:'课间·分享',x:'课间5分钟。\n\n{{mc.e}} {{mc.n}}{{pk:拿出一包零食|分享了一首新歌|掏出一个奇怪的挂件|在手机上刷到了好笑的视频}}。',
+    c:[{t:'自然地凑过去',a:[{id:'mc',v:dv(6)}],f:'Ta分给了你一半。上课铃响了——两个人手忙脚乱地把东西藏起来。'},
+       {t:'在旁边微笑看着',a:[{id:'mc',v:dv(3)}],f:'Ta注意到了你的目光——回头对你笑了一下。课间短暂——但很暖。'}]},
+  {t:'美术课·被画',x:'美术课。主题是「画你身边的人」。\n\n{{mc.e}} {{mc.n}}{{pk:偷偷在看你|画得特别认真|把画藏了起来不让人看|画纸上——好像是你的侧脸}}。',
+    c:[{t:'假装没发现——但配合地保持姿势',a:[{id:'mc',v:dv(8)}],f:'下课后Ta把画塞进了书包。但你瞥到了一眼——画得真的很好。'},
+       {t:'直接问「你在画我吗？」',a:[{id:'mc',v:dv(5)}],f:'Ta脸红了——把画纸翻了过去。「没——没有。」但你看到了。画的是你。'}]},
+  {t:'体育课·组队',x:'体育课。\n\n「两人一组——」\n\n{{mc.e}} {{mc.n}}{{pk:目光扫了一圈——看向了你|站在原地等着被选|径直朝你走过来}}。',
+    c:[{t:'主动向Ta走去',a:[{id:'mc',v:dv(7)}],f:'你们成了一组。练习的时候Ta意外地认真——但失误了会笑得很开。'},
+       {t:'站在原地——等Ta来找你',a:[{id:'mc',v:dv(5)}],f:'果然——Ta过来了。「一起？」你说好。阳光下——汗水在发光。'}]},
+  {t:'音乐课·合唱',x:'音乐课。大合唱。\n\n{{mc.e}} {{mc.n}}站在你旁边。\n\n歌曲是{{pk:一首老歌|最近很火的流行曲|一首奇怪的童谣}}。\n\n你们的声音混在一起的时候——',
+    c:[{t:'认真跟着唱',a:[{id:'mc',v:dv(5)}],f:'你们的声线意外地和。唱到高音的时候Ta破了音——两个人都笑了。'},
+       {t:'小声和Ta吐槽这首歌',a:[{id:'mc',v:dv(4)}],f:'你们在下面偷偷聊天。被老师瞪了一眼——但Ta没忍住又笑了。'}]},
+  {t:'考试·紧张',x:'小测验。\n\n教室安静。只有笔在纸上的沙沙声。\n\n{{mc.e}} {{mc.n}}{{pk:疯狂翻卷子|在咬笔帽|额头冒汗|看起来胸有成竹}}。',
+    c:[{t:'专注做自己的——考完后交换对答案',a:[{id:'mc',v:dv(5)}],f:'考完后你们对了答案。Ta错了一题——但你安慰说「那道题确实很坑」。'},
+       {t:'趁老师不注意，给Ta指了一下',a:[{id:'mc',v:dv(8)}],f:'你冒了风险。Ta看到了——赶紧改了。考完后Ta小声说了谢谢。'}]},
+  {t:'发成绩·安慰',x:'成绩公布了。\n\n{{mc.e}} {{mc.n}}{{pk:考得不太理想——趴在桌上|比上次进步了一点——在偷偷握拳|考砸了——把卷子塞进了书包最深处}}。',
+    c:[{t:'走过去说「下次一起复习吧」',a:[{id:'mc',v:dv(9)}],f:'Ta抬起头。眼睛有点红——但笑了。\n「……说好了。」'},
+       {t:'悄悄在Ta桌上放了一颗糖',a:[{id:'mc',v:dv(5)}],f:'Ta发现糖的时候愣了一秒。然后剥开糖纸吃了——好像心情好了一点点。'}]},
+  {t:'换座位·邻桌',x:'今天换座位。\n\n{{mc.e}} {{mc.n}}{{pk:坐到了你旁边|被调到了你前面|换到了你斜对角}}。\n\n「请多关照。」',
+    c:[{t:'开心地打招呼',a:[{id:'mc',v:dv(6)}],f:'Ta也笑了。新座位——意味着更多的交集。更多借橡皮、传纸条、课间闲聊的机会。'},
+       {t:'帮Ta搬桌子/放书',a:[{id:'mc',v:dv(4)}],f:'你顺手帮了忙。Ta说了谢谢——然后发现你们的铅笔盒是同款。'}]},
+  {t:'值日·一起',x:'今天轮到你值日。\n\n{{mc.e}} {{mc.n}}{{pk:也轮到了值日|主动留下来帮忙|被老师罚了值日——满脸不服}}。\n\n教室空了——只剩你们。',
+    c:[{t:'分工合作——擦黑板/扫地',a:[{id:'mc',v:dv(7)}],f:'值日很快做完了。夕阳从窗户照进来——教室里安静而温暖。你们多待了一会儿。'},
+       {t:'边做值日边聊天',a:[{id:'mc',v:dv(5)}],f:'聊着聊着——值日就做完了。你知道了Ta喜欢什么、讨厌什么。这些小事——很重要。'}]},
+  {t:'生病·课堂',x:'上课时。\n\n{{mc.e}} {{mc.n}}{{pk:脸色很差|一直在吸鼻子|趴在桌上不起来|嘴唇发白}}。\n\n老师还没注意到。',
+    c:[{t:'下课陪Ta去保健室',a:[{id:'mc',v:dv(10)}],f:'校医说是低血糖。你帮Ta倒了热水。Ta握着杯子——「你真好。」声音很轻。'},
+       {t:'帮Ta抄了今天的笔记',a:[{id:'mc',v:dv(6)}],f:'第二天你把工整的笔记本放在Ta桌上。Ta翻开的时候——沉默了很久。'}]},
+  {t:'班会·活动策划',x:'班会。\n\n班主任说下个月有班级展示。\n\n「谁来负责策划？」\n\n{{mc.e}} {{mc.n}}{{pk:举了手|被大家推举出来|偷偷看你——好像在邀请你一起}}。',
+    c:[{t:'举手：「我和Ta一起来」',a:[{id:'mc',v:dv(8)}],f:'你们一起负责了这次策划。放学后讨论了很久——虽然累但很充实。'},
+       {t:'在下面小声说「需要帮忙的话叫我」',a:[{id:'mc',v:dv(4)}],f:'Ta点了点头。后来真的来找你帮忙了——你当然没有拒绝。'}]},
+  {t:'走神·被点名',x:'课上。\n\n{{mc.e}} {{mc.n}}显然在走神——\n\n{{pk:盯着窗外|在纸上画小涂鸦|眼神放空|在偷偷看手机}}。\n\n老师突然喊了Ta的名字。',
+    c:[{t:'小声告诉Ta答案/页码',a:[{id:'mc',v:dv(8)}],f:'你飞快地指了一下课本。Ta反应过来——勉强答上了。坐下后对你感激地看了一眼。'},
+       {t:'假装掉笔——吸引老师注意力',a:[{id:'mc',v:dv(5)}],f:'你蹲下去捡笔。老师瞪了你一眼但节奏被打断了。{{mc.n}}趁机回了神。'}]},
+];
+
+// ─── 借宿事件模板（用 {{}} 作为占位符，运行时替换）───
+const HOME_EVENTS={
+  morning:[
+    {t:'起床',x:'闹钟响了。\n\n你从被窝里挣扎出来。\n\n厨房传来动静——{{hs.e}} {{hs.n}}{{pk:已经在做早餐了|正在刷牙|在沙发上睡着——还没醒|对着镜子整理头发|在看早间新闻}}。',
+      c:[{t:'去帮忙做早餐',a:[{id:'hs',v:dv(6)}],f:'你们一起做了早餐。虽然只是简单的吐司和牛奶——但两个人一起吃的味道总是不一样。'},
+         {t:'说「早上好——」然后去洗漱',a:[{id:'hs',v:dv(3)}],f:'Ta回了你一句随意的早安。日常的——但温暖的。'}]},
+    {t:'早餐',x:'餐桌上。\n\n{{hs.e}} {{hs.n}}把早餐摆好。\n\n{{pk:「昨晚睡得好吗？」|「今天有测验吧——复习了吗？」|「你头发翘起来了。」|「尝尝这个——我新学的。」}}',
+      c:[{t:'边吃边聊——聊今天的计划',a:[{id:'hs',v:dv(5)}],f:'你们聊着天。早餐时间很短——但足以让人对新的一天充满期待。'},
+         {t:'帮Ta收拾餐具',a:[{id:'hs',v:dv(3)}],f:'吃完后你主动洗碗。Ta在旁边擦桌子——这样的分工已经很自然了。'}]},
+    {t:'出门',x:'快迟到了。\n\n{{hs.e}} {{hs.n}}穿上鞋——\n\n{{pk:「你书包拉链没拉。」|「便当带了吗？」|在门口等你|已经推开门——阳光涌进来}}。',
+      c:[{t:'加快脚步跟上',a:[{id:'hs',v:dv(5)}],f:'你们几乎是小跑着出门的。路上——Ta说了句「今天的天气——适合迟到。」你笑了。'},
+         {t:'帮Ta拿了忘带的东西',a:[{id:'hs',v:dv(4)}],f:'你瞥见桌上Ta的钥匙——顺手拿了。Ta在门口摸口袋时——你递了过去。「……谢谢。」'}]},
+  ],
+  evening:[
+    {t:'回家',x:'天已经暗下来了。\n\n你用钥匙开门——屋里亮着灯。\n\n{{hs.e}} {{hs.n}}{{pk:在客厅等你|从房间探出头「回来啦？」|在厨房——香味飘了出来|已经躺在沙发上睡着了}}。',
+      c:[{t:'「我回来了——」自然地换鞋进屋',a:[{id:'hs',v:dv(5)}],f:'Ta应了一声。房间里很温暖——这是你在这里的第{{G.day}}天。已经开始习惯了。'},
+         {t:'轻手轻脚——怕吵醒Ta',a:[{id:'hs',v:dv(4)}],f:'你轻轻地关上门。但Ta还是醒了——看到你之后笑了笑。「回来了啊。」'}]},
+    {t:'晚饭',x:'晚饭时间。\n\n{{hs.e}} {{hs.n}}做了{{pk:咖喱饭|拉面|炒饭|火锅——只有两个人的|外卖——披萨}}。\n\n两个人坐在桌边。',
+      c:[{t:'「好吃——」真心地夸',a:[{id:'hs',v:dv(7)}],f:'Ta愣了一下——然后笑了。\n「那就多吃点。」Ta往你碗里又夹了一筷子菜。'},
+         {t:'聊今天发生的事',a:[{id:'hs',v:dv(5)}],f:'你把学校里的事讲给Ta听。Ta有时笑有时吐槽——不知不觉吃完了。'}]},
+    {t:'写作业',x:'晚上。\n\n你和{{hs.e}} {{hs.n}}在同一张桌上写作业。\n\n{{pk:「这道题你帮我看看——」|答案对不上——你算一遍？|两人的笔尖沙沙响|中场休息——Ta去拿了零食}}。',
+      c:[{t:'耐心地讲解',a:[{id:'hs',v:dv(6)}],f:'你讲得很清楚。Ta恍然大悟的表情——让你莫名有成就感。'},
+         {t:'分工——你写数学Ta写英语',a:[{id:'hs',v:dv(4)}],f:'虽然这种"分工"不太对——但效率确实高。做完后相视一笑。'}]},
+    {t:'客厅·闲谈',x:'作业做完了。\n\n你和{{hs.e}} {{hs.n}}在客厅。电视开着——但没人认真看。\n\n{{pk:「你有喜欢的人吗——」|「100天后——你会去哪里？」|「如果时间能停在这里就好了。」|「明天要不要去哪里逛逛？」}}',
+      c:[{t:'认真地回答',a:[{id:'hs',v:dv(8)}],f:'你回答了。Ta沉默了一会儿——然后在沙发上换了个姿势。\n「这样啊。」但Ta的声音变轻了。'},
+         {t:'反问「那你呢？」',a:[{id:'hs',v:dv(6)}],f:'Ta没有回答。但Ta的沉默——好像说了很多。'}]},
+    {t:'睡前',x:'夜深了。\n\n{{hs.e}} {{hs.n}}站在你房间门口。\n\n{{pk:「不早了——该睡了。」|「明天要早起。别熬夜。」|「晚安。」|靠在门框上——好像想说什么}}。',
+      c:[{t:'「晚安。」认真地回',a:[{id:'hs',v:dv(5)}],f:'Ta关上了门。走廊的脚步声渐渐远了。你躺在床上——觉得今天过得不错。'},
+         {t:'叫住Ta：「谢谢你让我住在这里」',a:[{id:'hs',v:dv(12)}],f:'Ta停住了。没有回头——但背影好像柔和了。\n「……别说这种话。」声音很轻。但你听到了。'}]},
+  ],
+};
+
+// ─── 周末校外地点的随机事件类型（用 {{}} 作为占位符）───
+const WEEKEND_TYPES=[
+  {t:'周末·逛街偶遇',x:'周末的{{loc.n}}{{loc.e}}很热闹。\n\n你逛着逛着——迎面碰上了{{mc.e}} {{mc.n}}{{sc?和+sc.e+ +sc.n:}}。\n\n{{pk:「这么巧——你也来逛？」|「正好——帮我挑个东西。」|两只手提满了购物袋——看起来血拼了一上午。|「附近有家店很不错——要不要一起去？」}}',
+    c:[{t:'「好巧！一起逛吧」',a:[{id:'mc',v:dv(6)}],f:'你们走在了一起。周末的街道——阳光正好。'},
+       {t:'推荐一家附近的店',a:[{id:'mc',v:dv(4)}],f:'Ta眼睛亮了一下。「真的？带路——」'}],},
+  {t:'周末·咖啡厅偶遇',x:'{{loc.n}}{{loc.e}}。\n\n你点了杯饮料坐下。\n\n旁边那桌——{{mc.e}} {{mc.n}}{{pk:在看书|在笔记本上写着什么|点了一杯和你一样的饮料|在发呆——看到你之后愣了一下}}。',
+    c:[{t:'「可以坐一起吗？」',a:[{id:'mc',v:dv(7)}],f:'Ta合上书——点了点头。你们的桌子并到了一起。咖啡的香气混着午后的阳光。'},
+       {t:'请Ta喝杯饮料',a:[{id:'mc',v:dv(5)}],f:'「这是你的——」Ta有些意外。捧着杯子的时候——手指很暖。'}],},
+  {t:'周末·公园散步',x:'{{loc.n}}{{loc.e}}。\n\n阳光从树叶间落下来。\n\n你看到{{mc.e}} {{mc.n}}{{pk:在跑步|坐在长椅上看鸽子|在喂野猫|戴着耳机——一个人在听歌}}。',
+    c:[{t:'走过去打招呼',a:[{id:'mc',v:dv(6)}],f:'Ta摘下耳机。你们沿着公园的小路走了一段——聊着些轻快的话题。'},
+       {t:'坐在不远处——安静地陪着',a:[{id:'mc',v:dv(4)}],f:'Ta没有立刻发现你。但当你起身准备离开时——Ta叫住了你。「……刚看到你。」'}],},
+  {t:'周末·电影院',x:'{{loc.n}}{{loc.e}}。\n\n{{mc.e}} {{mc.n}}站在排片表前——{{pk:犹豫要看哪部|在等朋友——但朋友迟到了|刚好看完一场出来|手里拿着爆米花——分量很大}}。',
+    c:[{t:'「一起看吧——我也在犹豫」',a:[{id:'mc',v:dv(8)}],f:'你们选了一部电影。黑暗中——偶尔会一起笑。偶尔碰到手臂——没人挪开。'},
+       {t:'帮Ta分析看哪部好',a:[{id:'mc',v:dv(4)}],f:'你给了建议。Ta点了点头——「听你的。」'}],},
+  {t:'周末·书店相遇',x:'{{loc.n}}{{loc.e}}。\n\n书架之间。\n\n你和{{mc.e}} {{mc.n}}同时伸手——\n\n拿的是同一本书。',
+    c:[{t:'「你看这本？」笑着让给Ta',a:[{id:'mc',v:dv(8)}],f:'Ta接过书——然后说「看完告诉你感想。」后来——你真的收到了Ta的消息。'},
+       {t:'「这本书很好看——推荐」',a:[{id:'mc',v:dv(5)}],f:'你说完——Ta认真地看了看简介。然后把书放进了购物篮。'}],},
+  {t:'周末·游戏厅',x:'{{loc.n}}{{loc.e}}。\n\n电子音和灯光交织。\n\n{{mc.e}} {{mc.n}}{{pk:在抓娃娃——快成功了|在赛车游戏上刷新了记录|站在投篮机前——满脸认真|在推币机前——只剩最后一个币}}。',
+    c:[{t:'「一起玩？」投币加入',a:[{id:'mc',v:dv(7)}],f:'你们PK了三局。各有胜负——但笑得比赢了还开心。'},
+       {t:'帮Ta抓出了那个娃娃',a:[{id:'mc',v:dv(9)}],f:'爪子松了的那一刻——你迅速调整了角度。居然抓出来了。Ta惊叹「你怎么做到的——！？」'}],},
+  {t:'周末·河边吹风',x:'{{loc.n}}{{loc.e}}。\n\n傍晚。风从水面上吹来。\n\n{{mc.e}} {{mc.n}}{{pk:靠着栏杆——看河水|在往水里扔石子|在遛狗——狗先跑过来蹭了你|一个人坐着——但看到你之后笑了}}。',
+    c:[{t:'站在Ta旁边——不说话',a:[{id:'mc',v:dv(8)}],f:'你们沉默地看着河水。这种安静——比很多对话更有分量。'},
+       {t:'「今天过得怎么样？」',a:[{id:'mc',v:dv(5)}],f:'Ta想了想。然后说——「不错。」然后看了你一眼。\n「……更好了。」'}],},
+  {t:'周末·车站偶遇',x:'{{loc.n}}{{loc.e}}。\n\n{{mc.e}} {{mc.n}}{{pk:在等车|刚从车上下来——提着一堆东西|在看时刻表|坐错了方向——一脸懵}}。',
+    c:[{t:'「你去哪里？一起走吧」',a:[{id:'mc',v:dv(6)}],f:'你们搭了同一班车。路上聊了很多——车窗外的风景一直在变。'},
+       {t:'帮Ta拿东西/指路',a:[{id:'mc',v:dv(5)}],f:'「还好碰到你——」Ta松了口气。你帮Ta把东西搬上了车。'}],},
+];
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  主线+支线任务系统 (v5.0 - 仿Madoka Portable架构)            ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// ─── 主线章节（不可跳过，驱动100天叙事）───
+const MAIN_CHAPTERS={
+  ch1:{day:1,t:'转校生',d:'你来到了凹凸学园。\n\n丹尼尔老师在晨会上介绍你。\n\n一百天。你在这里的时间——从今天开始倒数。',unlock:1},
+  ch2:{day:7,t:'社团招新',d:'中庭摆满了社团摊位。\n\n文艺社的银爵在逗猫。美术社的凯莉在展示画作。体育社的佩利在举哑铃。\n\n选择一个——或者保持自由。',unlock:7},
+  ch3:{day:21,t:'第一个交点',d:'三周了。\n\n你开始注意到——有些人在你生活里反复出现。\n\n天台上的对峙。午后的补习。宠物店前的偶遇。\n\n命运的线——正在缠绕。',unlock:20},
+  ch4:{day:40,t:'期中的转折',d:'期中考试。\n\n成绩公布那天——有人在榜前站了很久。\n\n你开始意识到——一百天并不长。\n\n已经过了将近一半。',unlock:38},
+  ch5:{day:50,t:'学园祭·光与影',d:'学园祭。\n\n体育馆的舞台剧。中庭的女仆咖啡店。旧教学楼的鬼屋。\n\n到处张灯结彩。\n\n你在人群中笑着——但心里有一瞬间的空洞。\n\n——已经一半了。',unlock:49},
+  ch6:{day:65,t:'裂痕',d:'关系在深化。\n\n但深化意味着更多的期待——和更多的失望。\n\n争吵。误解。沉默。\n\n然后——和好。或者没有。',unlock:63},
+  ch7:{day:80,t:'期末·倒计时',d:'期末考试结束。\n\n短暂假期。\n\n有人开始问：「你真的要走吗？」\n\n你无法回答。',unlock:78},
+  ch8:{day:90,t:'最后的节日',d:'文化祭。情人节。\n\n最后的——可以名正言顺表达心意的日子。\n\n巧克力。画。信。\n\n有人把心意藏了很久——终于拿了出来。',unlock:88},
+  ch9:{day:97,t:'倒数',d:'最后三天。\n\n教室黑板上不知谁写了「还有三天」。\n\n有人开始回避你的目光。\n\n有人——反而更频繁地出现在你面前。\n\n笔记本。约定。未说出口的话。',unlock:96},
+  ch10:{day:100,t:'第一百天',d:'今天——你要离开了。\n\n教室里挂满了祝福。\n\n金哭了。格瑞递纸巾。\n雷狮说「去了新学校别当乖宝宝」。\n安迷修说「记得遵守校规」。\n\n你回头看了一眼校门。\n\n一百天。\n\n谢谢。\n\n再见。',unlock:100},
+};
+
+// ─── 支线任务（条件触发，每条3步链）───
+const SIDE_QUESTS=[
+  // 金：数学苦手的成长
+  {id:'sq_jin',c:'jin',n:'金的数学大作战',e:'⭐📐',d:'帮金克服数学恐惧，见证他从不及格到及格的奇迹',
+   steps:[
+    {s:1,req:{aff:15,dayMin:5,dayMax:25},t:'第一次求救',x:'金⭐抱着数学卷子跑过来。\n\n「救——命——」\n\n卷子上——38分。',
+     c:[{t:'「从头开始——我教你」',a:[{id:'jin',v:10}],f:'你们从分数加减开始复习。金很努力——但基础确实差得离谱。'},
+        {t:'帮Ta制定学习计划',a:[{id:'jin',v:7}],f:'你把知识点拆分成了每天的小目标。金郑重地把计划贴在铅笔盒上。'}]},
+    {s:2,req:{aff:30,dayMin:26,dayMax:55,flag:'sq_jin_s1'},t:'期中的突破',x:'期中成绩公布。\n\n金⭐站在榜前——找了很久。\n\n然后——「52分！！」\n\n虽然不是高分——但进步了14分。\n\n金跑过来——差点撞到你。\n\n「你看到了吗——！！」',
+     c:[{t:'「进步超大——继续加油」',a:[{id:'jin',v:12}],f:'金笑得眼睛都眯起来了。他把成绩单折好——「这个要拿给格瑞看——」然后跑走了。但跑了两步又回头：「谢谢你——」'},
+        {t:'「按照计划——下次目标是65分」',a:[{id:'jin',v:8}],f:'金的表情僵了一秒——「65——？！」但然后认真地点头：「好。」'}]},
+    {s:3,req:{aff:50,dayMin:56,dayMax:95,flag:'sq_jin_s2'},t:'及格的奇迹',x:'期末考试后。\n\n金⭐拿着成绩单。\n\n数学——61分。\n\n及格了。\n\n金没有说话。只是把成绩单举得很高——像是举着一面旗。\n\n然后转身。\n\n「格瑞——！！及格了——！！」\n\n你看着金的背影——笑了。',
+     c:[{t:'为Ta鼓掌',a:[{id:'jin',v:15}],f:'你鼓了掌。金回头——对你比了个大大的拇指。\n\n有些进步——比满分更珍贵。'}]},
+   ]},
+  // 格瑞：冰山的融化
+  {id:'sq_gerui',c:'gerui',n:'融冰',e:'❄️🥛',d:'靠近一个不会主动靠近任何人的人。你发现——冰山下面有温泉。',
+   steps:[
+    {s:1,req:{aff:20,dayMin:3,dayMax:30},t:'图书馆的沉默',x:'图书馆。\n\n格瑞❄️在看书。\n\n你坐在他对面——他没有抬头。\n\n但你注意到——他翻页的速度变慢了。\n\n好像在等什么。',
+     c:[{t:'安静地看自己的书',a:[{id:'gerui',v:8}],f:'你们没有说一句话。但走的时候——格瑞轻轻点了下头。这是他的「再见」。'},
+        {t:'在他桌上放一杯热牛奶',a:[{id:'gerui',v:12}],f:'格瑞看着牛奶。沉默了三秒。\n然后——端起来喝了一口。\n没说谢谢。但你懂了。'}]},
+    {s:2,req:{aff:40,dayMin:31,dayMax:65,flag:'sq_gerui_s1'},t:'一句完整的话',x:'天台。\n\n格瑞❄️靠着栏杆。\n\n「金说——你在帮他补习。」\n\n他主动开口了。\n\n「……谢谢。」\n\n两个字。但来自格瑞——分量不一样。',
+     c:[{t:'「金是你的发小——应该的」',a:[{id:'gerui',v:10}],f:'格瑞没有回答。但嘴角——弯了。\n\n微小的弧度。但你看到了。'},
+        {t:'「你的温柔——其实很贵吧」',a:[{id:'gerui',v:15}],f:'格瑞转过头。\n\n「……你知道这句话？」\n\n你笑了笑。格瑞沉默了很久——然后说：「……对你——可以便宜一点。」'}]},
+    {s:3,req:{aff:60,dayMin:66,dayMax:98,flag:'sq_gerui_s2'},t:'笔记本的最后一页',x:'毕业前。\n\n格瑞❄️给了你一个笔记本。\n\n「不是礼物。」\n\n翻开——每一页都是一道题的完整解法。笔迹工整得不像手写。\n\n最后一页——\n\n「以后有不会的题，拍照发我。」\n\n下面是他的手机号。',
+     c:[{t:'认真地收下',a:[{id:'gerui',v:20}],f:'你把笔记本放进书包最安全的那层。\n\n回头发消息：「第一题——想你了，怎么解？」\n\n等了很久。\n\n「……无法求解。」格瑞回。\n\n然后又一條：「但可以视频。」'}]},
+   ]},
+  // 雷狮：不良的缝隙
+  {id:'sq_leishi',c:'leishi',n:'狮王的领地',e:'🦁👑',d:'靠近学园最危险的人。发现他从未展示的一面。',
+   steps:[
+    {s:1,req:{aff:15,dayMin:3,dayMax:20},t:'校门口的等待',x:'放学后。校门口。\n\n雷狮🦁靠在门柱上——\n\n像是在等谁。\n\n你经过的时候——他开口了。\n\n「喂。转校生。」\n\n他知道了你的名字。',
+     c:[{t:'停下来：「你知道我名字？」',a:[{id:'leishi',v:6}],f:'雷狮哼了一声。\n「全学园都知道。一百天的转校生。」\n然后他推开校门——\n「走了。」\n\n但你注意到——他是在等你出来才走的。'},
+        {t:'「在等安迷修？」',a:[{id:'leishi',v:8}],f:'雷狮的动作顿了一拍。\n「提那个风纪委员干什么。」\n然后他走了——但步速比平时慢。\n好像在等你反驳。'}],},
+    {s:2,req:{aff:35,dayMin:21,dayMax:60,flag:'sq_leishi_s1'},t:'天台·一个人的理由',x:'天台。\n\n雷狮🦁一个人在喝酒——不，是汽水。\n\n「上来干嘛。」\n\n你没回答——在他旁边坐下了。\n\n沉默了很久。\n\n「……我以前有个弟弟。卡米尔。」他忽然说。\n\n「不是亲的。但比亲的重要。」',
+     c:[{t:'安静地听',a:[{id:'leishi',v:15}],f:'雷狮说了很多——关于家人、关于为什么要当「不良」。\n\n说完之后——他站起来。\n「别告诉别人。」\n然后走了。\n但背影——好像轻了一点。'},
+        {t:'「所以你用这种方式保护他们」',a:[{id:'leishi',v:12}],f:'雷狮转过头——第一次认真地看你。\n「……你比看起来聪明。」\n然后笑了。不是平时的嘲笑——是真的。'}],},
+    {s:3,req:{aff:55,dayMin:61,dayMax:98,flag:'sq_leishi_s2'},t:'他的道别',x:'倒数第三天。\n\n雷狮🦁在你的鞋柜里放了一封信。\n\n字很狂草——\n\n「去了新学校别当乖宝宝。\n有人欺负你——报我的名字。\n虽然可能不管用。」\n\n下面画了一颗歪歪扭扭的星星。',
+     c:[{t:'把信折好——放进口袋',a:[{id:'leishi',v:20}],f:'你在校门口找到他。\n「收到了。」\n雷狮没有看你——看着天空。\n「……嗯。」\n然后推了你一下。很轻。\n「滚吧。」\n但你听到了——他在说「保重。」'}]},
+   ]},
+  // 安迷修：骑士的动摇
+  {id:'sq_anmixiu',c:'anmixiu',n:'骑士的盔甲',e:'⚔️🛡️',d:'最可靠的人——也有脆弱的一面。你看到了。',
+   steps:[
+    {s:1,req:{aff:15,dayMin:2,dayMax:20},t:'学生会の求助',x:'学生会室。\n\n安迷修⚔️对着山一样的文件皱眉。\n\n「在下一个人——有点吃力。」\n\n然后看到了你。\n\n「啊。你愿意帮忙吗——以骑士的名义感谢你。」',
+     c:[{t:'「当然——分我一半吧」',a:[{id:'anmixiu',v:8}],f:'你们一起整理了文件。安迷修的工作效率很高——但偶尔会停下来，给你讲某个文件背后的故事。'},
+        {t:'「骑士也会求助——这很好」',a:[{id:'anmixiu',v:10}],f:'安迷修愣了一下。\n「……你说得对。」\n然后笑了笑——「在下的盔甲——有时候太重了。」'}],},
+    {s:2,req:{aff:35,dayMin:21,dayMax:55,flag:'sq_anmixiu_s1'},t:'风纪委员的困境',x:'安迷修⚔️站在走廊——\n\n面对一群违规的学生。\n\n「校规第——」\n「得了吧骑士大人——你自己不也有放水的时候？」\n\n安迷修的手在微微发抖。',
+     c:[{t:'站到他旁边：「他放水是因为理解——不是软弱」',a:[{id:'anmixiu',v:15}],f:'学生们安静了。安迷修转头看你——眼神里有惊讶，更多的是感激。'},
+        {t:'帮他转移话题——化解僵局',a:[{id:'anmixiu',v:8}],f:'你巧妙地把话题引开了。风波平息后——安迷修郑重地对你鞠了一躬。'}],},
+    {s:3,req:{aff:55,dayMin:56,dayMax:98,flag:'sq_anmixiu_s2'},t:'骑士的赠礼',x:'离开前。\n\n安迷修⚔️给了你一样东西。\n\n是一枚小小的骑士徽章——是他自己的。\n\n「这不是什么贵重的东西——」\n\n「但在下希望——你记得。」\n\n「有人把你当作——值得守护的人。」',
+     c:[{t:'郑重地收下——别在书包上',a:[{id:'anmixiu',v:20}],f:'「我会一直带着。」\n安迷修看着你——然后行了一个标准的骑士礼。\n「一路顺风。」\n他的声音——有点哑。'},
+        {t:'「你是我见过的最好的骑士」',a:[{id:'anmixiu',v:18}],f:'安迷修低下头。\n\n肩膀在颤抖。\n\n「……谢谢。」\n\n然后抬起头——眼眶是红的。但他在笑。'}],},
+   ]},
+  // 凯莉×安莉洁：下午四点的秘密
+  {id:'sq_kaining',c:'kaili',n:'红茶与塔罗',e:'👑🍋',d:'下午四点。美术室飘出红茶香。两个人的日常——比任何魔法都坚固。',
+   steps:[
+    {s:1,req:{aff:20,dayMin:5,dayMax:30},t:'下午四点整',x:'下午四点。美术室。\n\n凯莉👑在倒红茶。安莉洁🍋闭着眼睛。\n\n「今天会有客人。」\n\n你推门进来。\n\n凯莉笑了。「哎呀——柠檬又说中了。」',
+     c:[{t:'「你们的下午茶——可以加入吗？」',a:[{id:'kaili',v:8},{id:'anlijie',v:8}],f:'凯莉给你倒了一杯。安莉洁递过来一片柠檬。\n\n「你的心情——是金色的。」安莉洁说。\n凯莉：「别理她——她每天都说不一样的颜色。」'}],},
+    {s:2,req:{aff:35,dayMin:31,dayMax:60,flag:'sq_kaining_s1'},t:'占卜屋的夜晚',x:'放学后。安莉洁🍋的占卜屋。\n\n「今天的占卜——特别准。」\n\n凯莉👑在旁边翻着塔罗牌——\n\n「柠檬。给你自己也占一卦。」\n\n安莉洁闭眼。\n\n「……我的未来里——有一个人一直在。」\n\n她没有说名字。但眼睛——看着凯莉。',
+     c:[{t:'微笑着保持沉默',a:[{id:'kaili',v:10},{id:'anlijie',v:10}],f:'凯莉低头喝了一口红茶。安莉洁继续摆弄塔罗牌。\n\n空气里有什么——不需要说了。'}],},
+    {s:3,req:{aff:55,dayMin:61,dayMax:98,flag:'sq_kaining_s2'},t:'百日纪念册',x:'凯莉👑给了你一本纪念册。\n\n翻开——全是你在这间美术室里的样子。\n\n喝红茶的。看安莉洁占卜的。在窗边发呆的。\n\n「——别想多了。」凯莉说。\n\n「只是想让你记得——这里永远有你的位置。」',
+     c:[{t:'翻到最后一页——空白页',a:[{id:'kaili',v:15},{id:'anlijie',v:12}],f:'「这页是留给你的——」安莉洁说。\n「等你回来的时候——画上新的。」\n凯莉在旁边哼了一声——但没有反驳。'}],},
+   ]},
+  // 帕洛斯×佩利：忠犬与谎言
+  {id:'sq_peipa',c:'paluosi',n:'暗影使者的真相',e:'🖊️🐺',d:'帕洛斯在写的小说——主角是谁？佩利知道吗？',
+   steps:[
+    {s:1,req:{aff:20,dayMin:10,dayMax:35},t:'手稿',x:'你不小心看到了帕洛斯🖊️的电脑屏幕。\n\n暗影使者——最新一章。\n\n主角是一个金发的不良少年——和一个跟在他后面的「忠犬」。\n\n帕洛斯合上了电脑。\n\n「……你看到了。」',
+     c:[{t:'「写得很好。」真诚地说',a:[{id:'paluosi',v:10}],f:'帕洛斯眯起眼睛。\n「……真的？」\n他的表情很难读——但声音有一瞬间的不确定。'},
+        {t:'「那个忠犬——是佩利吧？」',a:[{id:'paluosi',v:12}],f:'帕洛斯愣了一下。\n然后笑了——意味深长的。\n「谁知道呢。」\n但他没有否认。'}],},
+    {s:2,req:{aff:40,dayMin:36,dayMax:65,flag:'sq_peipa_s1'},t:'佩利知道了',x:'佩利🐺不知道从哪里拿到了手稿。\n\n「帕洛斯——！！这个——！！」\n\n帕洛斯的表情终于变了。\n\n「你听我解释——」\n\n「超——好——看——！！」\n\n佩利眼睛在发光。\n\n帕洛斯：……\n\n帕洛斯：「……哈？」',
+     c:[{t:'在旁边偷笑',a:[{id:'paluosi',v:8},{id:'peili',v:6}],f:'佩利还在追问下一章什么时候出。帕洛斯扶额——但嘴角在往上翘。'},
+        {t:'「你看——他根本不介意」',a:[{id:'paluosi',v:12}],f:'帕洛斯看了你一眼。\n「……多嘴。」\n但那天晚上——他更新了。连更三章。'}],},
+    {s:3,req:{aff:60,dayMin:66,dayMax:98,flag:'sq_peipa_s2'},t:'最后一章',x:'倒数第五天。\n\n帕洛斯🖊️把一本书塞给你。\n\n暗影使者——完结篇。\n\n翻到最后——\n\n「献给一个笨蛋。\n他从来不知道这本书是关于他的。\n但没关系——\n他一直在我身边。」',
+     c:[{t:'「你应该把这本书也给佩利看」',a:[{id:'paluosi',v:18}],f:'帕洛斯没有回答。但第二天——你看到佩利在校门口抱着一本书。\n封面是暗影使者。\n佩利在哭。帕洛斯在旁边——没有说话。但他的手——在佩利肩膀上。'}],},
+   ]},
+  // 雷德×祖玛：恋爱小说的实践
+  {id:'sq_leizu',c:'leide',n:'追光',e:'📖🗿',d:'雷德的暗恋笔记已经写了三百页。祖玛——真的没有注意到吗？',
+   steps:[
+    {s:1,req:{aff:18,dayMin:5,dayMax:25},t:'雷德的笔记',x:'图书馆。\n\n雷德📖的笔记本摊开——你瞥见了。\n\n「祖玛观察日记 Day 47\n今天祖玛说了11个字——比昨天多2个！！\n她还看了我一眼——不——应该是恰好看向这边——\n但反正是看了——！！」',
+     c:[{t:'帮他把笔记本合好——假装没看到',a:[{id:'leide',v:8}],f:'雷德发现的时候——脸红得快要爆炸了。\n但你什么都没说。\n有些秘密——值得被守护。'},
+        {t:'「雷德——你真的很喜欢祖玛啊」',a:[{id:'leide',v:6}],f:'雷德差点从椅子上摔下去。\n「你——你看到了——！！」\n但然后——他安静下来。「……嗯。很喜欢。」'}],},
+    {s:2,req:{aff:38,dayMin:26,dayMax:55,flag:'sq_leizu_s1'},t:'祖玛的察觉',x:'祖玛🗿在图书馆。\n\n她翻到一本恋爱小说——里面夹着雷德的笔记本。\n\n她翻开。\n\n看了很久。\n\n然后——\n\n「……第47天。」\n\n她的脸——红了。很浅。但确实红了。',
+     c:[{t:'「雷德——很用心的」',a:[{id:'leide',v:10},{id:'zuma',v:10}],f:'祖玛把笔记本放回原处。\n「……我知道。」\n然后补充：「从第一天开始。」'},
+        {t:'安静地在旁边看书——假装没注意',a:[{id:'leide',v:5},{id:'zuma',v:5}],f:'祖玛看了你一眼。然后轻轻点了下头。\n你们之间——有一种不需要说破的共识。'}],},
+    {s:3,req:{aff:58,dayMin:56,dayMax:98,flag:'sq_leizu_s2'},t:'告白',x:'毕业典礼后。\n\n雷德📖等在校门口。\n\n手里拿着一封信——和一本崭新的笔记本。\n\n封面写着：「祖玛观察日记 第二卷」\n\n祖玛🗿来了。\n\n「……你还没走。」\n「在等你——！！」',
+     c:[{t:'远远地看着',a:[{id:'leide',v:20},{id:'zuma',v:18}],f:'祖玛接过信和笔记本。\n然后——放进了胸前的口袋。最靠近心脏的地方。\n\n「……第二卷。」她说。「我会看的。」\n\n雷德哭了。祖玛没有——但她的手在轻轻发抖。'}],},
+   ]},
+  // 嘉德罗斯：王者的孤独
+  {id:'sq_jiadeluosi',c:'jiadeluosi',n:'渣渣的对手',e:'🔥👑',d:'九岁跳级的天才——其实只是想要一个真正的对手。和一个朋友。',
+   steps:[
+    {s:1,req:{aff:20,dayMin:5,dayMax:25},t:'成绩榜前',x:'成绩公布。\n\n嘉德罗斯🔥站在榜前。\n\n全科满分——除了物理。\n\n格瑞❄️高他0.5分。\n\n「渣渣——！！」\n\n但他的眼睛在发光。\n\n那是找到值得一战的对手时的兴奋。',
+     c:[{t:'「你其实——很佩服格瑞吧？」',a:[{id:'jiadeluosi',v:8}],f:'嘉德罗斯涨红了脸。\n「佩服——？！我是要打败他——！！」\n但你看到了他嘴角的弧度。'},
+        {t:'「差距只有0.5分——下次说不定就是你赢」',a:[{id:'jiadeluosi',v:6}],f:'嘉德罗斯转过头——第一次正眼看你。\n「你倒是会说。」\n然后拍了拍你的肩——\n「下次——你来见证。」'}],},
+    {s:2,req:{aff:40,dayMin:26,dayMax:60,flag:'sq_jiadeluosi_s1'},t:'一个人的午餐',x:'天台。\n\n嘉德罗斯🔥一个人在吃午餐。\n\n平时围绕在他身边的同学——今天都不在。\n\n「看什么看。」\n\n但你注意到——他旁边的位置空着。\n\n好像一直在空着。',
+     c:[{t:'「可以坐吗？」——不等回答就坐下',a:[{id:'jiadeluosi',v:12}],f:'嘉德罗斯瞪了你一眼——但没有赶你走。\n\n你们一起吃了午餐。\n\n「……你的便当不错。」\n这是他最接近「谢谢」的表达。'},
+        {t:'分一半零食给他',a:[{id:'jiadeluosi',v:8}],f:'嘉德罗斯接过去。\n「……渣渣。我才不是因为没有才吃的。」\n但还是吃完了。'}],},
+    {s:3,req:{aff:60,dayMin:61,dayMax:98,flag:'sq_jiadeluosi_s2'},t:'王者的告别',x:'最后一天。\n\n嘉德罗斯🔥在校门口等你。\n\n「渣渣。」\n\n然后递过来一个东西——是一枚小小的圣空星徽章。\n\n「去了新学校——报我的名字。」\n\n然后他转身——\n\n「下次——我会赢格瑞的。」\n\n「到时候——你回来见证。」',
+     c:[{t:'「一言为定」',a:[{id:'jiadeluosi',v:20}],f:'嘉德罗斯没有回头。\n但他的手——举起来。\n一个大拇指。\n\n王者从不回头看——但你知道——他会记得这个约定。'}],},
+   ]},
+  // 呆毛姐弟：姐姐的守护
+  {id:'sq_aibi',c:'aibi',n:'呆毛的羁绊',e:'😈😇',d:'艾比嘴上欺负埃米——但谁敢动她弟弟，她会第一个冲出去。',
+   steps:[
+    {s:1,req:{aff:15,dayMin:5,dayMax:30},t:'日常',x:'走廊。\n\n艾比😈在数落埃米😇——\n\n「笨蛋埃米——又把便当忘在家里了！！」\n\n埃米：「是姐姐你早上催得太急——」\n\n艾比：「还敢顶嘴——！！」\n\n但她的便当——分了一半在埃米桌上。',
+     c:[{t:'在旁边微笑看着',a:[{id:'aibi',v:5},{id:'aimi',v:5}],f:'艾比瞪了你一眼——「看什么看——！」但继续给埃米夹菜。'},
+        {t:'「艾比其实很会照顾人啊」',a:[{id:'aibi',v:8}],f:'艾比脸红了——「闭嘴——！！」\n埃米在旁边偷笑——被艾比敲了脑袋。'}],},
+    {s:2,req:{aff:35,dayMin:31,dayMax:60,flag:'sq_aibi_s1'},t:'保护',x:'有人在欺负埃米😇。\n\n你还没来得及反应——\n\n艾比😈已经冲上去了。\n\n「离我弟弟远一点——！！」\n\n她比你想象中快得多。也凶得多。',
+     c:[{t:'帮艾比——站在埃米前面',a:[{id:'aibi',v:12},{id:'aimi',v:8}],f:'艾比看了你一眼——有一瞬间的惊讶。然后转为认可。\n「……算你识相。」'},
+        {t:'把埃米护在身后——让艾比看到',a:[{id:'aibi',v:10},{id:'aimi',v:8}],f:'风波过后——艾比走到你面前。\n「……谢谢你。」\n声音很小。但很认真。'}],},
+    {s:3,req:{aff:55,dayMin:61,dayMax:98,flag:'sq_aibi_s2'},t:'笨弟弟的担当',x:'离别前。\n\n埃米😇给了你一样东西——是艾比做的饼干。\n\n「姐姐不好意思自己给你——」\n\n然后他抬头。\n\n「谢谢你——这一百天。照顾我姐姐。」\n\n他行了一个小小的大人礼。\n\n「我是男子汉——以后我会保护她的。」',
+     c:[{t:'「你们两个——都要好好的」',a:[{id:'aibi',v:15},{id:'aimi',v:15}],f:'艾比从墙角后面探出头——眼睛红红的。\n你对她笑了笑。\n她哼了一声——但也在笑。'}],},
+   ]},
+  // 银爵：猫与孤独
+  {id:'sq_yinjue',c:'yinjue',n:'猫与救赎',e:'🐱⛓️',d:'银爵只对猫温柔。你试着——让这份温柔分一点给别人。',
+   steps:[
+    {s:1,req:{aff:15,dayMin:8,dayMax:30},t:'文艺社的猫',x:'文艺社。\n\n银爵🐱在喂猫。\n\n三只。一只橘的。一只黑的。一只花的。\n\n他抬头看你——眼神冷冷的。\n\n但猫蹭了他的手——他的表情柔和了一瞬。',
+     c:[{t:'蹲下来——和猫打招呼',a:[{id:'yinjue',v:8}],f:'猫蹭了你的手。银爵看着这一幕——\n「……它很少亲近陌生人。」\n他的语气——变了。变轻了。'},
+        {t:'「你每天都来喂它们吗？」',a:[{id:'yinjue',v:6}],f:'银爵沉默了一会。\n「……嗯。」\n然后——\n「它们——不会背叛。」'}],},
+    {s:2,req:{aff:35,dayMin:31,dayMax:65,flag:'sq_yinjue_s1'},t:'下雨天',x:'大雨。\n\n银爵🐱在校门口——没带伞。\n\n怀里护着一只纸箱——里面是三只小猫。\n\n他的衣服全湿了。但他没有把纸箱放下来。',
+     c:[{t:'把自己的伞给他——然后冲进雨里',a:[{id:'yinjue',v:18}],f:'你在雨里跑了没几步——一只手拉住了你。\n\n银爵。\n\n他把你拉到伞下。\n\n「……一起。」\n这是他第一次——主动触碰别人。'},
+        {t:'帮他把猫箱搬到室内',a:[{id:'yinjue',v:10}],f:'你们一起把猫转移到了文艺社。银爵擦了擦头发上的水——\n「谢谢。」\n很轻。但很真。'}],},
+    {s:3,req:{aff:50,dayMin:66,dayMax:98,flag:'sq_yinjue_s2'},t:'托付',x:'离开前。\n\n银爵🐱把最小的那只猫——放到你手里。\n\n「它的名字——是你起的。」\n\n「带着。」\n\n然后他转身。\n\n「我会——试着相信。」\n\n「像你这样的人。」',
+     c:[{t:'抱住猫——认真地答应',a:[{id:'yinjue',v:25}],f:'猫在你怀里叫了一声。银爵没有回头——但他的背影——好像不再那么孤独了。'},
+        {t:'「我会回来看你们的——来看你和猫」',a:[{id:'yinjue',v:20}],f:'银爵停了一下。\n「……随便。」\n但你知道——他会等。'}],},
+   ]},
+  // 雷安：一见不钟情（致敬 Mercury.）
+  {id:'sq_leian',c:'leishi',n:'一见不钟情',e:'🦁⚔️🌌',d:'有些人花了七年才发现——最讨厌的那个人，原来一直住在心里。致敬 Mercury. 雷安名作。',
+   steps:[
+    {s:1,req:{aff:20,dayMin:10,dayMax:35},t:'竹马',x:'体育课后。\n\n安迷修⚔️在器材室整理器械。\n\n你帮忙搬垫子时——一张旧照片从安迷修的口袋里滑了出来。\n\n照片上——两个小孩。一个揪着另一个的衣领。\n\n「这个……是雷狮？」\n\n安迷修愣住。\n\n「……是。」他没收好——声音突然低了下去。\n\n「我和他——从小就认识。」',
+     c:[
+      {t:'「从小就在一起……是什么感觉？」',a:[{id:'anmixiu',v:8},{id:'leishi',v:3}],f:'安迷修沉默了很久。\n\n「他小时候更过分。」\n嘴角却在往上翘。\n\n「但每次我摔倒——第一个跑过来的也是他。」'},
+      {t:'安静地听着——不打断',a:[{id:'anmixiu',v:12}],f:'安迷修说了很多。\n\n关于小时候的打架、抢零食、一起翻墙被抓。\n\n说到最后——他忽然停了。\n\n「这些话——我从来没跟别人说过。」\n他看你一眼。\n「……谢谢。」'}
+    ]},
+    {s:2,req:{aff:40,dayMin:36,dayMax:65,flag:'sq_leian_s1'},t:'暗涌',x:'天台。\n\n安迷修⚔️靠着栏杆。\n\n「有时候——」\n\n他开口，然后停住。\n\n「……算了。」\n\n你在他旁边站了一会儿。\n\n「有些话——说出口就收不回来了。」\n\n他握着学生手册的手指节发白。\n\n风很大。吹乱了他的头发。\n\n他没有说。但你听到了。',
+     c:[
+      {t:'「有些话——不说才会后悔。」',a:[{id:'anmixiu',v:15}],f:'安迷修转过头。\n\n眼神里有什么——在动摇。\n\n「……你说话——和雷狮有点像。」\n然后他笑了。\n笑意很浅——但很真。'},
+      {t:'什么都不说——陪他站到天黑',a:[{id:'anmixiu',v:10}],f:'夕阳沉下去了。\n\n安迷修终于开口。\n\n「七年了。」\n他像是在对自己说。\n\n「已经七年了。」\n\n你不需要问是什么。\n你知道了。'}
+    ]},
+    {s:3,req:{aff:55,dayMin:55,dayMax:85,flag:'sq_leian_s2'},t:'羁绊',x:'学生会室。\n\n安迷修⚔️和雷狮🦁被丹尼尔老师同时叫来。\n\n「学园祭——你们俩负责同一个项目。」\n\n雷狮：「什么？」\n安迷修：「什么？」\n异口同声。然后互相瞪了一眼。\n\n丹尼尔微笑：「安排好了。不能换。」',
+     c:[
+      {t:'自告奋勇：「我来帮忙协调——」',a:[{id:'anmixiu',v:10},{id:'leishi',v:10}],f:'你成了两人之间的缓冲带。\n\n放学后的学生会室——变成了最吵闹也最安静的地方。\n\n雷狮嘴上抱怨——但每次都准时到。\n\n安迷修认真地列出任务清单——雷狮在旁边划掉一半。「效率太低了——渣渣。」\n\n但被划掉的那些——他自己偷偷做完了。'},
+      {t:'旁观——记录下这些日常',a:[{id:'anmixiu',v:5},{id:'leishi',v:5}],f:'你在日记里写下：\n\n「雷狮今天帮安迷修搬了桌子——虽然嘴上说『这是最后一次』。\n安迷修给雷狮留了晚饭——放在桌上，没说一句话。」\n\n有些关系——不需要说破。\n\n你只是恰好看到了。'}
+    ]},
+    {s:4,req:{aff:70,dayMin:75,dayMax:95,flag:'sq_leian_s3'},t:'追悔',x:'走廊。\n\n雷狮🦁拦住了你。\n\n「喂。转校生。」\n\n他的表情——和平时的嚣张不一样。\n\n「安迷修——最近在躲我。」\n\n沉默。\n\n「……是不是我说了什么？」\n\n你第一次看到——\n\n雷狮脸上有心虚的痕迹。',
+     c:[
+      {t:'「你说了什么？」',a:[{id:'leishi',v:15}],f:'雷狮靠在墙上。\n\n「……我说『不用你管』。」\n\n然后安迷修就真的不管了。\n\n雷狮揉了揉头发——烦躁但不敢发作。\n\n「我以前觉得——他太啰嗦了。」\n「现在——」\n他没说完。\n但你知道他想说什么。'},
+      {t:'「你是不是——习惯了有他在？」',a:[{id:'leishi',v:18}],f:'雷狮没有回答。\n\n但他也没有反驳。\n\n过了很久——\n\n「……七年。」\n他说。声音很轻。\n\n「他一直都在。」\n「我以为他会一直烦我一辈子。」\n「……我错了。」'}
+    ]},
+    {s:5,req:{aff:85,dayMin:90,dayMax:100,flag:'sq_leian_s4'},t:'钟情',x:'第一百天。\n\n校门口。\n\n安迷修⚔️站着。雷狮🦁站在几步之外。\n\n「安迷修。」\n雷狮开口。\n\n「我不说第二遍。」\n\n然后他说了。\n\n说得很短。很糟糕。\n\n但安迷修的眼睛——红了。\n\n雷狮说完转身就走——\n但安迷修拉住了他的袖子。\n\n「我也——」\n安迷修的声音在发抖。\n\n「……从很久以前。」',
+     c:[
+      {t:'远远地看着——笑了',a:[{id:'leishi',v:25},{id:'anmixiu',v:25}],f:'你没有走过去。\n\n这是他们的时刻。\n\n但你看到了——\n\n雷狮的耳朵红了。安迷修在笑。\n雷狮没有把手抽回去。\n\n你合上日记本。\n\n一百天。\n\n有些故事——比一百天长得多。\n\n—— 致敬 Mercury.《一见不钟情》'},
+      {t:'在日记里写下最后一页',a:[{id:'leishi',v:20},{id:'anmixiu',v:20}],f:'你在日记最后一页写道：\n\n「今天。校门口。\n\n终于——说出口了。\n\n有些人花七年才明白。\n\n但明白之后——就是一辈子了。」\n\n你写下日期。\n\nDay 100。\n\n然后合上。\n\n感谢这百日。\n感谢——《一见不钟情》。'}
+    ]},
+   ]},
+];
+
+// ─── 任务追踪状态 ───
+// 在G中新增：
+// G.mainChapter: 当前主线章节号 (1-10)
+// G.sideQuests: {sq_id: currentStep} — 每个支线的进度
+// G.completedSQ: [sq_id, ...] — 已完成的支线
+
+// ─── 任务检查与触发 ───
+function checkMainChapter(){
+  for(let i=10;i>=1;i--){
+    const ch=MAIN_CHAPTERS['ch'+i];
+    if(G.day>=ch.unlock&&!G.flags['main_ch'+i]){
+      G.flags['main_ch'+i]=true;
+      G.mainChapter=i;
+      return ch;
+    }
+  }
+  return null;
+}
+
+function checkSideQuest(){
+  const avail=[];
+  SIDE_QUESTS.forEach(sq=>{
+    if(G.completedSQ.includes(sq.id))return;
+    const curStep=G.sideQuests[sq.id]||1;
+    const step=sq.steps.find(s=>s.s===curStep);
+    if(!step)return;
+    // 检查条件
+    if(G.aff[sq.c]>=step.req.aff&&G.day>=step.req.dayMin&&G.day<=step.req.dayMax){
+      if(!step.req.flag||G.flags[step.req.flag])avail.push({sq,step});
+    }
+  });
+  return avail.length>0?pk(avail):null;
+}
+
+function triggerSideQuest(sq,step){
+  curEv={
+    type:'sidequest',
+    sq:sq.id,step:step.s,
+    narration:`📋 支线 · ${sq.n} — 第${step.s}步\n\n${step.x}`,
+    choices:step.c
+  };
+  render('event');
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  因果值(Karma)系统 — 仿Madoka Portable跨轮回追踪            ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// ─── 因果值定义与存取 ───
+// G.karma: 跨轮回累积（类似Madoka Portable因果值，每轮回继承）
+// 存储：localStorage 'aotu4_karma'
+function loadKarma(){try{const v=localStorage.getItem('aotu4_karma');return v?parseInt(v)||0:0;}catch(e){return 0;}}
+function saveKarma(v){try{localStorage.setItem('aotu4_karma',String(v));console.log("💾 因果值已保存:",v);return true;}catch(e){return false;}}
+
+// ─── 轮回结算：计算本轮回获得的因果值 ───
+function calcKarmaEarned(){
+  let karma=0;
+  // 最高CP好感度奖励
+  let maxCP=0;Object.entries(CP).forEach(([k])=>{const a=cpAvg(k);if(a>maxCP)maxCP=a;});
+  karma+=Math.floor(maxCP/2); // 最高50
+  // 支线完成奖励
+  karma+=(G.completedSQ||[]).length*5; // 每个支线+5
+  // SPR保持奖励
+  if(G.attr.SPR>=5)karma+=10; // 精神稳定+10
+  // 存活天数奖励
+  karma+=Math.floor(G.day/5); // 每5天+1
+  // 成就奖励
+  karma+=(G.achievements||[]).length*2;
+  // 好感度≥90角色奖励
+  let highAff=0;Object.values(G.aff).forEach(v=>{if(v>=90)highAff++;});
+  karma+=highAff*8;
+  return karma;
+}
+
+// ─── 感情值波动机制（高好感→SPR更易消耗）───
+// 仿Madoka Portable：感情值越高→灵魂宝石越容易黑化
+function getSprVolatility(){
+  let maxAff=0;Object.values(G.aff).forEach(v=>{if(v>maxAff)maxAff=v;});
+  if(maxAff>=80)return 2;    // 深度羁绊：SPR消耗×2（因为有羁绊保护，净效果被抵消）
+  if(maxAff>=60)return 1.5;  // 重要关系：SPR消耗×1.5
+  if(maxAff>=40)return 1.2;  // 友谊：SPR消耗×1.2
+  return 1;
+}
+
+// ─── 因果商店（轮回间消费）───
+// 用于新游戏开始前消费因果值获得buff
+const KARMA_SHOP=[
+  {id:'ks_attr',n:'天赋异禀',e:'🌟',cost:50,d:'全属性+2（新轮回开始时生效）',eff:()=>{Object.keys(G.attr).forEach(k=>G.attr[k]=clamp(G.attr[k]+2,1,10));}},
+  {id:'ks_aff5',n:'命运的引力',e:'💫',cost:30,d:'随机3个角色初始好感+10',eff:()=>{const pool=Object.keys(CH).sort(()=>Math.random()-0.5).slice(0,3);pool.forEach(k=>G.aff[k]=(G.aff[k]||0)+10);}},
+  {id:'ks_spr',n:'钢之决意',e:'🧘',cost:40,d:'精神初始值+3，SPR不低于3',eff:()=>{G.attr.SPR=clamp(G.attr.SPR+3,1,10);G._ksSpr=true;}},
+  {id:'ks_energy',n:'充沛活力',e:'🔋',cost:25,d:'每日体力+10',eff:()=>{G._ksEnergy=true;}},
+  {id:'ks_home',n:'居場所',e:'🏠',cost:20,d:'可选择借宿角色（而非随机）',eff:()=>{G._ksHome=true;}},
+  {id:'ks_bonus',n:'番外·回声',e:'🌌',cost:120,d:'解锁隐藏天赋"圆环之理"——前7天每天额外触发一次特殊事件',eff:()=>{G.talents.push('t_bonus');G.talentNames.push('圆环之理');G._tBonus=true;}},
+];
+
+// ─── 更新execChoice中的SPR消耗逻辑（加入感情值波动）───
+// 在SPR计算中加入波动系数（在execChoice中调用）
+function applySprVolatility(sprDelta){
+  if(sprDelta<0){
+    const vol=getSprVolatility();
+    return Math.ceil(sprDelta*vol); // 高好感时损失更大
+  }
+  return sprDelta;
+}
+
+// ─── 游戏状态 ───
+let G={
+  name:'',gender:'neutral',day:1,maxDay:100,
+  slot:'morning',energy:100,
+  attr:{INT:0,CHR:0,STR:0,AFF:0,SPR:0},
+  aff:{},flags:{},talents:[],talentNames:[],club:null,
+  journal:[],memories:[],achievements:[],
+  history:[],loop:1,phase:'title',
+  homestay:null,dayType:'weekday',
+  mainChapter:1,sideQuests:{},completedSQ:[],
+  lowSprDays:0,sprWarned:false,dailyEvents:0,schoolStreak:0,karma:0,_ksSpr:false,_ksEnergy:false,_ksHome:false,_tBonus:false,
+  _tAngel:false,_tJournal:false,_tSeventh:false,_tWatch:false,
+  _tStuco:false,_tSocial:false,_tEarly:false,_tNight:false,
+  _tBento:false,_tRun:false,_tWeather:false,_tJoke:false,
+  _tLucky:false,_tLib:false,_tRooftop:false,_tChill:false,
+};
+let curEv=null,toastQ=[];
+
+function initG(){
+  G.day=1;G.slot='morning';G.energy=100;
+  G.attr={INT:rn(2,8),CHR:rn(2,8),STR:rn(2,8),AFF:rn(2,8),SPR:rn(2,8)}; // 随机属性！
+  G.aff={};Object.keys(CH).forEach(k=>G.aff[k]=0);
+  G.flags={};G.club=null;G.journal=[];G.memories=[];G.history=[];
+  G.talents=[];G.talentNames=[];
+  G.homestay=pk(HOMESTAY_POOL); // 随机借宿角色
+  G.dayType='weekday'; G.mainChapter=1; G.sideQuests={}; G.completedSQ=[]; G.lowSprDays=0; G.sprWarned=false; G.dailyEvents=0; G.schoolStreak=0;
+  G.karma=loadKarma();applyKarmaPassive(); G._ksSpr=false; G._ksEnergy=false; G._ksHome=false; G._tBonus=false;
+  ['_tAngel','_tJournal','_tSeventh','_tWatch','_tStuco','_tSocial','_tEarly','_tNight','_tBento','_tRun','_tWeather','_tJoke','_tLucky','_tLib','_tRooftop','_tChill'].forEach(k=>G[k]=false);
+}
+initG();
+
+// ─── 工具 ───
+function rn(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function pk(a){return a[Math.floor(Math.random()*a.length)];}
+function dv(v){return Math.round(v+(Math.random()-0.5)*5);} // ±2.5范围偏差
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+function cpAvg(key){const cp=CP[key];return Math.round(((G.aff[cp.c1]||0)+(G.aff[cp.c2]||0))/2);}
+function stageName(v){return v>=90?'💖心动':v>=70?'💗亲密':v>=50?'💛好友':v>=30?'💚朋友':v>=10?'🤝认识':'😶初识';}
+
+// ─── 日类型计算 ───
+function calcDayType(day){
+  if(typeof CAL!=='undefined'&&CAL[day]?.fest)return'festival';
+  const mod=(day-1)%7;
+  if(mod===5||mod===6)return'weekend';
+  return'weekday';
+}
+function getDayName(day){
+  const mod=(day-1)%7;
+  return['周一','周二','周三','周四','周五','周六','周日'][mod];
+}
+function slotLabel(slot){
+  const hs=CH[G.homestay];const hn=hs?hs.e+' '+hs.n:'';
+  switch(slot){
+    case'morning':return`🌅 早晨 · ${hn}家`;
+    case'class1':return'📖 上午课';
+    case'noon':return'☀️ 午间';
+    case'class2':return'📝 下午课';
+    case'afternoon':return G.dayType==='weekend'?'☕ 午后时光':'🌆 放学后';
+    case'evening':return`🌙 晚间 · ${hn}家`;
+    default:return'';
+  }
+}
+
+// ─── 存档 ───
+function saveTo(slot){try{const d=JSON.parse(JSON.stringify(G));d._t=new Date().toISOString();localStorage.setItem('aotu4_'+slot,JSON.stringify(d));return true;}catch(e){return false;}}
+function loadFrom(slot){const r=localStorage.getItem('aotu4_'+slot);if(!r)return false;try{G=JSON.parse(r);return true;}catch(e){return false;}}
+
+// ─── 事件构建 ───
+function genRandomEvent(locId){
+  const loc=LC[locId];if(!loc)return null;
+  // 26种随机事件类型（加权：常见类型出现更频繁）——灵感来自Lofter/贴吧/B站/抖音/小红书海量同人作品
+  const types=[
+    'chat','chat','chat','help','help','deep','deep','fun','fun','sick',
+    'rain','rain','game','message','message','lunch','lunch','star','sports',
+    'lost','prepare','study','study','hallway','rooftop','share',
+    'shoelocker','photo','argue','comfort','celebrate','promise','farewell',
+    'club','rumor','rumor','message2','sick2','lost2','sports2','deep2','fun2','childhood','childhood','secret_crush','secret_crush'
+  ];
+  const type=pk(types);
+  const banList=CHAR_EVENT_BAN[type]||[];
+  const pool=loc.ch.filter(id=>CH[id]&&!banList.includes(id));
+  if(pool.length===0)return null;
+  const nChar=Math.min(rn(1,Math.min(3,pool.length)),pool.length);
+  const chars=[];const tmp=[...pool].sort(()=>Math.random()-0.5);
+  for(let i=0;i<nChar;i++)chars.push(CH[tmp[i]]);
+  const mc=chars[0],sc=chars[1];
+
+  let n='',ch=[];
+
+  switch(type){
+    // ─── 闲聊 ───
+    case'chat':
+      n=pk([`你来到${loc.n}${loc.e}。${mc.e} ${mc.n}${sc?'和'+sc.e+' '+sc.n:''}在${pk(['聊着最近的考试','分享刚买的零食','讨论周末去哪里玩','交换手机里的搞笑视频','在说某个老师的八卦'])}。`,
+        `${loc.n}${loc.e}。${mc.e} ${mc.n}${pk(['看到你之后笑着招了招手','正在给同学看手机上的什么东西','靠在墙边和身边的人聊天'])}。`,
+        `课间。${mc.e} ${mc.n}${pk(['讲了件特别好笑的事——周围的人都笑了','在认真地说着什么——表情很生动','分享了一首最近很喜欢的歌'])}。`]);
+      ch=[{t:'自然地加入聊天',a:chars.map(c=>({id:c.id,v:dv(5)}))},{t:'在旁边微笑听着',a:chars.map(c=>({id:c.id,v:dv(3)}))},{t:'说一句有趣的话——刚好接上话题',a:chars.map(c=>({id:c.id,v:dv(4)}))}];break;
+
+    // ─── 帮忙 ───
+    case'help':
+      n=pk([`${mc.e} ${mc.n}${pk(['抱着一摞摇摇欲坠的教材','被一道超难的题困住了','正在发愁社团活动没人帮忙','搬桌椅时看起来快撑不住了','蹲在地上捡散落一地的卷子'])}。`,
+        `${mc.e} ${mc.n}${pk(['在公告栏前踮着脚贴海报——贴歪了','抱着一大箱活动物资——路都看不清','对着电脑皱眉——社团的策划案写不出来','在小卖部买东西发现忘带钱包'])}。`,
+        `${loc.n}${loc.e}。${mc.e} ${mc.n}${pk(['的书包拉链开了——东西快掉出来了','手里的文件夹突然散了——纸飞了一地'])}。`]);
+      ch=[{t:'「我来帮你」',a:[{id:mc.id,v:dv(8)}]},{t:'在一旁看看——确定需要帮忙再出手',a:[{id:mc.id,v:dv(4)}]},{t:'叫上别人一起帮忙',a:sc?[{id:mc.id,v:dv(6)},{id:sc.id,v:dv(5)}]:[{id:mc.id,v:dv(5)}]}];break;
+
+    // ─── 情绪陪伴 ───
+    case'deep':
+      n=pk([`${mc.e} ${mc.n}${pk(['一个人坐着，看起来有些落寞','趴在桌上，气压很低','盯着窗外发呆','眼角有点红——好像刚哭过','叹了口气，似乎有什么心事'])}。`,
+        `${mc.e} ${mc.n}${pk(['今天话特别少——不像平时的Ta','在角落里戴着耳机，把自己与世隔绝','在笔记本上反复涂画着什么——但都不是在写字'])}。`,
+        `你注意到${mc.e} ${mc.n}${pk(['今天一直没怎么说话','收到了一条消息之后脸色变了','一个人提前离开了热闹的地方'])}。`]);
+      ch=[{t:'安静地坐在Ta旁边',a:[{id:mc.id,v:dv(12)}]},{t:'轻声问「发生什么了？」',a:[{id:mc.id,v:dv(7)}]},{t:'递一包纸巾/一颗糖——什么都不说',a:[{id:mc.id,v:dv(6)}]}];break;
+    case'deep2':
+      n=pk([`天台。${mc.e} ${mc.n}一个人在这里。\n\n风很大——吹乱了Ta的头发。\n\n你走过去——但也只是站着。沉默。`,
+        `${loc.n}${loc.e}。\n\n${mc.e} ${mc.n}靠在墙上。\n\n「……我只是想安静一下。」\n\n你在不远处坐下。你们之间隔着几步——但你知道，Ta其实不想一个人。`]);
+      ch=[{t:'沉默地站在Ta旁边',a:[{id:mc.id,v:dv(8)}],f:'你们没有说话。但Ta的呼吸——好像平稳了一些。'},
+        {t:'「我在这里。」简短地说',a:[{id:mc.id,v:dv(12)}],f:'Ta没有回答。但也没有让你走。有时候——不拒绝就是最大的信任。'}];break;
+
+    // ─── 搞笑 ───
+    case'fun':
+      n=pk([`${mc.e} ${mc.n}${pk(['在模仿老师的语气——学得超像','试图同时转三支笔，全飞出去了','在用课本搭一座小城堡','在偷偷画同学的搞笑肖像','打瞌睡结果头「咚」地磕到桌上'])}。`,
+        `${mc.e} ${mc.n}${pk(['站起来回答问题——但完全答错了方向','把盐当成糖倒进了饮料里——喝了一口之后表情崩坏了','在走廊上边走边看手机——撞上了玻璃门'])}。`,
+        `${mc.e} ${mc.n}${pk(['试图单手接住从桌上滚落的橡皮——失败了但姿势很帅','在自动售货机前狂按按钮——饮料卡住了','把别人的名字叫错了——全场安静了一秒'])}。`]);
+      ch=[{t:'忍不住笑出来',a:[{id:mc.id,v:dv(5)}]},{t:'若无其事地帮忙收拾残局',a:[{id:mc.id,v:dv(4)}]},{t:'笑着说「你刚才那个——再来一次」',a:[{id:mc.id,v:dv(6)}]}];break;
+    case'fun2':
+      n=`在${loc.n}${loc.e}。${mc.e} ${mc.n}${pk(['正在一本正经地模仿某个老师的走路姿势——周围人都在憋笑','在用粉笔在黑板上画漫画——画得意外地好','在用奇怪的口音读课本——笑得旁边人直不起腰'])}。`;
+      ch=[{t:'掏出手机——「等一下，这段必须录下来」',a:[{id:mc.id,v:dv(5)}],f:'Ta发现你在录——扑过来抢手机。两个人笑成一团。'},
+        {t:'加入Ta——两人一起演',a:[{id:mc.id,v:dv(7)}],f:'你们即兴发挥了一段。围观群众鼓掌——Ta对你竖了大拇指。'}];break;
+
+    // ─── 生病 ───
+    case'sick':
+      n=pk([`你注意到${mc.e} ${mc.n}${pk(['脸色不太好','一直在咳嗽','额头似乎有点烫','说话声音哑了','趴在桌上没什么精神'])}。${pk(['好像感冒了。','昨晚熬夜了？','似乎不舒服很久了。'])}`,
+        `${mc.e} ${mc.n}${pk(['在下课时一个人趴在桌上——没像平时一样去小卖部','体育课请假了——这在Ta身上很少见','午饭几乎没怎么吃'])}。`]);
+      ch=[{t:'问Ta需不需要去保健室',a:[{id:mc.id,v:dv(10)}],f:'你陪Ta去了保健室。校医开了药。Ta对你笑了笑——虽然还是很虚弱。'},
+        {t:'默默地放了一瓶水在Ta桌上',a:[{id:mc.id,v:dv(7)}],f:'Ta看到了桌上的水。抬头找你的时候——你已经走远了。'},
+        {t:'把自己的外套递过去',a:[{id:mc.id,v:dv(8)}],f:'Ta愣了一下。犹豫了一秒——然后披上了。「……谢谢。」'}];break;
+    case'sick2':
+      n=`保健室。\n\n${mc.e} ${mc.n}躺在病床上——${pk(['睡着了','在看书——看到你之后把书放下了','在发呆——似乎很无聊'])}。`;
+      ch=[{t:'带了水果/热饮过来',a:[{id:mc.id,v:dv(8)}],f:'「你怎么来了——」Ta有些意外。但Ta接过热饮的时候——手很暖。'},
+        {t:'坐在旁边——陪Ta聊天解闷',a:[{id:mc.id,v:dv(7)}],f:'你们聊了很多。生病的下午——反而变得不那么难熬了。'}];break;
+
+    // ─── 雨天 ───
+    case'rain':
+      n=pk([`突然下起了雨。\n\n${mc.e} ${mc.n}${pk(['站在屋檐下，没带伞','把书包顶在头上准备冲进雨里','在教学楼门口犹豫','看着雨发呆'])}。`,
+        `大雨倾盆。\n\n${mc.e} ${mc.n}${pk(['的伞被风吹翻了——狼狈地站在雨里','在走廊上等雨停——但雨好像越下越大了','用课本挡着头跑过来——全身都湿了'])}。`]);
+      ch=[{t:'把自己的伞递给Ta',a:[{id:mc.id,v:dv(12)}],f:'Ta愣了一下。然后认真地说了「谢谢」。你冲进雨里——但回头的时候看到Ta在伞下对你挥手。'},
+        {t:'「一起走吧」',a:[{id:mc.id,v:dv(8)}],f:'两个人挤在一把伞下。距离很近——近到能闻到Ta身上的味道。'},
+        {t:'和Ta一起等雨停',a:[{id:mc.id,v:dv(5)}],f:'你们站在屋檐下。雨水的声音填满了沉默——但这沉默意外地舒服。'}];break;
+
+    // ─── 真心话大冒险 ───
+    case'game':
+      n=pk([`午休时间。${mc.e} ${mc.n}被拉进了真心话大冒险的游戏里。\n\n转盘停在了Ta面前。\n\n${pk(['「真心话还是大冒险？」','所有人都在起哄。'])}`,
+        `${loc.n}${loc.e}。一群人围坐着。${mc.e} ${mc.n}${pk(['抽到了大冒险——满脸写着拒绝','被问到真心话——耳朵红了','在犹豫——所有人都在喊Ta的名字'])}。`]);
+      ch=[{t:'帮Ta选真心话——问一个温柔的问题',a:[{id:mc.id,v:dv(6)}],f:'问题让Ta红了脸。但你问得很温柔——没有让Ta难堪。'},
+        {t:'帮Ta选大冒险——指定一个有趣的挑战',a:[{id:mc.id,v:dv(8)}],f:'挑战内容是给在场每个人说一句优点。说到你的时候——Ta多看了你一眼。'},
+        {t:'笑着帮Ta解围：「算了吧算了吧」',a:[{id:mc.id,v:dv(5)}],f:'Ta松了口气。对你投来一个感激的眼神。'}];break;
+
+    // ─── 深夜消息 ───
+    case'message':
+      n=`晚上。手机亮了。\n\n是${mc.e} ${mc.n}发来的消息。\n\n${pk(['「作业的那道题你写了吗——求救」','「今天谢谢你了。」','「睡了吗？」','「分享一首歌给你——」','「明天要不要一起去图书馆？」','「我刚才做了一个奇怪的梦——梦到你了。」'])}`;
+      ch=[{t:'认真地回复',a:[{id:mc.id,v:dv(7)}],f:'你们聊了很久。不知不觉——已经深夜了。'},
+        {t:'秒回一个表情包',a:[{id:mc.id,v:dv(4)}],f:'Ta回了一个笑哭的表情。又聊了几句——互道晚安。'},
+        {t:'发一段语音过去',a:[{id:mc.id,v:dv(5)}],f:'Ta很快回了一段语音。声音从手机里传出来——很近。好像就在身边。'}];break;
+    case'message2':
+      n=`早上。手机亮了。\n\n是${mc.e} ${mc.n}发来的。\n\n${pk(['「今天降温——多穿点。」','「我在校门口等你？」','「昨晚梦到今天的考试——然后吓醒了。」','「给你带了早餐——便当盒在我桌上。」'])}`;
+      ch=[{t:'暖心回复',a:[{id:mc.id,v:dv(6)}],f:'你们在早安消息里开始了新的一天。屏幕的光——比窗外的阳光还暖。'},
+        {t:'直接打电话过去',a:[{id:mc.id,v:dv(5)}],f:'「喂——」Ta的声音有点惊讶。但你们聊到出门——然后在校门口碰了面。'}];break;
+
+    // ─── 午餐 ───
+    case'lunch':
+      n=pk([`午餐时间。${mc.e} ${mc.n}${pk(['打开了看起来很丰盛的便当','在食堂排了很久的队','一个人坐在角落吃饭','在小卖部挑面包'])}。`,
+        `食堂人很多。\n\n你端着餐盘——看到${mc.e} ${mc.n}${pk(['对面还有空位','在朝你这边看','旁边刚好没人'])}。`]);
+      ch=[{t:'「可以坐你旁边吗？」',a:[{id:mc.id,v:dv(6)}],f:'Ta点了点头。你注意到Ta的便当里有你最喜欢的菜——Ta主动分了你一半。'},
+        {t:'分给Ta一包零食',a:[{id:mc.id,v:dv(5)}],f:'Ta有些意外——然后笑了。「谢谢。」这个小东西似乎让Ta的一天变好了。'},
+        {t:'交换便当里的菜',a:[{id:mc.id,v:dv(7)}],f:'「你尝尝这个——」你们像交换宝物一样分享着午餐。味道更好了。'}];break;
+
+    // ─── 看星星 ───
+    case'star':
+      n=pk([`放学后天已经黑了。你在天台看到了${mc.e} ${mc.n}。\n\nTa仰着头——在看星星。\n\n「今天星星很亮。」Ta说。`,
+        `${loc.n}${loc.e}。夜幕低垂。\n\n${mc.e} ${mc.n}${pk(['靠着栏杆——望着夜空','在数星星——数到一半忘了','一个人坐着——看到你来之后笑了笑'])}。`]);
+      ch=[{t:'站在Ta旁边——一起看',a:[{id:mc.id,v:dv(10)}],f:'你们没有说话。但沉默很舒服。风轻轻吹过——星星真的很亮。'},
+        {t:'「你知道那颗最亮的是什么星吗？」',a:[{id:mc.id,v:dv(6)}],f:'你给Ta讲了一个关于那颗星的故事。Ta听得很认真。'}];break;
+
+    // ─── 体育 ───
+    case'sports':
+      n=pk([`体育课。${mc.e} ${mc.n}${pk(['跑步时摔了一跤','投篮时连进了三个','在接力赛中拼命跑','打羽毛球时把球打到了树上','跑完800米蹲在地上喘气'])}。`,
+        `操场上。${mc.e} ${mc.n}${pk(['在做引体向上——满头大汗','在教同学做拉伸——很专业','一个人对着墙练网球'])}。`]);
+      ch=[{t:'跑过去扶Ta/递水',a:[{id:mc.id,v:dv(9)}],f:'Ta接过水瓶的时候手指碰到了你的。两个人都没说话——但空气好像变了。'},
+        {t:'在场边大声喊加油',a:[{id:mc.id,v:dv(5)}],f:'Ta听到了你的声音——然后跑得更快了。'}];break;
+    case'sports2':
+      n=`运动会将近。\n\n${mc.e} ${mc.n}在${pk(['练习接力传棒','一遍遍练习跳高','在跑道上计时——和自己比赛'])}。\n\n汗在阳光下发光。`;
+      ch=[{t:'帮Ta计时/数次数',a:[{id:mc.id,v:dv(7)}],f:'有人帮忙的感觉就是不一样——Ta的成绩比刚才好了。对你得意地一笑。'},
+        {t:'和Ta一起练习',a:[{id:mc.id,v:dv(8)}],f:'你们一起跑了一圈。累了就一起躺在操场上——天空很蓝。'}];break;
+
+    // ─── 失物 ───
+    case'lost':
+      n=pk([`你在地上看到了一个东西——是${mc.e} ${mc.n}的${pk(['学生证','钥匙扣','笔记本','围巾','钱包','手机挂件'])}。\n\n应该是Ta不小心掉的。`,
+        `${loc.n}${loc.e}。\n\n${mc.e} ${mc.n}在${pk(['翻遍书包找什么东西——表情越来越急','在地上到处看——好像在找什么','问周围的人有没有看到Ta的某样东西'])}。`]);
+      ch=[{t:'捡起来追上去还给Ta',a:[{id:mc.id,v:dv(8)}],f:'「还好你捡到了——这里面有很重要的东西。」Ta松了一口气，对你郑重地道了谢。'},
+        {t:'放在Ta桌上——不留名',a:[{id:mc.id,v:dv(4)}],f:'第二天Ta在班里问是谁帮忙的。你什么都没说——但Ta好像猜到了。'}];break;
+    case'lost2':
+      n=`${mc.e} ${mc.n}走到你面前。\n\n「上次你帮我找到的东西——」\n\nTa递过来${pk(['一瓶饮料','一包零食','一个小小的挂件——和Ta的那个是一对','一张手写的感谢卡'])}。`;
+      ch=[{t:'「不用这么客气的——」',a:[{id:mc.id,v:dv(5)}],f:'Ta坚持塞给了你。「你帮了我——这是回礼。」然后快步走了——好像怕你拒绝。'},
+        {t:'开心地收下',a:[{id:mc.id,v:dv(7)}],f:'你收下了。Ta笑了——「本来还怕你不喜欢。」不会的。当然不会。'}];break;
+
+    // ─── 活动准备 ───
+    case'prepare':
+      n=pk([`学园活动临近。${mc.e} ${mc.n}${pk(['在为舞台剧做道具','在画活动海报','在整理运动会的器材','在布置教室','在写活动策划案','在排练节目'])}。\n\n看起来忙得不可开交。`,
+        `${loc.n}${loc.e}。放学后。\n\n${mc.e} ${mc.n}一个人在做准备——${pk(['黑板上画满了流程图','地上摆着各种材料','对着清单一项项核对'])}。`]);
+      ch=[{t:'卷起袖子：「我来帮忙」',a:[{id:mc.id,v:dv(9)}],f:'你们一起忙到了很晚。走的时候教室里只剩你们两个人——Ta说「今天真的很开心」。'},
+        {t:'帮Ta带了一份晚饭/饮料',a:[{id:mc.id,v:dv(6)}],f:'「你怎么知道我没吃饭——」Ta惊讶地看着你。其实你只是注意到了。'}];break;
+
+    // ─── 学习（新）───
+    case'study':
+      n=pk([`${loc.n}${loc.e}。${mc.e} ${mc.n}${pk(['在解一道看起来很复杂的题','笔记写满了整页——字迹工整','在复习——嘴里念念有词'])}。`,
+        `自习时间。${mc.e} ${mc.n}${pk(['在借你的笔记抄——上次Ta请了假','在帮你讲解一道题——讲得很清楚','两人各自看书——偶尔抬头对视一眼'])}。`]);
+      ch=[{t:'「一起复习吧」',a:[{id:mc.id,v:dv(6)}],f:'你们一起学了一下午。效率意外地高——可能是因为有人陪着。'},
+        {t:'教Ta一道题',a:[{id:mc.id,v:dv(7)}],f:'你讲完的时候——Ta恍然大悟。「原来是这样——」那种表情让你莫名满足。'},
+        {t:'请Ta教你',a:[{id:mc.id,v:dv(5)}],f:'Ta认真地讲给你听。你其实会了——但听Ta讲——是一种享受。'}];break;
+
+    // ─── 走廊偶遇（新）───
+    case'hallway':
+      n=pk([`走廊。下课铃刚响。\n\n${mc.e} ${mc.n}${pk(['从教室里出来——差点撞上','抱着作业往办公室走','在窗边靠着——等上课铃','和朋友边走边笑'])}。`,
+        `走廊转角。\n\n你和${mc.e} ${mc.n}差点撞了个满怀。\n\n「啊——对不起。」${pk(['异口同声。','然后都笑了。'])}`]);
+      ch=[{t:'打招呼——聊两句',a:[{id:mc.id,v:dv(4)}],f:'你们站在走廊聊了一会儿。直到上课铃响——Ta说「下节课下了再说——」'},
+        {t:'和Ta一起走去教室/办公室',a:[{id:mc.id,v:dv(5)}],f:'你们并肩走着。走廊的尽头——阳光正好。'}];break;
+
+    // ─── 天台独处（新）───
+    case'rooftop':
+      n=pk([`天台。风很舒服。\n\n${mc.e} ${mc.n}${pk(['靠着栏杆发呆','在吃午餐——一个人','在地上躺着看云','在看手机——但看到你之后收起来了'])}。`,
+        `你去了天台——没想到${mc.e} ${mc.n}也在。\n\n「哦。你也来了。」\nTa的语气很平淡——但听起来并不意外。`]);
+      ch=[{t:'在Ta旁边坐下——不说话',a:[{id:mc.id,v:dv(8)}],f:'你们各自做各自的事。偶尔抬头对视一眼——这大概就是最舒服的相处方式。'},
+        {t:'「这里是我最喜欢的地方」',a:[{id:mc.id,v:dv(6)}],f:'「我也是。」Ta说。你们分享了关于天台的小秘密。'}];break;
+
+    // ─── 鞋柜交换（新）───
+    case'shoelocker':
+      n=pk([`放学后。鞋柜前。\n\n你发现鞋柜里多了一样东西——${pk(['一封信','一小包零食','一张便签','一个手工的小挂件'])}。\n\n上面写着你的名字。笔迹——你认得。是${mc.e} ${mc.n}。`,
+        `早上。\n\n你打开鞋柜——一张纸条掉了出来。\n\n「昨天的事——谢谢。」\n\n没有署名。但你转头的时候——${mc.e} ${mc.n}正在假装系鞋带。`]);
+      ch=[{t:'在Ta的鞋柜里放一封回信',a:[{id:mc.id,v:dv(10)}],f:'第二天——你看到Ta打开鞋柜。愣了一秒。然后笑了。'},
+        {t:'当面道谢',a:[{id:mc.id,v:dv(7)}],f:'你走到Ta面前。「收到了——谢谢。」Ta的耳朵红了。但嘴角——藏不住。'}];break;
+
+    // ─── 拍照（新）───
+    case'photo':
+      n=`${loc.n}${loc.e}。\n\n${mc.e} ${mc.n}${pk(['在摆姿势——让朋友帮Ta拍照','在偷拍别人——刚好被你看到','在看手机里的相册——翻到一张合照停住了'])}。`;
+      ch=[{t:'「我帮你们拍吧」',a:[{id:mc.id,v:dv(5)}],f:'你接过手机。取景框里——Ta笑得很自然。你按了好几张——不舍得停下。'},
+        {t:'「要不要一起拍一张？」',a:[{id:mc.id,v:dv(8)}],f:'你们靠在一起。快门声响过——定格了这一刻。后来你把这张照片存了好久。'}];break;
+
+    // ─── 争执（新）───
+    case'argue':
+      n=`你听到${mc.e} ${mc.n}在和${sc?sc.e+' '+sc.n:'别人'}争论什么。\n\n${pk(['不是吵架——但语气很认真','各执一词——谁也不退让'])}。\n\n你走近的时候——两人同时转头看你。`;
+      ch=[{t:'居中调解——各退一步',a:chars.map(c=>({id:c.id,v:dv(6)})),f:'你说了几句公道话。两人都沉默了——然后'+mc.n+'先开口：「……你说得对。」'},
+        {t:'站在'+mc.n+'这边',a:[{id:mc.id,v:dv(8)}],f:'Ta感激地看了你一眼。争论结束——但你知道，Ta会更信任你。'}];break;
+
+    // ─── 安慰（新）───
+    case'comfort':
+      n=pk([`${mc.e} ${mc.n}${pk(['考砸了——把卷子揉成了一团','被老师批评了——低着头不说话','在社团竞选里落选了——强撑着笑'])}。`,
+        `${mc.e} ${mc.n}${pk(['今天一直没什么精神','午饭也没怎么吃','一个人对着窗外站了很久'])}。`]);
+      ch=[{t:'说「你已经很棒了」',a:[{id:mc.id,v:dv(8)}],f:'Ta没说话。但眼眶——红了一点。'},
+        {t:'「下次一起努力」',a:[{id:mc.id,v:dv(7)}],f:'「……好。」Ta回答得很快。像是抓住了什么。'},
+        {t:'什么都不说——帮Ta做些小事',a:[{id:mc.id,v:dv(6)}],f:'你帮Ta收了卷子/整理了桌面。有时行动比语言更有效。'}];break;
+
+    // ─── 分享（新）───
+    case'share':
+      n=`${mc.e} ${mc.n}${pk(['递给你一只耳机——「听这首歌。」','分给你一半零食——「新出的口味——尝尝。」','给你看手机上的照片——「昨天拍到的——超搞笑。」','打开一本书——「这段——你一定要看。」'])}`;
+      ch=[{t:'接过来——认真地听/看/尝',a:[{id:mc.id,v:dv(6)}],f:'是真的很好。你告诉Ta了——Ta的眼睛亮了。'},
+        {t:'也分享一样东西给Ta',a:[{id:mc.id,v:dv(5)}],f:'你们交换了分享——像是交换了一小部分自己。'}];break;
+
+    // ─── 庆祝（新）───
+    case'celebrate':
+      n=`${mc.e} ${mc.n}${pk(['成绩进步了——拿着成绩单跑过来','社团比赛赢了——满脸兴奋','终于完成了一个很难的目标——长出一口气','收到了期待已久的消息——第一时间来告诉你'])}。`;
+      ch=[{t:'「太棒了！！」真心地为Ta高兴',a:[{id:mc.id,v:dv(8)}],f:'Ta笑得合不拢嘴。你也被感染了——开心是会传染的。'},
+        {t:'「走——请客庆祝一下」',a:[{id:mc.id,v:dv(6)}],f:'你们去了小卖部/食堂。一瓶饮料两个人喝——比平时甜。'}];break;
+
+    // ─── 约定（新）───
+    case'promise':
+      n=`${mc.e} ${mc.n}${pk(['突然说：「毕业后——我们还要联系。」','在日历上圈了一个日期——「那天一起出去吧。」','把一样东西塞给你：「先替我保管——以后我来拿。」'])}`;
+      ch=[{t:'「一言为定」',a:[{id:mc.id,v:dv(8)}],f:'Ta伸出了小拇指。你们拉了钩——幼稚但认真。'},
+        {t:'把约定写下来——夹在书里',a:[{id:mc.id,v:dv(5)}],f:'你在便签上写了日期和约定。以后翻开——会想起今天的。'}];break;
+
+    // ─── 离别伤感（新）───
+    case'farewell':
+      n=`接近一百天了。\n\n${mc.e} ${mc.n}${pk(['忽然说：「你真的要走吗？」','给了你一样东西——「收着。以后别忘了我。」','看着你——好像想把你的样子记住。'])}`;
+      ch=[{t:'「我不会忘的。」认真地说',a:[{id:mc.id,v:dv(12)}],f:'Ta转过了头。但肩膀——在微微发抖。'},
+        {t:'「还有X天呢——别急着告别」',a:[{id:mc.id,v:dv(6)}],f:'Ta愣了一下——然后笑了。\n「……你说得对。还早。」'}];break;
+
+    // ─── 社团活动（新）───
+    case'club':
+      n=`${loc.n}${loc.e}。社团活动时间。\n\n${mc.e} ${mc.n}${pk(['在认真地做着社团的事情','在教新社员——很耐心的样子','一个人在排练/练习——很投入'])}。`;
+      ch=[{t:'在旁边安静地看',a:[{id:mc.id,v:dv(4)}],f:'Ta注意到你在看——稍微认真了一点。'},
+        {t:'「需要帮忙吗？」',a:[{id:mc.id,v:dv(7)}],f:'你们一起完成了。Ta拍了拍手：「有你在效率翻倍——」'}];break;
+
+    // ─── 八卦传闻（新）───
+    case'rumor':
+      n=`${loc.n}${loc.e}。\n\n你听到有人在议论${mc.e} ${mc.n}——\n\n${pk(['说Ta和某个人走得很近','说Ta最近好像有什么变化','在猜测Ta喜欢谁'])}。`;
+      ch=[{t:'帮Ta澄清/解围',a:[{id:mc.id,v:dv(6)}],f:'你说了几句公道话。讨论平息了。后来Ta知道了——对你轻轻点了下头。'},
+        {t:'不参与——但之后告诉Ta这件事',a:[{id:mc.id,v:dv(4)}],f:'Ta耸了耸肩：「随便他们怎么说。」但看起来——还是有点在意。'},
+        {t:'笑着岔开话题',a:[{id:mc.id,v:dv(3)}],f:'你巧妙地把话题引开了。'+mc.n+'没被影响——也许根本没听到。'}];break;
+      // ─── 梦境（新）───
+    case'dream':
+      n=pk([`你做了一个梦。\n\n梦里——${mc.e} ${mc.n}${pk(['在说什么——但醒来后不记得了','站在很远的地方——你跑过去但追不上','递给你一样东西——你接住了'])}。\n\n第二天。你在走廊遇到Ta。\n\n${pk(['「昨晚没睡好？」Ta问。','Ta看你的眼神——好像也知道那个梦。','一切如常——但你觉得有什么变了。'])}`,
+        `午休。${mc.e} ${mc.n}忽然说：\n\n「我昨晚梦到你了。」\n\n${pk(['然后迅速说「没什么特别的——」','说完之后耳朵红了','像是在试探什么'])}。`]);
+      ch=[{t:'「我也梦到你了——」',a:[{id:mc.id,v:dv(10)}],f:'Ta睁大了眼睛。然后笑了——「梦到什么了？」\n你们交换了梦的内容。有些梦——醒了之后还记得。'},
+        {t:'「梦都是反的——」笑着说',a:[{id:mc.id,v:dv(5)}],f:'Ta哼了一声——但嘴角在往上翘。\n「最好是。」'}];break;
+    // ─── 作业借抄（新）───
+    case'homework':
+      n=pk([`${mc.e} ${mc.n}${pk(['凑过来——「昨天的作业——最后一道题你写了吗——」','翻遍书包找不到作业本——脸色发白','在早自习前疯狂赶作业——笔都快飞起来了'])}。`,
+        `${mc.e} ${mc.n}把作业本递到你面前。\n\n「答案借我对一下——」\n\n${pk(['表情很诚恳','其实已经写完了——只是想确认','是你上次帮Ta之后——Ta第一次来找你'])}。`]);
+      ch=[{t:'把自己的作业借给Ta',a:[{id:mc.id,v:dv(6)}],f:'Ta接过去——认真地看了一遍。\n「……你字写得比老师还清楚。」'},
+        {t:'「我教你——比直接抄有用」',a:[{id:mc.id,v:dv(8)}],f:'Ta愣了一下——然后坐到了你旁边。\n「……那。这里——我不太懂。」'}];break;
+    // ─── 一起打扫（新）───
+    case'cleaning':
+      n=pk([`放学后。大扫除。\n\n${mc.e} ${mc.n}被分配到${pk(['擦窗户','扫地','整理图书角'])}。\n\n你也是。`,
+        `${loc.n}${loc.e}。今天轮到大扫除。\n\n${mc.e} ${mc.n}${pk(['站在凳子上擦高处的玻璃——摇摇晃晃','一个人搬桌子——看起来很重','在清理角落的灰——很认真'])}。`]);
+      ch=[{t:'「我来帮你——高处/重的东西交给我」',a:[{id:mc.id,v:dv(7)}],f:'你们一起做完了。教室里很干净——夕阳从擦过的玻璃照进来。'},
+        {t:'边打扫边聊天——活干得慢但很开心',a:[{id:mc.id,v:dv(5)}],f:'你们聊着天就把教室打扫完了。最后检查的时候——「完美。」'}];break;
+    // ─── 一起回家（新）───
+    case'walk_home':
+      n=pk([`放学铃响。\n\n校门口。\n\n${mc.e} ${mc.n}${pk(['和你同一方向——自然走在了一起','在门口等你——「一起走？」','走在你前面——放慢了脚步'])}。`,
+        `回家的路上。\n\n${mc.e} ${mc.n}走在旁边。\n\n${pk(['夕阳把影子拉得很长','路过一家店——Ta停了下來看','风吹过来——很舒服'])}。`]);
+      ch=[{t:'聊着今天发生的事',a:[{id:mc.id,v:dv(6)}],f:'你们聊了一路。到了分岔路口——Ta说「明天见。」\n这三个字——比平时好听。'},
+        {t:'在便利店买两瓶饮料——给Ta一瓶',a:[{id:mc.id,v:dv(5)}],f:'Ta接过去。冰凉的罐子在手指间——但心里很暖。'}];break;
+    // ─── 黑板留言（新）───
+    case'blackboard':
+      n=`早上。\n\n黑板上有人写了一句话。\n\n${pk(['「今天降温——多穿点。」','「昨天的笔记借我——放你桌上了。」','「生日快乐——」（虽然你生日不是今天）'])}。\n\n笔迹——你认得。是${mc.e} ${mc.n}。`;
+      ch=[{t:'在黑板上回复——画一个笑脸',a:[{id:mc.id,v:dv(8)}],f:'第二节课间——黑板上多了一个新的表情。\nTa画的。一个更丑的笑脸。'},
+        {t:'擦掉——然后在纸上写回信放到Ta桌上',a:[{id:mc.id,v:dv(6)}],f:'Ta收到纸条的时候——愣了一秒。然后抬头——正好对上你的目光。'}];break;
+    // ─── 起绰号（新）───
+    case'nickname':
+      n=`${mc.e} ${mc.n}${pk(['忽然给你起了个绰号——','在所有人面前叫了你一个奇怪的名字——然后大家都开始跟着叫','写纸条的时候用了一个你没见过的小称呼'])}。\n\n${pk(['你从来没被人这样叫过。','听起来有点傻——但意外地亲切。','只有Ta一个人这样叫。'])}`;
+      ch=[{t:'笑着接受——也给Ta起一个',a:[{id:mc.id,v:dv(8)}],f:'Ta听了你给Ta起的绰号——\n「什么啊——」\n但之后每次听到——都会嘴角上扬。'},
+        {t:'假装抗议——但心里其实喜欢',a:[{id:mc.id,v:dv(5)}],f:'Ta继续叫着——越来越自然。很久之后——这个绰号成了你们之间的暗号。'}];break;
+    // ─── 运动受伤（新）───
+    case'injury':
+      n=pk([`体育课。\n\n${mc.e} ${mc.n}${pk(['跑步时扭到了脚——坐在地上','打篮球时被撞倒了——膝盖破了','在器材室撞到了架子——器材哗啦啦掉了一地'])}。`,
+        `${mc.e} ${mc.n}${pk(['一瘸一拐地走着','捂着手腕——表情在忍痛','说「没事」——但明显有事'])}。`]);
+      ch=[{t:'跑过去——扶Ta去保健室',a:[{id:mc.id,v:dv(12)}],f:'路上Ta还嘴硬说「不用扶——」但靠在你肩上的重量——很真实。'},
+        {t:'帮忙拿医药箱——陪在旁边',a:[{id:mc.id,v:dv(8)}],f:'你帮Ta消毒、贴创可贴。你的动作很轻——Ta说「你比校医温柔。」'}];break;
+    // ─── 遇到小动物（新）───
+    case'pet':
+      n=`${loc.n}${loc.e}。\n\n一只${pk(['猫','小狗','小兔子——不知道从哪里跑来的'])}出现了。\n\n${mc.e} ${mc.n}${pk(['蹲下来——伸出手','眼睛亮了——很少看到Ta这样','有点紧张——但小动物主动蹭了Ta'])}。`;
+      ch=[{t:'和Ta一起摸小动物',a:[{id:mc.id,v:dv(7)}],f:'你们蹲在一起。小动物在你们之间蹭来蹭去——偶尔碰到彼此的手指。'},
+        {t:'去买点吃的——一起喂',a:[{id:mc.id,v:dv(5)}],f:'你们用面包喂了它。看着小动物吃东西的样子——两人都笑了。'}];break;
+    // ─── 打雷（新）───
+    case'thunder':
+      n=`突然——\n\n轰隆——！！\n\n打雷了。很大的雷。\n\n${mc.e} ${mc.n}${pk(['缩了一下——然后假装没事','抓住了你的袖子——马上又松开了','站在窗边看着闪电——「好近。」'])}。`;
+      ch=[{t:'「没事——只是雷声」轻声说',a:[{id:mc.id,v:dv(8)}],f:'Ta松了口气——然后说「我知道。」但手——没从你旁边移开。'},
+        {t:'转移话题——讲一个关于雷的笑话',a:[{id:mc.id,v:dv(6)}],f:'Ta笑了——紧张被打破了。下一个雷声响起时——Ta没再抖。'}];break;
+    // ─── 转校生话题（新）───
+    case'transfer_talk':
+      n=`${mc.e} ${mc.n}${pk(['忽然问：「你以前的学校——是什么样的？」','说：「你来了之后——这里好像不太一样了。」','在别人讨论转校生时——沉默了'])}。`;
+      ch=[{t:'讲以前学校的事',a:[{id:mc.id,v:dv(6)}],f:'Ta听得很认真。你讲完后——Ta说：「这里——比那边好吗？」\n你点了点头。Ta笑了。'},
+        {t:'「这里——因为有你们在。」',a:[{id:mc.id,v:dv(10)}],f:'Ta转过头。\n「……那就别急着走。」\n声音很轻——但很重。'}];break;
+    // ─── 天台午餐（新）───
+    case'rooftop_lunch':
+      n=`天台。午休。\n\n${mc.e} ${mc.n}${pk(['在吃便当——一个人','看到你来了——往旁边挪了挪','说「这里视野好——但风大。小心便当飞走。」'])}。`;
+      ch=[{t:'在Ta旁边坐下——打开自己的便当',a:[{id:mc.id,v:dv(7)}],f:'你们在天台上吃了午餐。风吹过来——很舒服。偶尔说几句话——但大部分时间只是安静地吃着。'},
+        {t:'分Ta一个饭团——「我做得太多了」',a:[{id:mc.id,v:dv(8)}],f:'Ta接过去——咬了一口。\n「……好吃。」\n然后默默把Ta的菜也分了你一半。'}];break;
+    // ─── 被罚留堂（新）───
+    case'detention':
+      n=`${mc.e} ${mc.n}被罚留堂了。\n\n原因——${pk(['上课讲话——其实是在替别人背锅','忘写作业——但昨天确实有特殊情况','迟到——因为帮了路上的老奶奶'])}。\n\n你也留下来了——${pk(['是你害Ta被罚的——来赔罪','作业也没写完','只是想陪Ta'])}。`;
+      ch=[{t:'「我陪你——反正我也没事」',a:[{id:mc.id,v:dv(9)}],f:'Ta看了你一眼——\n「你根本就没被罚吧。」\n但Ta没有赶你走。留堂——反而变成了一段意外的安静时光。'},
+        {t:'帮Ta一起做留堂的罚写',a:[{id:mc.id,v:dv(7)}],f:'你的字很像Ta的——老师说「下次注意。」\n离开教室的时候——Ta说「欠你一次。」'}];break;
+    // ─── 学园祭筹备争论（新）───
+    case'festival_prep':
+      n=`学园祭/文化祭筹备。\n\n${mc.e} ${mc.n}在和${sc?sc.e+' '+sc.n:'别人'}${pk(['争论舞台剧的剧本','为摊位卖什么意见不合','在争谁负责最难的那部分'])}。`;
+      ch=[{t:'居中调解——提一个折中方案',a:chars.map(c=>({id:c.id,v:dv(8)})),f:'你的方案被双方接受了。Ta看了看你——「……你还挺会处理事的。」'},
+        {t:'支持'+mc.n+'的方案——帮Ta说服对方',a:[{id:mc.id,v:dv(10)}],f:'你说服了对方。'+mc.n+'感激地拍了拍你的肩膀——「有你在就是不一样。」'}];break;
+    // ─── 情人节做巧克力（新）───
+    case'valentine_make':
+      n=`料理室。\n\n${mc.e} ${mc.n}${pk(['在试着做巧克力——但看起来不太成功','在偷偷装饰巧克力——很用心','站在料理台前发呆——好像不知道怎么做'])}。\n\n空气中飘着甜味。`;
+      ch=[{t:'「一起做吧——」卷起袖子',a:[{id:mc.id,v:dv(9)}],f:'你们一起做了巧克力。卖相一般——但味道意外地好。'},
+        {t:'帮Ta装饰——画一个星星',a:[{id:mc.id,v:dv(7)}],f:'Ta看着你画的星星——「……谢谢。」然后小心翼翼地把它放进了盒子。'}];break;
+    // ─── 未来的打算（新）───
+    case'future_talk':
+      n=`${mc.e} ${mc.n}${pk(['在填升学志愿表——一个人对着纸发呆','忽然问：「你以后想做什么？」','说：「毕业之后——我们还会见面吗？」'])}。`;
+      ch=[{t:'认真地聊未来的计划',a:[{id:mc.id,v:dv(8)}],f:'你们聊了很久。未来不确定——但知道对方在——好像就没那么可怕了。'},
+        {t:'「不管去哪里——保持联系就好」',a:[{id:mc.id,v:dv(7)}],f:'「……嗯。」Ta的声音很轻——但很确定。'}];break;
+    // ─── 日记被发现（新）───
+    case'diary_found':
+      n=`你不小心看到了${mc.e} ${mc.n}的笔记本。\n\n${pk(['翻开的——不是作业','里面夹着一张照片','某页上——好像有你的名字'])}。\n\nTa发现了——手忙脚乱地合上。`;
+      ch=[{t:'「我不会看的——」退后一步',a:[{id:mc.id,v:dv(6)}],f:'Ta松了口气。然后把笔记本放进了书包最深处——但你的名字——你确实看到了。'},
+        {t:'笑着说「如果写的是我——那我以后再看」',a:[{id:mc.id,v:dv(10)}],f:'Ta脸红到了耳根。\n「……以后再说。」\n没有否认。'}];break;
+    // ─── 借伞（新）───
+    case'umbrella_lend':
+      n=`早上出门时还是晴天。\n\n但课上到一半——窗外开始下雨。\n\n你没带伞。\n\n${mc.e} ${mc.n}${pk(['课间走到你旁边——「我有多的。」','放学时在你桌边停了一下——手里有两把伞','把自己的伞塞给你——「我家近。跑回去就行。」'])}。`;
+      ch=[{t:'「谢谢——明天还你」',a:[{id:mc.id,v:dv(8)}],f:'你打着Ta的伞回家。伞柄上有Ta的温度。第二天还伞时——多聊了一会儿。'},
+        {t:'「一起走吧——反正顺路」',a:[{id:mc.id,v:dv(7)}],f:'你们挤在一把伞下。这种距离——雨声都盖不住心跳。'}];break;
+    // ─── 推歌（新）───
+    case'song_rec':
+      n=`${mc.e} ${mc.n}${pk(['发了一首歌的链接——「这首——一定要听。」','递给你一只耳机——什么都没说','在走廊上哼着歌——你听出了那首你喜欢的歌'])}。`;
+      ch=[{t:'认真地听——然后告诉Ta你的感受',a:[{id:mc.id,v:dv(7)}],f:'Ta听着你的评价——眼睛越来越亮。\n「我就知道你会懂——」'},
+        {t:'也分享一首歌给Ta',a:[{id:mc.id,v:dv(6)}],f:'Ta戴上了耳机。听完之后——\n「……加到我的收藏了。」'}];break;
+    // ─── 试胆/怪谈（新）───
+    case'ghost_story':
+      n=`旧教学楼。\n\n有人说这里有${pk(['七大不可思议','会动的音乐室雕像','晚上会自己弹的钢琴'])}。\n\n${mc.e} ${mc.n}${pk(['嘴上说不信——但脸色有点白','兴奋地拉着你去探险','在门口犹豫——看到你之后好像安心了一点'])}。`;
+      ch=[{t:'「一起去看看——有我在」',a:[{id:mc.id,v:dv(9)}],f:'你们一起去探险了。结果是假的——但回来的路上，你们都在笑。'},
+        {t:'讲一个更恐怖的故事——吓唬Ta',a:[{id:mc.id,v:dv(5)}],f:'Ta被吓到了——但然后追着你打。笑声在走廊里回荡。'}];break;
+    // ─── 最后的话（新，90天后）───
+    case'final_words':
+      n=`接近一百天了。\n\n${mc.e} ${mc.n}${pk(['说：「我有话想跟你说——但不知道怎么说。」','给了你一样东西——「这个——你走的那天再打开。」','在走廊叫住你——然后沉默了很久。\n「……算了。以后再说。」'])}`;
+      ch=[{t:'「想说什么——就说吧。」安静地等',a:[{id:mc.id,v:dv(15)}],f:'Ta说了。说得断断续续——但你听懂了每一个字。\n然后——你们都没有说话。沉默比语言——说了更多。'},
+        {t:'「没关系——等你想说的时候。我都在。」',a:[{id:mc.id,v:dv(10)}],f:'Ta低下了头。\n「……为什么你总是——」\n没有说完。但眼眶红了。'}];break;
+    // ─── 发错消息（新）───
+    case'wrong_message':
+      n=`手机亮了。\n\n是${mc.e} ${mc.n}发来的消息——\n\n${pk(['「刚才那条——发错了。」','消息被撤回了——但你看到了预览','「（消息已删除）」——然后过了一会儿，发了条无关的'])}。`;
+      ch=[{t:'「我看到了——」',a:[{id:mc.id,v:dv(8)}],f:'Ta沉默了很久。\n然后——「……看到了就算了。」\n那条消息——你说你会留着截图。'},
+        {t:'假装没看到——正常回复',a:[{id:mc.id,v:dv(5)}],f:'Ta好像松了一口气。但之后的每条消息——都更认真了。'}];break;
+    // ─── 便当忘记（新）───
+    case'bento_forgot':
+      n=`午休。\n\n${mc.e} ${mc.n}${pk(['翻遍书包——「便当忘在家里了——」','在小卖部排了队——但卖完了','看着别人的便当——肚子叫了'])}。`;
+      ch=[{t:'把自己的便当分Ta一半',a:[{id:mc.id,v:dv(10)}],f:'你们分着吃了——两个人的便当。不够饱——但比什么都好吃。'},
+        {t:'带Ta去小卖部——请Ta吃面包',a:[{id:mc.id,v:dv(7)}],f:'你们坐在中庭吃面包。Ta说「下次我请——」但你已经不在乎了。'}];break;
+    // ─── 社团对决（新）───
+    case'club_clash':
+      n=`${loc.n}${loc.e}。\n\n两个社团在${pk(['抢活动室','争论文化祭的摊位位置','比谁的活动更有人气'])}。\n\n${mc.e} ${mc.n}${pk(['站在前面——据理力争','被夹在中间——左右为难','拉你过来做裁判'])}。`;
+      ch=[{t:'帮Ta的社团说话',a:[{id:mc.id,v:dv(8)}],f:'你说的话起了作用。Ta感激地看了你一眼——「够意思！」'},
+        {t:'提一个公平的解决方案',a:[{id:mc.id,v:dv(6)}],f:'双方都觉得合理。'+mc.n+'说「你还挺有办法的。」'}];break;
+
+
+    
+    // ─── 竹马回忆（致敬一见不钟情）───
+    case'childhood':
+      n=pk([`${mc.e} ${mc.n}正在翻书包——一张旧照片掉了出来。照片上——两个小孩。\n\n${pk(['Ta愣了一下——然后迅速把照片塞了回去','「这是——很久以前了。」','你看了一眼——照片里另一个孩子——有点眼熟'])}。`,`${loc.n}${loc.e}。\n\n${mc.e} ${mc.n}在讲小时候的事。\n\n「那时候——有个人总跟我打架。」\n${pk(['但每次我哭了——那个人会在旁边站很久。不走。','后来——打架变成了习惯。有人在旁边——反而是安心的。'])}`]);
+      ch=[{t:'「那个人——现在还在你身边吗？」',a:[{id:mc.id,v:dv(10)}],f:'Ta没有回答。\n\n但沉默——比回答说了更多。'},
+        {t:'安静地听Ta讲完',a:[{id:mc.id,v:dv(7)}],f:'Ta讲了很多——讲到小时候的打架、翻墙、被老师一起罚站。\n\n讲到后来——声音越来越轻。\n\n「……原来已经这么多年了。」'}];break;
+
+    // ─── 暗恋心事（致敬一见不钟情）───
+    case'secret_crush':
+      n=pk([`${mc.e} ${mc.n}在看你——${pk(['你转头的时候——Ta移开了目光','然后若无其事地看向窗外','手指在桌上轻轻敲着——节奏很快'])}。`,`${loc.n}${loc.e}。\n\n${mc.e} ${mc.n}在本子上写了几行字——\n\n看到你过来——迅速翻到了下一页。\n\n${pk(['你瞥见了一个名字的首字母。','本子合上了。但Ta的耳朵——红了。'])}`]);
+      ch=[{t:'假装没看到——但心里记下了',a:[{id:mc.id,v:dv(5)}],f:'有些秘密——不需要被揭穿。\n\n你什么都没有说。\n\n但Ta好像感觉到了什么——对你轻轻笑了一下。'},
+        {t:'在Ta旁边坐下——换个话题',a:[{id:mc.id,v:dv(8)}],f:'你自然地聊起了别的事。\n\nTa松了口气——然后聊得很开心。\n\n心里的秘密——暂时可以放一放。'}];break;
+
+  }
+  return {type:type,narration:n,choices:ch,chars}; // 返回具体事件类型（供SPR系统判断）
+}
+
+// ─── 占位符替换工具 ───
+function replacePlaceholders(str,mc,sc,hs,loc){
+  // 替换 {{mc.e}} {{mc.n}} {{sc.e}} {{sc.n}} {{hs.e}} {{hs.n}} {{loc.n}} {{loc.e}} {{G.day}}
+  if(mc){str=str.replace(/\{\{mc\.e\}\}/g,mc.e).replace(/\{\{mc\.n\}\}/g,mc.n);}
+  if(sc){str=str.replace(/\{\{sc\.e\}\}/g,sc.e).replace(/\{\{sc\.n\}\}/g,sc.n);}
+  else{str=str.replace(/\{\{sc\?[^}]+\}\}/g,'');} // 去掉sc条件模板
+  if(hs){str=str.replace(/\{\{hs\.e\}\}/g,hs.e).replace(/\{\{hs\.n\}\}/g,hs.n);}
+  if(loc){str=str.replace(/\{\{loc\.n\}\}/g,loc.n).replace(/\{\{loc\.e\}\}/g,loc.e);}
+  str=str.replace(/\{\{G\.day\}\}/g,G.day);
+  // 替换 {{pk:选项1|选项2|...}}
+  str=str.replace(/\{\{pk:([^}]+)\}\}/g,(m,capt)=>{
+    const opts=capt.split('|').map(s=>s.trim());
+    return pk(opts);
+  });
+  return str;
+}
+
+// ─── 课堂事件生成器 ───
+function genClassEvent(){
+  const tmpl=pk(CLASS_EVENTS);
+  // 基于性格过滤：该课堂事件不兼容的角色
+  const banList=CHAR_CLASS_BAN[tmpl.t]||[];
+  const pool=Object.keys(CH).filter(id=>CH[id]&&CH[id].c==='高一B'&&!banList.includes(id));
+  const chars=[CH[pk(pool)]];
+  if(Math.random()<0.4){const sc=CH[pk(pool.filter(id=>id!==chars[0].id))];if(sc)chars.push(sc);}
+  const mc=chars[0],sc=chars[1];
+  let x=replacePlaceholders(tmpl.x,mc,sc,null,null);
+  const choices=tmpl.c.map(ch=>{
+    const a=ch.a?ch.a.map(a=>{
+      if(a.id==='mc')return{id:mc.id,v:dv(a.v||5)};
+      if(a.id==='sc'&&sc)return{id:sc.id,v:dv(a.v||5)};
+      return a;
+    }).filter(a=>a.id&&CH[a.id]):[];
+    const t=replacePlaceholders(ch.t,mc,sc,null,null);
+    const f=ch.f?replacePlaceholders(ch.f,mc,sc,null,null):null;
+    return{t,a,f};
+  });
+  return{type:'class',narration:x,choices,chars};
+}
+
+// ─── 借宿事件生成器 ───
+function genHomeEvent(timeOfDay){
+  const hs=CH[G.homestay];if(!hs)return null;
+  const pool=timeOfDay==='morning'?HOME_EVENTS.morning:HOME_EVENTS.evening;
+  const tmpl=pk(pool);
+  let x=replacePlaceholders(tmpl.x,null,null,hs,null);
+  const choices=tmpl.c.map(ch=>({
+    t:ch.t,f:ch.f||null,
+    a:ch.a?ch.a.map(a=>({id:a.id==='hs'?G.homestay:a.id,v:dv(a.v||5)})).filter(a=>CH[a.id]):[]
+  }));
+  return{type:'home',narration:x,choices,chars:[hs]};
+}
+
+// ─── 周末校外事件生成器 ───
+function genWeekendEvent(locId){
+  const loc=LC_OUT[locId];if(!loc)return null;
+  const pool=loc.ch.filter(id=>CH[id]);if(pool.length===0)return null;
+  const nChar=Math.min(rn(1,Math.min(2,pool.length)),pool.length);
+  const chars=[];const tmp=[...pool].sort(()=>Math.random()-0.5);
+  for(let i=0;i<nChar;i++)chars.push(CH[tmp[i]]);
+  const mc=chars[0],sc=chars[1];
+  const tmpl=pk(WEEKEND_TYPES);
+  let x=replacePlaceholders(tmpl.x,mc,sc,null,loc);
+  const choices=tmpl.c.map(ch=>{
+    const a=ch.a?ch.a.map(a=>({id:a.id==='mc'?mc.id:a.id,v:dv(a.v||5)})).filter(a=>CH[a.id]):[];
+    return{t:ch.t,f:ch.f||null,a};
+  });
+  return{type:'weekend',narration:x,choices,chars};
+}
+
+// ─── CP事件内容 ───
+const CPS={
+  leian:{
+    1:{t:'天台上的对峙',x:'天台。\n\n雷狮🦁靠着护栏。安迷修⚔️举着学生手册。\n\n「第三次了。校服。」\n「忘了。」\n\n安迷修的笔悬在扣分栏上——但没有落下去。',
+      c:[{t:'「你们两个，其实关系挺好的吧？」',m:'match',a:[{id:'leishi',v:8},{id:'anmixiu',v:8}],f:'两人同时转头。\n安迷修：「怎么可能！」\n雷狮：「无聊。」\n但他们都避开了彼此的目光。'},
+        {t:'帮安迷修说话',m:'self',a:[{id:'anmixiu',v:7},{id:'leishi',v:3}],f:'安迷修感激地看了你一眼。雷狮撇了撇嘴——但还是拿出了外套。'}]},
+    2:{t:'雨天的校门',x:'大雨。\n\n安迷修⚔️没带伞。雷狮🦁从你身边经过——他有一把伞。\n\n他的脚步停了一瞬。',
+      c:[{t:'叫住雷狮：「你不送送他吗？」',m:'match',a:[{id:'leishi',v:12},{id:'anmixiu',v:10}],f:'雷狮看了你一眼。\n走过去，把外套扔在安迷修头上。\n「……上来。」两人走进雨里。'}]},
+    3:{t:'学园祭·舞台剧',x:'学园祭的舞台剧。\n\n雷狮🦁演王子——虽然一脸不情愿。安迷修⚔️演骑士——倒是很像。\n\n后台。安迷修在帮雷狮整理戏服的领结。\n\n「别乱动。」\n「我没动。」',
+      c:[{t:'偷偷拍下这一幕',m:'match',a:[{id:'leishi',v:8},{id:'anmixiu',v:8}],f:'你悄悄拍了下来——这画面太珍贵了。后来你把照片洗了出来，偷偷放在了两人的鞋柜里。'},
+        {t:'「你们两个今天都很帅」',m:'self',a:[{id:'leishi',v:5},{id:'anmixiu',v:5}],f:'安迷修认真地道了谢。雷狮哼了一声但嘴角是上扬的。'}],},
+    4:{t:'天台·吵架',x:'天台。雷狮🦁和安迷修⚔️在大声争执。\n\n「你能不能别总是一个人扛着？！」安迷修罕见地发火了。\n「……关你什么事。」\n「当然关我的事——！」\n\n安迷修的声音在发抖。雷狮愣住了。',
+      c:[{t:'在不远处静静看着',m:'match',a:[{id:'leishi',v:12},{id:'anmixiu',v:12}],f:'雷狮沉默了很久。然后——\n「……我知道了。」\n这是你第一次听到雷狮说这样的话。安迷修的眼眶红了。'}]},
+    5:{t:'毕业前的天台',x:'倒数第10天。\n\n雷狮🦁一个人在天台。\n「安迷修刚才来过。」\n「我跟他说——我要去别的城市了。」',
+      c:[{t:'「你应该把真正想说的话告诉他」',m:'match',a:[{id:'leishi',v:18},{id:'anmixiu',v:15}],f:'雷狮沉默了很久。\n那天晚上，安迷修的鞋柜里——有一封信。'}]},
+  },
+  ruijin:{
+    1:{t:'午后的教室',x:'金⭐对数学题抓耳挠腮。\n\n格瑞❄️合上书，默默把椅子挪过去。\n「这里——用这个公式。」\n「格瑞你讲得比老师还好懂——！！」',
+      c:[{t:'「金，格瑞对你真的好有耐心啊」',m:'match',a:[{id:'jin',v:8},{id:'gerui',v:8}],f:'金挠头大笑：「是哦！格瑞最好了——」\n格瑞转过了头。耳朵——好像红了。'}]},
+    2:{t:'转学的传闻',x:'班里传开——金⭐可能要转学了。\n\n格瑞❄️站在人群外围。没有说话。',
+      c:[{t:'对格瑞说：「你不说点什么吗？」',m:'match',a:[{id:'gerui',v:12},{id:'jin',v:6}],f:'格瑞走到金面前。\n「……留下来。」\n声音很轻。金的眼睛瞬间亮了起来。'}]},
+    3:{t:'合宿之夜',x:'修学旅行。合宿的晚上。\n\n金⭐已经呼呼大睡——被子踢掉了一半。\n格瑞❄️还醒着。他起身，把金的被子重新盖好。\n\n月光明亮。',
+      c:[{t:'轻声说「金很幸运，有你在」',m:'match',a:[{id:'gerui',v:12},{id:'jin',v:5}],f:'格瑞没有说话。但他的嘴角弯了一下——在月光下看不真切。\n但他又坐回了金旁边。很近。'}]},
+    4:{t:'黑金的秘密',x:'金⭐今天不太对劲。\n\n他的眼神很冷——冷得不像平时那个爱笑的金。\n\n格瑞❄️全身紧绷地站在不远处。\n\n「……黑金。」格瑞低声说。「他又出来了。」',
+      c:[{t:'走过去拉住金的手：「金。回来。」',m:'self',a:[{id:'jin',v:20},{id:'gerui',v:15}],f:'金抬起头。眼睛慢慢恢复了温度。\n「……我又……？」\n「没关系。」你说。格瑞在你身后——沉默地松了一口气。'}]},
+    5:{t:'你的倒数',x:'倒数第8天。\n\n金⭐塞给你全班签了名的笔记本。\n\n格瑞❄️没签名——但他写了一整道题的解题过程。\n\n附了一行很小的字：「以后有不会的题，拍照发我。」',
+      c:[{t:'「格瑞——你这个比签名还有用」',m:'match',a:[{id:'gerui',v:15},{id:'jin',v:10}],f:'金在旁边喊「格瑞你脸红了——！！」\n「……没有。」格瑞说。\n但你知道——他脸红了。'}]},
+  },
+  kaiai:{
+    1:{t:'宠物店前',x:'宠物店。\n\n卡米尔🧣和埃米😇蹲在猫笼前。\n「它的眼睛和你围巾颜色一样——」\n「……嗯。」',
+      c:[{t:'「卡米尔对埃米好温柔啊」',m:'match',a:[{id:'kamier',v:8},{id:'aimi',v:8}],f:'卡米尔把围巾拉了拉。\n埃米笑着：「卡米尔一直都这样的！」\n卡米尔的耳朵——红了。'}]},
+    2:{t:'运动会之后',x:'埃米😇摔倒了。膝盖破了。\n\n卡米尔🧣第一个冲到他身边。\n\n他解下那条从不离身的围巾——轻轻缠在埃米的膝盖上。\n\n「围巾会脏的。」\n「没关系。」',
+      c:[{t:'「你把最重要的围巾给他了」',m:'match',a:[{id:'kamier',v:12},{id:'aimi',v:10}],f:'卡米尔没有抬头。\n「……围巾可以洗。」\n但你知道——他给出去的不只是围巾。'}]},
+    3:{t:'深夜补习',x:'自习室快关门了。\n\n卡米尔🧣在给埃米😇讲数学题。埃米困得眼睛快要闭上了——卡米尔还在耐心地讲。\n\n「今天就到这里吧。」\n「……可是你明天还要小测。」',
+      c:[{t:'帮埃米整理笔记',a:[{id:'aimi',v:6},{id:'kamier',v:3}],f:'你帮忙把笔记整理好。埃米感激地笑了笑。卡米尔轻轻点了下头——这已经是他很大的认可了。'},{t:'「卡米尔真的很有耐心」',m:'match',a:[{id:'kamier',v:8},{id:'aimi',v:5}],f:'卡米尔没说话。但他讲题的速度——放得更慢了。更仔细了。'}]},
+    4:{t:'艾比的考验',x:'艾比😈拦住了卡米尔🧣。\n\n「你最近——和我弟弟走得很近啊？」\n\n卡米尔沉默。艾比围着他转了一圈。\n「你要是敢欺负他——」\n「不会。」卡米尔回答得很快。',
+      c:[{t:'帮卡米尔说话：「他对埃米很好」',m:'match',a:[{id:'kamier',v:12},{id:'aimi',v:8}],f:'艾比瞪了你一眼——但好像信了几分。「哼。最好是这样。」\n卡米尔在你身后——轻轻松了口气。'}]},
+    5:{t:'升学志愿',x:'初三最后。\n\n卡米尔🧣和埃米😇填志愿。\n\n你听说——卡米尔填了和埃米一样的学校。一模一样。',
+      c:[{t:'问卡米尔：「因为埃米？」',m:'match',a:[{id:'kamier',v:15},{id:'aimi',v:10}],f:'卡米尔没有回答。\n但沉默——有时比任何回答都响亮。'}]},
+  },
+  kaining:{
+    1:{t:'下午四点',x:'下午四点整。美术室飘出红茶香。\n\n凯莉👑倒茶。安莉洁🍋闭眼占卜。\n「今天会有客人。」\n你推门进来。\n「哎呀。」凯莉笑了。「柠檬又说中了。」',
+      c:[{t:'「你们每天都这样吗？真好」',m:'match',a:[{id:'kaili',v:8},{id:'anlijie',v:8}],f:'凯莉笑了笑：「下午茶是不可动摇的。」\n安莉洁点头：「不可动摇。」\n异口同声——这画面莫名可爱。'}]},
+    2:{t:'化学室的意外',x:'化学室传来闷响。安莉洁🍋的实验冒烟了。\n\n凯莉👑——平时从容的大小姐——\n第一个冲了进去。\n\n「柠檬！！」',
+      c:[{t:'「凯莉，你跑得比谁都快」',m:'match',a:[{id:'kaili',v:12},{id:'anlijie',v:10}],f:'凯莉扭头哼了一声。「我只是刚好离得近。」\n安莉洁轻轻拉住了凯莉的袖子。'}]},
+    3:{t:'占卜与秘密',x:'安莉洁🍋的占卜屋。\n\n「今天的占卜——凯莉的未来里有一个很重要的人。」\n「谁？」\n「……不能说。」\n\n但安莉洁的眼睛——看着凯莉。',
+      c:[{t:'微笑着不点破',m:'match',a:[{id:'kaili',v:8},{id:'anlijie',v:8}],f:'凯莉低头喝了一口红茶。安莉洁继续摆弄她的塔罗牌。\n空气里有什么——已经不需要说了。'}]},
+    4:{t:'文化祭的画展',x:'文化祭。画展角落有一幅不起眼的肖像。\n\n画的是安莉洁🍋。闭着眼，捧着柠檬。\n\n标签：《柠檬与占卜师》。作者：凯莉👑。',
+      c:[{t:'「这幅画画了多久？」',m:'match',a:[{id:'kaili',v:15},{id:'anlijie',v:12}],f:'凯莉没有说傲娇的话。\n「……很久。怎么画都不像她。」\n安莉洁轻声说：「很像。我很喜欢。」'}]},
+    5:{t:'毕业纪念册',x:'毕业前。\n\n凯莉👑在安莉洁🍋的纪念册上画了很久。\n\n——一颗小柠檬，上面戴着一顶皇冠。',
+      c:[{t:'「好可爱——柠檬上面戴着皇冠」',m:'match',a:[{id:'kaili',v:18},{id:'anlijie',v:15}],f:'凯莉合上纪念册。\n安莉洁翻开看的时候——眼泪掉了下来。但她是在笑的。'}]},
+  },
+  leizu:{
+    1:{t:'图书馆·恋爱小说',x:'雷德📖对着一本小说傻笑。\n\n「祖玛祖玛！这个告白方式——在图书馆悄悄把情书夹进书里——」\n「……嘉德罗斯大人不会来图书馆。」\n\n雷德石化了。但祖玛翻页的速度放慢了。',
+      c:[{t:'「祖玛，雷德其实很用心的」',m:'match',a:[{id:'leide',v:10},{id:'zuma',v:6}],f:'祖玛的手指停了一下。\n「……我知道。」\n声音很轻——但雷德猛地坐直了。'}]},
+    2:{t:'情人节·勇气',x:'情人节。\n\n雷德📖等在校门口。手里攥着歪歪扭扭的手工巧克力。\n\n祖玛🗿来了。\n「早——！！这个是——给你的——！！」',
+      c:[{t:'在旁边偷偷加油',m:'match',a:[{id:'leide',v:8},{id:'zuma',v:8}],f:'祖玛接过来。沉默了很久。\n然后把巧克力放进了包里——最里面的那层。'}]},
+    3:{t:'雷德的笔记本',x:'你不小心看到了雷德📖摊开的笔记本。\n\n上面密密麻麻写满了——\n\n「祖玛今天笑了」\n「祖玛说了一句很长的句子」\n「祖玛看了我一眼——不，应该是恰好看向这边」',
+      c:[{t:'「雷德——你记了多久了？」',a:[{id:'leide',v:8}],f:'雷德手忙脚乱地合上笔记本。脸红得像番茄。\n「没——没什么——！！」\n但你看到最早的一条是——去年四月。开学第一天。'},{t:'合上笔记本放回原位',a:[{id:'leide',v:5}],f:'你没说什么。有些秘密——不需要被揭穿。但你在心里想：祖玛应该知道的。'}]},
+    4:{t:'运动会接力',x:'运动会。\n\n雷德📖和祖玛🗿在同一组接力。\n\n交接棒的时候——雷德太紧张，差点掉棒。\n但祖玛稳稳地接住了。\n\n「……走。」祖玛说。然后冲了出去。',
+      c:[{t:'在场边大喊加油',m:'match',a:[{id:'leide',v:10},{id:'zuma',v:8}],f:'祖玛跑完后——喘着气——看了雷德一眼。\n「……你刚才差点掉了。」\n「对不起——！！」\n「……还好没有。」'}],},
+    5:{t:'毕业·告白',x:'毕业典礼后。\n\n雷德📖等在校门口。手里拿着一封信。\n\n祖玛🗿终于来了。\n\n「……你还没走。」\n「在等你——！！」',
+      c:[{t:'远远地看着',m:'match',a:[{id:'leide',v:18},{id:'zuma',v:15}],f:'祖玛接过信。没有打开。\n但放进了胸前的口袋——最靠近心脏的地方。\n\n夕阳把两人的影子拉得很长。'}],},
+  },
+  peipa:{
+    1:{t:'暗影使者',x:'帕洛斯🖊️合上电脑。\n\n「你知道了？」关于他是"暗影使者"这件事。\n\n佩利🐺在旁边呼呼大睡。',
+      c:[{t:'「告诉佩利，他会很高兴吧」',m:'match',a:[{id:'paluosi',v:10},{id:'peili',v:5}],f:'帕洛斯轻哼一声。\n「那个单细胞——不用知道。」\n但他没有关掉正在写的文档。标题：《关于忠犬的一百种写法》。'}]},
+    2:{t:'打架之后',x:'佩利🐺又打架了。脸上挂着彩，但还在咧嘴笑。\n\n帕洛斯🖊️坐在旁边——拿医药箱。\n\n「别乱动。」\n「帕洛斯你轻点——疼疼疼——」\n「……谁让你打架的。」\n但他的手很轻。',
+      c:[{t:'帮忙递纱布',a:[{id:'peili',v:6},{id:'paluosi',v:5}],f:'帕洛斯接过去。佩利对你龇牙一笑——「谢啦！」。帕洛斯默默地继续包扎。'},
+        {t:'「帕洛斯包扎手法好熟练」',m:'match',a:[{id:'paluosi',v:8},{id:'peili',v:3}],f:'帕洛斯没停手。「……习惯了。」\n佩利忽然安静了一下。「帕洛斯——一直都这样。」'}],},
+    3:{t:'深夜天台',x:'深夜。天台。\n\n帕洛斯🖊️一个人在看夜景。佩利🐺不知道什么时候上来了。\n\n「你怎么在这？」\n「找你啊——晚上太冷了，给你。」\n\n佩利把外套扔了过去。',
+      c:[{t:'在楼梯间看着——不打扰',m:'match',a:[{id:'paluosi',v:12},{id:'peili',v:10}],f:'帕洛斯披上了外套。没有说谢谢——但他没有把外套还回去。\n佩利在他旁边坐下，开始讲今天吃了什么。'}],},
+  },
+  jiarui:{
+    1:{t:'天才的对决',x:'嘉德罗斯🔥站在格瑞❄️桌前。\n\n「这次物理竞赛——我不会再输给你。」\n「……随便。」\n「你每次都这么说——每次都第一！」',
+      c:[{t:'「嘉德罗斯，你其实很佩服格瑞吧？」',m:'match',a:[{id:'jiadeluosi',v:10},{id:'gerui',v:5}],f:'嘉德罗斯脸涨得通红。\n「佩服——？！我是要打败他！！」\n格瑞翻了一页书。「……我等着。」'}]},
+    2:{t:'考试之后',x:'成绩公布。嘉德罗斯🔥终于在某科超过了格瑞❄️——0.5分。\n\n他站在公告栏前，反复看了三遍。\n\n格瑞从他身后路过。\n「……恭喜。」',
+      c:[{t:'「格瑞，你居然会说恭喜」',a:[{id:'gerui',v:5},{id:'jiadeluosi',v:5}],f:'格瑞没有停步。但嘉德罗斯看着他的背影——笑了。\n是那种发自内心的、「我终于做到了」的笑。'}],},
+    3:{t:'一起自习',x:'你看到嘉德罗斯🔥和格瑞❄️在同一个自习室里。\n\n隔了三排桌子。\n\n但两人的笔——在比谁写得快。',
+      c:[{t:'在中间坐下，安静地看书',a:[{id:'gerui',v:3},{id:'jiadeluosi',v:3}],f:'你成了他们无声竞赛的「裁判」。后来两人都开始教你做题——似乎是在比谁教得好。'}],},
+  },
+  anlei:{
+    1:{t:'反向观察',x:'安迷修⚔️在天台找到了雷狮🦁。\n\n这次是安迷修先开口。\n\n「上次雨伞的事。谢谢。」\n雷狮愣了一下。然后笑了。\n「风纪委员长会道谢——世界末日？」',
+      c:[{t:'在不远处听着',m:'match',a:[{id:'anmixiu',v:8},{id:'leishi',v:8}],f:'安迷修深吸一口气。\n「我不是在开玩笑。」\n雷狮收起了笑容。\n「……我知道。」'}]},
+    2:{t:'校门口的等待',x:'放学后。安迷修⚔️在校门口站了很久。\n\n你在旁边。\n\n「在等人？」\n「……不。只是——习惯了。」\n\n然后雷狮🦁出现在了校门口。\n「走了。」雷狮说。安迷修跟上。',
+      c:[{t:'微笑地看着他们离开',m:'match',a:[{id:'anmixiu',v:8},{id:'leishi',v:8}],f:'他们的背影走在黄昏里。安迷修在说着什么——大概是在抱怨。\n但他们的步子——是一样的节奏。'}],},
+  },
+};
+
+// ─── 日历事件 ───
+const CAL={
+  1:{n:'开学第一天',x:'丹尼尔老师📋在晨会上介绍你。\n\n「这是我们的新同学——只待一百天。好好相处。」\n\n金⭐第一个冲过来握手：「欢迎——！！」\n格瑞❄️在旁边默默点了个头。雷狮🦁翘着椅子看了你一眼。安迷修⚔️认真地说「有困难可以找我」。',aa:3},
+  7:{n:'社团招新',x:'中庭摆满了社团摊位。文艺社的银爵在逗猫，美术社的凯莉在展示画作，体育社的佩利在举哑铃。\n\n加入哪个？',club:true},
+  15:{n:'第一次小测',x:'第一次小测验。金紧张到转笔把笔转飞了——格瑞默默帮他捡了回来。',attr:{INT:1}},
+  21:{n:'天台·对峙',x:'天台。风吹过。雷狮🦁和安迷修⚔️——第一次交锋。',cp:'leian',st:1},
+  25:{n:'深夜消息',x:'晚上手机亮了。是金⭐——「明天的小测救命——」\n\n你还没来得及回复，格瑞❄️在班群里发了一份整理好的笔记。',attr:{INT:1}},
+  28:{n:'午后·补习',x:'午后的教室。格瑞在教金做题——比老师讲得还好。',cp:'ruijin',st:1},
+  35:{n:'宠物店·初遇',x:'放学路上。宠物店前——卡米尔和埃米蹲在猫笼前。',cp:'kaiai',st:1},
+  40:{n:'期中考试',x:'期中考试。嘉德罗斯🔥和格瑞❄️在成绩榜上只差0.5分。嘉德罗斯站在榜前看了很久。',attr:{INT:2}},
+  45:{n:'下午四点',x:'美术室。下午四点整。红茶香与占卜——凯莉和安莉洁的日常。',cp:'kaining',st:1},
+  48:{n:'雨天的天台',x:'大雨。天台——雷狮和安迷修。有人没带伞。',cp:'leian',st:2},
+  50:{n:'🎪 学园祭',x:'⭐ 学园祭！⭐\n\n体育馆·舞台剧 / 中庭·女仆咖啡店 / 旧教学楼·鬼屋\n\n到处张灯结彩。你在人群中——笑着。',fest:true},
+  55:{n:'图书馆·恋爱小说',x:'雷德在读恋爱小说。祖玛在看英语参考书。两个人在同一张桌子。',cp:'leizu',st:1},
+  58:{n:'转学传闻',x:'「金可能要转学了」——消息传开。格瑞站在人群外围。沉默。',cp:'ruijin',st:2},
+  60:{n:'🏃 体育祭',x:'体育祭！佩利🐺横冲直撞，金⭐摔倒了又爬起来，嘉德罗斯🔥一脸不服输。接力赛上——雷德差点掉棒，祖玛稳稳接住了。',attr:{STR:2},cp:'leizu',st:4},
+  65:{n:'天台·争吵',x:'天台。这一次——安迷修发火了。雷狮愣住了。',cp:'leian',st:4},
+  70:{n:'运动会·围巾',x:'埃米摔倒了。卡米尔第一个冲过去。解下了从不离身的围巾。',cp:'kaiai',st:2},
+  73:{n:'保健室',x:'凯莉今天没来上课。安莉洁说「她在保健室——只是感冒。」但安莉洁一整天都在看时钟。',cp:'kaining',st:3},
+  75:{n:'合宿之夜',x:'修学旅行。深夜——格瑞给踢被子的小金重新盖好。月光很亮。',cp:'ruijin',st:3},
+  78:{n:'化学室·意外',x:'化学室冒了烟。凯莉第一个冲进去——跑得比谁都快。',cp:'kaining',st:2},
+  80:{n:'期末考试',x:'三天考试。考完之后——短暂的假期。有人在计划合宿。',attr:{INT:2}},
+  82:{n:'💝 情人节',x:'空气里飘着甜味。安迷修在雷狮鞋柜前犹豫了很久。金抱着一大盒巧克力跑向格瑞。凯莉给了安莉洁马卡龙。雷德手里攥着歪歪扭扭的手工巧克力。\n\n——你将巧克力放在了谁的鞋柜里？',fest:true},
+  84:{n:'巧克力与回应',x:'情人节第二天。祖玛把巧克力放进了包里——最安全的位置。',cp:'leizu',st:2},
+  87:{n:'暗影使者',x:'帕洛斯合上电脑。佩利在旁边呼呼大睡。\n\n「你知道了？」',cp:'peipa',st:1},
+  89:{n:'画展·告白',x:'文化祭。角落里一幅不起眼的画——《柠檬与占卜师》。作者：凯莉。',cp:'kaining',st:4},
+  91:{n:'深夜·天台',x:'深夜。天台。帕洛斯在看夜景。佩利上来找他——「给你外套。太冷了。」',cp:'peipa',st:3},
+  93:{n:'黑金的秘密',x:'金今天的眼神很冷。格瑞说：「黑金又出来了。」',cp:'ruijin',st:4},
+  95:{n:'天台·毕业前',x:'雷狮在天台。\n「安迷修刚才来过。我告诉他——我要去别的城市。」',cp:'leian',st:5},
+  97:{n:'笔记本·约定',x:'金塞给你全班签名的本子。格瑞没签名——他写了一整道题。\n「以后有不会的题，拍照发我。」',cp:'ruijin',st:5},
+  99:{n:'🎉 送别会',x:'明天就要走了。\n\n教室黑板写满了祝福。丹尼尔拍了拍你的肩。\n\n金哭了。格瑞递纸巾。\n雷狮：「去了新学校别当乖宝宝。」\n安迷修：「记得遵守校规。」\n凯莉给你马卡龙。安莉洁：「你的未来……很亮。」\n雷德给你写了封信——信封画满了爱心。祖玛说「保重。」\n卡米尔把围巾的一角塞进你手里。埃米抱了你一下。\n佩利拍你的背（比平时轻）。帕洛斯说「……暗影使者下本书的男主——有点像你。」\n嘉德罗斯说「要是新学校有人欺负你——报我的名字。」\n\n你看着这些人。这些一百天里走进你生命的人。\n\n——明天就要走了。',aa:8},
+};
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  多事件并行选择系统 (v5.4 - 仿Madoka Portable地图选人)       ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// ─── 事件简述替换工具 ───
+function fillTeaser(tmpl,mc,sc,hs,loc){
+  let s=tmpl;
+  if(mc){s=s.replace(/\{mc\}/g,mc.e+' '+mc.n);}
+  if(sc){s=s.replace(/\{sc\}/g,sc.e+' '+sc.n);}
+  if(hs){s=s.replace(/\{hs\}/g,hs.e+' '+hs.n);}
+  if(loc){s=s.replace(/\{loc\}/g,loc.e+' '+loc.n);}
+  return s;
+}
+
+// ─── 预生成多个事件预览 ───
+// locPool: 位置ID数组, count: 生成数量, genFn: 事件生成函数, opts: {cpChance, locPoolOut, isClass}
+function genEventPreviews(locPool,count,genFn,opts={}){
+  const previews=[];
+  // 打乱位置池，取count个不重复位置
+  const shuffled=[...locPool].sort(()=>Math.random()-0.5);
+  const pickedLocs=shuffled.slice(0,Math.min(count,shuffled.length));
+
+  // 对每个位置生成一个事件预览
+  pickedLocs.forEach(locId=>{
+    let ev;
+    if(opts.isClass){
+      ev=genFn(); // genClassEvent不需要locId
+    }else{
+      ev=genFn(locId);
+    }
+    if(!ev||!ev.choices||ev.choices.length===0)return;
+    const loc=LC[locId]||LC_OUT[locId];
+    const mc=ev.chars?ev.chars[0]:null;
+    const sc=ev.chars?ev.chars[1]:null;
+    // 生成简述：课堂/借宿/周末事件用narration首行，随机事件用EVENT_TEASERS模板
+    let teaser;
+    if(ev.type==='class'||ev.type==='home'||ev.type==='weekend'){
+      // 课堂/借宿/周末事件：截取narration第一行（已替换角色名）
+      const firstLine=ev.narration.replace(/\n/g,' ').slice(0,55);
+      teaser=firstLine+(ev.narration.length>55?'…':'');
+    }else{
+      const teasers=EVENT_TEASERS[ev.type]||['{mc}似乎有什么事——'];
+      teaser=fillTeaser(pk(teasers),mc,sc,null,loc);
+    }
+    // 课堂事件确保显示人物
+    if(opts.isClass&&mc){
+      teaser=mc.e+' '+mc.n+(sc?' + '+sc.e+' '+sc.n:'')+' · '+teaser;
+    }
+    previews.push({
+      locId,locName:loc?loc.n:'',locEmoji:loc?loc.e:'',
+      chars:ev.chars||[],type:ev.type,
+      narration:ev.narration,choices:ev.choices,
+      teaser,isCP:false,
+    });
+  });
+
+  // CP事件注入：概率将其中1个替换为CP事件
+  if(opts.cpChance&&Math.random()<opts.cpChance){
+    const avail=Object.entries(CPS).filter(([key,data])=>{
+      let stage=1;if(G.flags["cp_"+key+"_s1"])stage=2;if(G.flags["cp_"+key+"_s2"])stage=3;if(G.flags["cp_"+key+"_s3"])stage=4;if(G.flags["cp_"+key+"_s4"])stage=5;
+      if(!data[stage])return false;
+      if(G.flags['cp_'+key+'_s'+stage+'_done'])return false; // 已触发过的不再出现
+      const avg=cpAvg(key);
+      if(stage===1&&avg<10)return false;if(stage===2&&avg<25)return false;if(stage===3&&avg<45)return false;if(stage===4&&avg<60)return false;if(stage===5&&avg<75)return false;
+      return true;
+    });
+    if(avail.length>0){
+      const pick2=avail[Math.floor(Math.random()*avail.length)];
+      const[key,data]=pick2;let stage=1;
+      if(G.flags['cp_'+key+'_s1'])stage=2;if(G.flags['cp_'+key+'_s2'])stage=3;if(G.flags['cp_'+key+'_s3'])stage=4;if(G.flags['cp_'+key+'_s4'])stage=5;
+      if(data[stage]){
+        const cpData=CP[key];
+        const ev=data[stage];
+        const cpPreview={
+          locId:'cp',locName:'特殊事件',locEmoji:'💫',
+          chars:[],type:'cp',
+          narration:`💫 ${cpData?.n||''} · Day ${G.day}\n\n`+ev.x,
+          choices:ev.c,
+          teaser:`💫 ${cpData?.n||''} · ${ev.t||''}`,
+          isCP:true,cpKey:key,cpStage:stage,
+        };
+        // 有概率替换已有事件或追加（如果不够count）
+        if(previews.length>=count&&Math.random()<0.7){
+          previews[Math.floor(Math.random()*previews.length)]=cpPreview;
+        }else if(previews.length<count){
+          previews.push(cpPreview);
+        }
+      }
+    }
+  }
+  return previews;
+}
+
+// ─── 渲染事件选择画面 ───
+function renderEventSelect(app,events,timeLabel,extraHTML=''){
+  if(!events||events.length===0){render('play');return;}
+  window._pendingEvents=events;
+  // 计算当前时段体力消耗提示
+  let energyCostHint='';
+  if(G.slot==='afternoon')energyCostHint='🔋-'+Math.max(4,14-G.attr.STR);
+  else if(G.dayType==='weekend'||G.dayType==='festival')energyCostHint='🔋-'+Math.max(3,11-G.attr.STR);
+  else if(G.slot==='noon')energyCostHint='🔋-3~5';
+  else if(G.slot==='class1'||G.slot==='class2')energyCostHint='🔋-2~4';
+  let cards='';
+  events.forEach((ev,i)=>{
+    const charsStr=ev.chars&&ev.chars.length>0
+      ?ev.chars.map(c=>`${c.e||''} ${c.n||''}`).join(' + ')
+      :(ev.isCP?'💫 CP事件':'');
+    const border=ev.isCP?'2px solid var(--gold)':'1px solid #444';
+    const badge=ev.isCP?'<span style="font-size:0.6em;background:var(--gold);color:#000;padding:2px 6px;border-radius:8px;margin-left:6px">CP事件</span>':'';
+    cards+=`<button class="btn btn-choice fadein" onclick="window._pickEvent(${i})" style="text-align:left;padding:14px 16px;margin:6px 0;border:${border};${ev.isCP?'animation:pulse 2s infinite;':''}">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:1.4em;flex-shrink:0">${ev.locEmoji||'📍'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.8em;color:var(--gold);font-weight:bold">${ev.locName}${badge}</div>
+          <div style="font-size:0.75em;color:var(--dim);margin-top:2px">${charsStr||'???'}</div>
+          <div style="font-size:0.78em;color:var(--text);margin-top:4px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ev.teaser||'……'}</div>
+        </div>
+        <span style="color:var(--accent);flex-shrink:0;font-size:0.8em">选择 ▸</span>
+      </div></button>`;
+  });
+  app.innerHTML=buildShell(`<div class="panel fadein"><h2>${timeLabel}</h2>
+    <p style="color:var(--dim);font-size:0.75em;margin:4px 0 10px">多个事件同时发生——选择其中一个去参与 ${energyCostHint?'· 参与消耗 '+energyCostHint:''}</p>
+    ${cards}
+    ${extraHTML}
+  </div>`);
+}
+
+// ─── 选择事件卡片 ───
+window._pickEvent=function(idx){
+  if(!window._pendingEvents||idx>=window._pendingEvents.length)return;
+  const ev=window._pendingEvents[idx];
+  window._pendingEvents=null;
+  // 消耗体力（根据时段不同消耗量不同）
+  if(G.slot==='afternoon'){
+    G.energy=Math.max(0,G.energy-Math.max(4,14-G.attr.STR)); // 放学后探索：4-14
+    G.attr.SPR=clamp(G.attr.SPR-rn(0,1),0,10); // 探索也消耗精神
+  }else if(G.dayType==='weekend'||G.dayType==='festival'){
+    G.energy=Math.max(0,G.energy-Math.max(3,11-G.attr.STR)); // 周末外出：3-11
+    G.attr.SPR=clamp(G.attr.SPR-rn(0,1),0,10); // 外出消耗精神
+  }else if(G.slot==='noon'){
+    G.energy=Math.max(0,G.energy-rn(3,5)); // 午间社交：3-5
+  }else if(G.slot==='class1'||G.slot==='class2'){
+    G.energy=Math.max(0,G.energy-rn(2,4)); // 课堂参与：2-4（脑力消耗）
+  }
+  curEv=ev;
+  if(ev.isCP){
+    G.flags['cp_'+ev.cpKey+'_s'+ev.cpStage+'_done']=true;
+  }
+  render('event');
+};
+
+// ─── 执行选择 ───
+function execChoice(ev,chIdx){
+  const ch=ev.choices[chIdx];if(!ch)return{msg:'什么都没发生。',changes:[]};
+  const changes=[];
+  if(ch.a){ch.a.forEach(a=>{
+    let val=Math.round(a.v||dv(3));
+    if(G._tAngel&&G.slot==='morning')val+=1; // 天使天赋
+    if(G._tBento&&ev.type==='noon')val+=2;    // 便当天赋（午间事件）
+    if(G._tJoke&&(ev.type==='fun'||ev.type==='fun2')&&ev.narration.includes('笑'))val+=3; // 冷笑话天赋
+    if(G._tEarly&&ev.type==='home'&&G.slot==='morning')val+=1; // 早起天赋
+    if(G._tNight&&ev.type==='home'&&G.slot==='evening')val+=2; // 夜猫子天赋
+    if(G._tWeather&&ev.narration&&ev.narration.includes('雨'))val+=3; // 天气天赋
+    // 因果被动加成
+    val+=getKarmaAffBonus();
+    // 阈值效果
+    if(G.attr.AFF>=7)val+=1; // 高亲和→好感加成
+    if(ev.type==='study'&&G.attr.INT>=8)val+=2; // 高学力→教题效果翻倍
+    if((ev.type==='chat'||ev.type==='game')&&G.attr.CHR>=8)val+=2; // 高魅力→社交加成
+    if(G.attr.INT<=3&&(ev.type==='study'||ev.type==='homework'))val-=2; // 低学力→学习吃力
+    if(G.attr.AFF<=3)val-=1; // 低亲和→好感减成
+    const old=G.aff[a.id]||0;G.aff[a.id]=clamp(old+val,0,100);
+    // 双胞胎联动：艾比/埃米好感互相影响50%
+    if(a.id==="aibi"){const o2=G.aff.aimi||0;G.aff.aimi=clamp(o2+Math.round(val*0.5),0,100);changes.push({id:"aimi",n:CH.aimi?.n||"埃米",e:"😇",old:o2,val:Math.round(val*0.5)});}
+    if(a.id==="aimi"){const o2=G.aff.aibi||0;G.aff.aibi=clamp(o2+Math.round(val*0.5),0,100);changes.push({id:"aibi",n:CH.aibi?.n||"艾比",e:"😈",old:o2,val:Math.round(val*0.5)});}
+    changes.push({id:a.id,n:CH[a.id]?.n||a.id,e:CH[a.id]?.e||'',old,val});
+  });}
+  if(ch.f)G.flags['ev_'+ev.type+'_'+G.day+'_fb']=ch.f;
+  if(ch.m==='match'&&ev.cp)G.flags['match_'+ev.cp]=true;
+  if(ev.cp&&ev.stage)G.flags['cp_'+ev.cp+'_s'+ev.stage]=true;
+  if(ev.type==='calendar')G.flags['cal_'+G.day]=true;
+  if(ev.type==='forced_end'){G.day=G.maxDay+1;render('end');return{msg:'',changes:[],mode:'forced'};}
+  if(ev.type==='sick_leave'&&ch.skip>0){
+    G.day+=ch.skip;G.energy=100;G.attr.SPR=clamp(G.attr.SPR+2,1,10);G.slot='morning';
+    G.dayType=calcDayType(G.day);
+    G.journal.push({day:G.day-2,t:'请了两天病假——好好休息了一下。'});
+    G.flags['sick_leave_used']=true;
+    if(G.day>G.maxDay){render('end');return{msg:'',changes:[],mode:'leave'};}
+  }
+  if(ev.type==='sick_leave'&&!ch.skip){G.energy=Math.max(0,G.energy-15);G.attr.SPR=clamp(G.attr.SPR-rn(1,2),0,10);}
+  // 支线完成处理
+  if(ev.type==='sidequest'&&ev.sq){
+    const sq=SIDE_QUESTS.find(q=>q.id===ev.sq);
+    if(sq){
+      G.flags['sq_'+ev.sq+'_s'+ev.step]=true;
+      G.sideQuests[ev.sq]=ev.step+1;
+      if(ev.step>=sq.steps.length){
+        G.completedSQ.push(ev.sq);
+        triggerAch('sq_'+ev.sq,sq.n+' · 完成','📋 一段故事走到了终点');
+      }
+    }
+  }
+  // 课堂/借宿/周末事件的成就追踪
+  if(ev.type==='class'&&!G.flags['class_seen']){G.flags['class_seen']=true;G.flags['class_count']=(G.flags['class_count']||0)+1;}else if(ev.type==='class'){G.flags['class_count']=(G.flags['class_count']||0)+1;}
+  if(ev.type==='home'&&G.slot==='evening'&&!G.flags['eve_seen']){G.flags['eve_count']=(G.flags['eve_count']||0)+1;}
+  if(ev.type==='weekend'&&!G.flags['wk_seen_'+G.day]){G.flags['wk_seen_'+G.day]=true;G.flags['wk_count']=(G.flags['wk_count']||0)+1;}
+  const msg=ch.f||'你做出了选择。';
+  G.journal.push({day:G.day,t:msg,cp:ev.cp});
+  if(ev.cp&&ev.stage>=4&&!G.memories.includes(ev.cp)){G.memories.push(ev.cp);triggerAch('mem_'+ev.cp,CP[ev.cp]?.n+'的记忆','📸 解锁了珍贵的回忆碎片');}
+  if(G._tJournal)G.attr.SPR=clamp(G.attr.SPR+1,1,10);
+  // ─── SPR灵魂宝石系统（仿Madoka Portable感情值）───
+  let sprDelta=0;
+  // 消耗SPR的事件（大幅上调）
+  if(ev.type==='deep'||ev.type==='deep2')sprDelta-=rn(3,4);     // 情绪落寞
+  else if(ev.type==='argue')sprDelta-=3;                          // 争执
+  else if(ev.type==='farewell'||ev.type==='final_words')sprDelta-=4; // 离别伤感
+  else if(ev.type==='sick'||ev.type==='sick2')sprDelta-=rn(2,3); // 照顾病人
+  else if(ev.type==='detention')sprDelta-=3;                      // 被罚留堂
+  else if(ev.type==='comfort')sprDelta-=rn(2,3);                  // 安慰别人
+  else if(ev.type==='thunder')sprDelta-=rn(1,2);                  // 打雷
+  else if(ev.type==='nightmare'||ev.type==='dream')sprDelta-=rn(1,2); // 噩梦
+  else if(ev.type==='club_clash')sprDelta-=rn(1,2);               // 社团冲突
+  else if(ev.type==='injury')sprDelta-=1;                          // 受伤
+  // 恢复SPR的事件（确定性恢复 + 概率加成）
+  if(ev.type==='celebrate')sprDelta+=rn(1,3);                      // 庆祝：大幅恢复
+  else if(ev.type==='share'||ev.type==='song_rec')sprDelta+=rn(1,2); // 分享：稳定恢复
+  else if(ev.type==='promise')sprDelta+=rn(1,2);                   // 约定：温暖恢复
+  else if(ev.type==='pet')sprDelta+=rn(1,2);                       // 小动物：治愈恢复
+  else if(ev.type==='rooftop'||ev.type==='star')sprDelta+=rn(1,2); // 安静时刻：放松恢复
+  else if(ev.type==='walk_home')sprDelta+=rn(1,2);                 // 一起回家：安心恢复
+  else if(ev.type==='home'&&G.slot==='evening')sprDelta-=rn(0,1); // 晚间社交：一天下来累了
+  else if(ev.type==='home'&&G.slot==='morning')sprDelta+=rn(1,2); // 早晨：新的一天活力
+  else if(ev.type==='lunch'||ev.type==='lunch2')sprDelta+=rn(0,1); // 一起吃饭：小恢复
+  else if(ev.type==='photo')sprDelta+=rn(0,1);                     // 拍照：快乐恢复
+  else if(ev.type==='weekend')sprDelta+=rn(1,2);                   // 周末偶遇：休闲恢复
+  else if(ev.type==='help'||ev.type==='help2')sprDelta+=rn(0,1);   // 帮助别人：意义感恢复
+  else if(ev.type==='message'||ev.type==='message2')sprDelta+=rn(0,1); // 收到消息：连接感恢复
+  else if(ev.type==='game'||ev.type==='game2')sprDelta+=rn(0,1);   // 游戏：轻松恢复
+  else if(ev.type==='study'||ev.type==='study2')sprDelta+=rn(0,1); // 学习：充实感恢复
+  // 高好感角色在场的额外SPR恢复（羁绊保护机制）
+  if(ev.chars&&ev.chars.length>0){
+    let maxAff=0;ev.chars.forEach(c=>{if(G.aff[c.id]>maxAff)maxAff=G.aff[c.id];});
+    if(maxAff>=70)sprDelta+=2;  // 深度羁绊：与在意的人在一起本身就是治愈
+    else if(maxAff>=50)sprDelta+=1; // 好友：安心感
+  }
+  // 感情值波动：高好感→SPR更脆弱（仿Madoka Portable）— 仅影响事件消耗，不影响每日固定消耗
+  if(sprDelta<0&&ev.type!=='daily'){sprDelta=applySprVolatility(sprDelta);sprDelta-=getKarmaSprPenalty();}
+  // 钢铁意志：SPR损失减半
+  if(G.attr.SPR>=7&&sprDelta<0)sprDelta=Math.ceil(sprDelta/2);
+  if(G._tChill&&sprDelta<0)sprDelta=Math.ceil(sprDelta/2);
+  G.attr.SPR=clamp(G.attr.SPR+sprDelta,0,10);
+  // 低SPR追踪（低于阈值累积天数，触发提前转学）
+  if(G.attr.SPR<=2){
+    G.lowSprDays++;
+    if(!G.sprWarned){G.sprWarned=true;triggerAch('spr_low','灵魂宝石的裂痕','🧘 精神值持续走低——再这样下去……你可能撑不到100天');}
+  }else{G.lowSprDays=Math.max(0,G.lowSprDays-1);if(G.attr.SPR>=5)G.sprWarned=false;}
+  if(G.attr.SPR<=0){G.attr.SPR=1;G.energy=Math.max(0,G.energy-25);}// 归零重击
+  // ─── 五维属性动态变化（仿Madoka Portable角色成长）───
+  let attrDelta={INT:0,CHR:0,STR:0,AFF:0};
+  // 学力变化
+  if(ev.type==='study'||ev.type==='study2')attrDelta.INT+=rn(1,2);
+  else if(ev.type==='class'&&ev.narration.includes('数学'))attrDelta.INT+=1;
+  else if(ev.type==='homework')attrDelta.INT+=rn(0,1);
+  // 魅力变化
+  if(ev.type==='chat'||ev.type==='game')attrDelta.CHR+=rn(0,1);
+  else if(ev.type==='photo'||ev.type==='rumor')attrDelta.CHR+=1;
+  else if(ev.type==='fun'||ev.type==='fun2')attrDelta.CHR+=rn(0,1);
+  // 体力变化
+  if(ev.type==='sports'||ev.type==='sports2'){attrDelta.STR+=rn(1,2);if(G.attr.STR>=7)attrDelta.STR+=1;} // 高体力加成
+  else if(ev.type==='injury'){attrDelta.STR-=rn(0,1);if(G.attr.STR>=8)attrDelta.STR=0;} // 高体力不容易受伤
+  else if(ev.type==='walk_home'||ev.type==='cleaning')attrDelta.STR+=rn(0,1);
+  // 亲和力变化
+  if(ev.type==='deep'||ev.type==='deep2')attrDelta.AFF+=1;
+  else if(ev.type==='help')attrDelta.AFF+=rn(0,1);
+  else if(ev.type==='share'||ev.type==='comfort')attrDelta.AFF+=1;
+  else if(ev.type==='argue')attrDelta.AFF-=rn(0,1);
+  // 应用变化
+  Object.keys(attrDelta).forEach(k=>{if(attrDelta[k]!==0)G.attr[k]=clamp(G.attr[k]+attrDelta[k],1,10);});
+  // 能量消耗（放学后/周末探索）
+  if(ev.type&&(G.slot==='afternoon'||G.dayType==='weekend')){
+    G.energy=Math.max(0,G.energy-rn(3,8));
+  }
+  checkMilestones();
+  return{msg,changes,mode:ch.m||'neutral',sprDelta,attrDelta};
+}
+
+function checkMilestones(){
+  Object.entries(CP).forEach(([k,cp])=>{const a=cpAvg(k);if(a>=80&&!G.flags['m80_'+k]){G.flags['m80_'+k]=true;triggerAch('m80_'+k,cp.n+'·心意相通','💖 有些话已经不需要说出口了');}if(a>=50&&!G.flags['m50_'+k]){G.flags['m50_'+k]=true;triggerAch('m50_'+k,cp.n+'·逐渐靠近','💛 有什么正在悄然改变');}});
+  Object.entries(G.aff).forEach(([id,v])=>{if(v>=90&&!G.flags['a90_'+id]){G.flags['a90_'+id]=true;triggerAch('a90_'+id,'💖 '+CH[id]?.n,CH[id]?.n+'已经把你当作非常重要的人了');}});
+  // 新增成就
+  if(G.flags['class_count']>=15&&!G.flags['ach_class']){G.flags['ach_class']=true;triggerAch('class_star','课堂之星','📖 课堂上已经帮过很多人了');}
+  if(G.flags['eve_count']>=5&&!G.flags['ach_eve']){G.flags['ach_eve']=true;triggerAch('eve_talk','晚间的秘密','🌙 在借宿的夜晚——有过很多次深夜谈心');}
+  if(G.flags['wk_count']>=6&&!G.flags['ach_wk']){G.flags['ach_wk']=true;triggerAch('wk_explorer','周末探险家','🏖️ 周末去过很多校外的地方');}
+  if(G.homestay&&!G.flags['hs_'+G.homestay]){G.flags['hs_'+G.homestay]=true;
+    const hsSeen=HOMESTAY_POOL.filter(h=>G.flags['hs_'+h]).length;
+    if(hsSeen>=3)triggerAch('hs3','借宿达人','🏠 已经在3个不同的角色家借宿过了');
+  }
+}
+
+function triggerAch(id,name,desc){
+  if(G.achievements.includes(id))return;G.achievements.push(id);
+  toastQ.push({name,desc});if(toastQ.length===1)showToast();
+}
+function showToast(){
+  if(toastQ.length===0)return;const t=toastQ.shift();
+  const el=document.createElement('div');el.className='achtoast';
+  el.innerHTML=`<div class="achicon">🏆</div><div class="achname">成就解锁：${t.name}</div><div class="achdesc">${t.desc}</div>`;
+  document.body.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity 0.5s';setTimeout(()=>{el.remove();if(toastQ.length>0)setTimeout(showToast,300);},500);},2500);
+}
+
+// ═══════════════════════════════════════════
+//  UI渲染
+// ═══════════════════════════════════════════
+function render(phase,data){
+  G.phase=phase;const app=document.getElementById('app');
+  switch(phase){
+    case'title':rTitle(app);break;case'create':rCreate(app);break;
+    case'play':rPlay(app,data);break;case'event':rEvent(app,data);break;
+    case'aff':rAff(app);break;case'cpview':rCP(app);break;
+    case'mem':rMem(app);break;case'journal':rJournal(app);break;
+    case'end':rEnd(app);break;case'load':rLoad(app);break;case'quest':rQuest(app);break;case'karmashop':rKarmaShop(app);break;
+  }
+}
+
+function rTitle(app){
+  const saves=[];for(let i=1;i<=5;i++){const r=localStorage.getItem('aotu4_'+i);if(r){try{const d=JSON.parse(r);saves.push({s:i,n:d.name,day:d.day,t:d._t});}catch(e){}}}
+  try{const ae=localStorage.getItem('aotu4_ach');if(ae)G.achievements=JSON.parse(ae);}catch(e){}
+  app.innerHTML=`
+<div style="text-align:center;padding:20px 0" class="fadein"><h1 style="font-size:2em;color:var(--accent)">🏫 凹凸学园</h1><div style="color:var(--gold);font-size:1.3em;letter-spacing:5px;margin:6px 0">百 日 倒 数</div><div style="color:var(--dim);font-size:0.8em">转校生限定 · 100天 · 每一天都不可重来</div></div>
+<div class="panel fadein" style="text-align:center">
+  <div style="font-size:2.5em;margin:8px 0">🦁⚔️ ⭐❄️ 🧣😇 👑🍋 📖🗿</div>
+  <p style="color:var(--dim);line-height:2;margin:10px 0">
+    你是转校生。<br>你将在凹凸学园度过<strong style="color:var(--accent)">一百天</strong>。<br><br>
+    一百天后——无论发生什么——你都要离开。<br>
+    你会走近谁？见证谁和谁的故事？留下什么样的回忆？<br><br>
+    <span style="color:var(--gold)">每一天。每一个选择。都不可重来。</span>
+  </p>
+  <button class="btn btn-p pulse" onclick="window._toCreate()" style="font-size:1.1em;padding:12px 40px;margin:12px 0">✨ 开始一百天</button>
+  ${saves.length>0?`<br><button class="btn btn-s" onclick="render('load')">📂 继续旅程</button>`:''}
+</div>
+<div class="panel fadein" style="text-align:center;background:linear-gradient(135deg,#1a1a2e,#2d1a3e);border:1px solid var(--gold)"><div style="font-size:0.7em;color:var(--dim)">✦ 因果値 · ${getKarmaTier(loadKarma()).e} ${getKarmaTier(loadKarma()).t} ✦</div><div style="font-size:2em;color:${getKarmaTier(loadKarma()).clr};font-weight:bold" id="karmaDisp">${loadKarma()}</div><div style="font-size:0.7em;color:var(--dim);margin-top:2px">跨轮回累积 · 永久强化解锁</div><button class="btn btn-p pulse" onclick="render('karmashop')" style="margin-top:10px;width:100%;font-size:1em;padding:10px">🏪 因果商店</button><div style="font-size:0.6em;color:var(--dim);margin-top:4px">消费因果値 · 解锁永久强化</div></div>
+<div class="panel fadein"><h2>🏆 成就收藏 (${G.achievements.length})</h2>${G.achievements.length===0?'<span style="color:var(--dim)">开始百日之旅来解锁成就。</span>':G.achievements.slice(-20).map(a=>`<span style="background:var(--card);padding:3px 8px;border-radius:4px;font-size:0.7em;margin:2px;display:inline-block">🏆 ${a.split('_').pop()}</span>`).join(' ')}</div>
+<div style="text-align:center;font-size:0.65em;color:var(--dim);margin:8px">七创社《凹凸学园》同人作品 · 全性向 · 攻略&助攻双模式</div>`;
+}
+
+window._updateKarma=function(){const ke=document.getElementById("karmaDisp");if(ke)ke.textContent=loadKarma();};
+function startNew(){render('create');}
+window._toCreate=function(){render('create');};
+
+// ─── 随机属性分配器 ───
+function randomizeAttrs(){
+  const keys=['INT','CHR','STR','AFF','SPR'];
+  const attrs={};keys.forEach(k=>attrs[k]=rn(1,5)); // 基础随机1-5
+  let remain=15;
+  // 随机投入剩余点数
+  while(remain>0){
+    const k=pk(keys);
+    if(attrs[k]<10){attrs[k]++;remain--;}
+  }
+  return attrs;
+}
+
+// ─── 随机天赋选择器 ───
+function randomizeTalents(){
+  const pickCount=loadKarma()>=100?3:2; // 观测者以上：3选1
+
+  const pool=[...TALENTS].sort(()=>Math.random()-0.5);
+  // 根据权重概率抽取2个（高稀有度概率更低，但可能抽到）
+  const selected=[];
+  const weights=pk([...Array(5)].map((_,i)=>i)); // 随机决定抽卡偏向
+  for(let i=0;i<pickCount;i++){
+    const r=Math.random();
+    let pick;
+    if(r<0.05)pick=pool.find(t=>t.g>=5);     // 5%传说
+    else if(r<0.20)pick=pool.find(t=>t.g===4); // 15%史诗
+    else if(r<0.45)pick=pool.find(t=>t.g===3); // 25%稀有
+    else if(r<0.75)pick=pool.find(t=>t.g===2); // 30%普通
+    else pick=pool.find(t=>t.g<=1);            // 25%平凡
+    if(!pick||selected.find(s=>s.id===pick.id))pick=pool.find(t=>!selected.find(s=>s.id===t.id));
+    if(pick)selected.push(pick);
+  }
+  return selected.slice(0,pickCount);
+}
+
+function rCreate(app){
+  const rndAttrs=randomizeAttrs();
+  const rndTalents=randomizeTalents();
+  const rndHome=pk(HOMESTAY_POOL);const rndHomeCh=CH[rndHome];
+  const pickCount=loadKarma()>=100?3:2;
+  window._rndAttrs=rndAttrs;
+  window._rndTalents=rndTalents;window._rndPickCount=pickCount;
+  window._rndHome=rndHome;
+  const attrLabels={INT:'📐 学力',CHR:'💫 魅力',STR:'💪 体能',AFF:'💕 亲和力',SPR:'🧘 精神'};
+
+  app.innerHTML=`
+<div style="text-align:center;padding:15px 0" class="fadein"><h1>📝 新转校生</h1><div style="color:var(--dim);font-size:0.8em">命运已经为你安排好了一切</div></div>
+<div class="panel fadein"><h2>👤 你是谁？</h2>
+  <div style="margin:10px 0"><label>名字：</label><input id="pn" value="见习天使" style="background:var(--card);color:var(--text);border:1px solid #444;padding:10px;border-radius:6px;width:220px;font-size:1em"></div>
+  <div style="margin:10px 0"><label>性别：</label><select id="pg" style="background:var(--card);color:var(--text);border:1px solid #444;padding:10px;border-radius:6px;font-size:1em"><option value="male">男</option><option value="female">女</option><option value="neutral">不指定</option></select></div>
+  <p style="color:var(--dim);font-size:0.7em">性别不影响任何人的攻略可能性。</p>
+</div>
+<div class="panel fadein"><h2>🏠 借宿家庭</h2>
+  <div style="text-align:center;padding:12px;background:var(--card);border:2px solid var(--accent);border-radius:10px">
+    <div style="font-size:3em">${rndHomeCh.e}</div>
+    <div style="font-weight:bold;font-size:1.1em;color:var(--gold);margin:6px 0">${rndHomeCh.n}家</div>
+    <div style="font-size:0.75em;color:var(--dim)">${rndHomeCh.c} · 你将以这里为起点——度过一百天</div>
+  </div>
+  <button class="btn btn-xs btn-s" id="rerollHomeBtn" style="margin-top:8px;display:block;margin-left:auto;margin-right:auto">🏠 换一个借宿家庭</button>
+</div>
+<div class="panel fadein"><h2>🌟 天赋</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px">
+    ${rndTalents.map(t=>`<div style="background:var(--card);border:2px solid var(--gold);border-radius:8px;padding:10px"><span style="font-size:0.6em;color:var(--gold)">${t.g>=5?'🔴传说':t.g>=4?'🟣史诗':t.g>=3?'🔵稀有':t.g>=2?'⚪普通':'⬜平凡'}</span> <span style="font-size:1.3em">${t.e}</span> <strong style="font-size:0.9em">${t.n}</strong><div style="font-size:0.7em;color:var(--dim);margin-top:2px">${t.d}</div></div>`).join('')}
+  </div>
+  <button class="btn btn-xs btn-s" id="rerollBtn1" style="margin-top:8px">🎲 重新随机天赋&属性</button>
+</div>
+<div class="panel fadein"><h2>📊 能力值</h2>
+  ${Object.entries(rndAttrs).map(([k,v])=>`<div style="margin:6px 0;display:flex;align-items:center;gap:8px"><span style="width:70px;font-size:0.85em">${attrLabels[k]||k}</span><div style="flex:1;height:10px;background:#333;border-radius:5px"><div style="height:100%;background:var(--accent);border-radius:5px;width:${v*10}%"></div></div><span style="width:25px;text-align:center;font-weight:bold;color:var(--gold);font-size:1.2em">${v}</span></div>`).join('')}
+</div>
+<div style="text-align:center;margin:20px 0">
+  <button class="btn btn-p" id="startBtn" style="font-size:1.3em;padding:16px 60px;background:var(--accent);color:#fff;border:none;border-radius:12px;cursor:pointer;box-shadow:0 0 20px rgba(233,69,96,0.4)">🎮 开始一百天倒计时</button>
+  <div style="color:var(--dim);font-size:0.75em;margin-top:8px">点击开始——每一天都不可重来</div>
+</div>`;
+
+  // 用事件监听器绑定按钮——100%可靠
+  document.getElementById('rerollBtn1').onclick=function(){
+    const a=randomizeAttrs();const t=randomizeTalents();
+    window._rndAttrs=a;window._rndTalents=t;
+    render('create');
+  };
+  document.getElementById('rerollHomeBtn').onclick=function(){
+    window._rndHome=pk(HOMESTAY_POOL);
+    render('create');
+  };
+  document.getElementById('startBtn').onclick=function(){
+    const n=document.getElementById('pn').value||'见习天使';
+    const g=document.getElementById('pg').value||'neutral';
+    initG();G.name=n;G.gender=g;
+    G.attr={...(window._rndAttrs||rndAttrs)};
+    G.talents=(window._rndTalents||rndTalents).map(t=>t.id);
+    G.talentNames=(window._rndTalents||rndTalents).map(t=>t.n);
+    G.homestay=window._rndHome||pickHomestay(G.talents);
+    G.dayType='weekday';G.loop=1;
+    try{const ae=localStorage.getItem('aotu4_ach');if(ae)G.achievements=JSON.parse(ae);}catch(e){}
+    (window._rndTalents||rndTalents).forEach(t=>{if(t&&t.eff)t.eff();});
+    try{const bought=JSON.parse(localStorage.getItem('aotu4_shop')||'[]');bought.forEach(idx=>{const item=KARMA_SHOP[idx];if(item&&item.eff)item.eff();});localStorage.removeItem('aotu4_shop');}catch(e){} // 生效后清除
+    render('play');
+  };
+}
+
+// ─── 主游戏 ───
+function buildShell(content){
+  const dl=G.maxDay-G.day;const pct=(G.day/G.maxDay)*100;
+  const dn=getDayName(G.day);const dt=G.dayType;
+  const dtTag=dt==='festival'?'🎪 特别日':dt==='weekend'?'🏖️ 周末':'📚 上课日';
+  const hs=CH[G.homestay];
+  return`<div class="cdbanner fadein"><div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div class="daynum" id="dayDisp">${dl}</div><div class="daylabel">DAYS LEFT</div></div><div style="text-align:right;font-size:0.7em;color:var(--dim)"><div>📅 Day ${G.day} / 100</div><div>${dn} · ${dtTag}</div>${hs?`<div>🏠 ${hs.e} ${hs.n}家</div>`:''}<div style="color:var(--gold);font-size:0.85em;margin-top:2px">${G.mainChapter?`Ch.${G.mainChapter} ${MAIN_CHAPTERS['ch'+G.mainChapter]?.t||''}`:''}</div></div></div><div class="daysbar"><div class="daysfill" style="width:${pct}%"></div></div></div>
+<div class="statusbar fadein"><span style="font-size:0.6em;color:var(--dim);margin-right:2px">STATUS</span>${Object.entries(G.attr).map(([k,v])=>{const lb={INT:'📐学力',CHR:'💫魅力',STR:'💪体能',AFF:'💕亲和',SPR:'🧘精神'};const isSPR=k==='SPR';const sprWarn=v<=2;return`<div class="stat" title="${lb[k]}" style="${isSPR?'background:'+(sprWarn?'#3d1a1a':'#1a2e1a')+';border:1px solid '+(sprWarn?'var(--accent)':'var(--green)')+';padding:4px 10px;font-weight:bold':''}">${lb[k]} <s style="color:${sprWarn?'var(--accent)':isSPR?'var(--green)':'var(--gold)'};font-size:${isSPR?'1.1em':'1em'}">${v}</s>${isSPR?'<span style="font-size:0.55em;color:var(--dim);margin-left:2px">/10</span>':''}${sprWarn?' ⚠️':''}</div>`;}).join('')}<div class="stat" title="体力">🔋体力 <s>${G.energy}</s></div></div>
+<div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
+  <div style="display:flex;gap:3px;margin:4px 0;flex-wrap:wrap;background:var(--card);border-radius:8px;padding:4px 6px;align-items:center">
+    <span style="font-size:0.65em;color:var(--dim);margin-right:4px">MENU</span>
+    <button class="btn btn-menu" onclick="window._nav('aff')" title="好感度">💕<span class="btxt">好感</span></button>
+    <button class="btn btn-menu" onclick="window._nav('cpview')" title="CP羁绊">💑<span class="btxt">CP</span></button>
+    <button class="btn btn-menu" onclick="window._nav('mem')" title="回忆相册">📸<span class="btxt">回忆</span></button>
+    <button class="btn btn-menu" onclick="window._nav('quest')" title="任务">📋<span class="btxt">任务</span></button>
+    <button class="btn btn-menu" onclick="window._nav('journal')" title="日记">📓<span class="btxt">日记</span></button>
+    <span style="color:#444;margin:0 2px">│</span>
+    <button class="btn btn-menu" onclick="window._save()" title="快速存档">💾<span class="btxt">存档</span></button>
+    <button class="btn btn-menu" onclick="window._nav('load')" title="读取存档">📂<span class="btxt">读档</span></button>
+  </div>${content}`;
+}
+window._nav=function(p){render(p);};
+window._save=function(){saveTo(0);render('play',{msg:'💾 已快速存档。',changes:[]});};
+
+function rPlay(app,feedback){
+  if(G.day>G.maxDay){render('end');return;}
+
+  // 日历事件检查（在任何时段都优先）
+  const cal=CAL[G.day];
+  if(cal&&!G.flags['cal_'+G.day]&&!feedback){
+    G.flags['cal_'+G.day]=true;G.dayType='festival';
+    if(cal.fest){curEv={type:'calendar',narration:`🎪 Day ${G.day} · ${cal.n}\n\n`+cal.x,choices:[
+      {t:'全身心投入每一个活动',a:Object.keys(CH).slice(0,14).map(k=>({id:k,v:dv(5)})),f:cal.n+'——你在人群中，笑着。这会是回忆里闪闪发光的一天。'},
+      {t:'在人群之外安静地享受',a:[],f:'你在角落看着所有人。这种距离——也很舒服。'},
+    ]};render('event');return;}
+    if(cal.cp&&CPS[cal.cp]?.[cal.st]){
+      const sd=CPS[cal.cp][cal.st];
+      curEv={type:'cp',cp:cal.cp,stage:cal.st,narration:`💫 ${CP[cal.cp]?.n||''} · Day ${G.day}\n\n`+sd.x,choices:sd.c};
+      render('event');return;
+    }
+    if(cal.club){
+      curEv={type:'calendar',narration:`📅 Day ${G.day} · ${cal.n}\n\n`+cal.x,choices:[
+        {t:'加入文艺社（银爵🐱）',a:[{id:'yinjue',v:8}],f:'银爵点了点头。「欢迎。猫可以摸——但不要吵到它。」',club:'文艺社'},
+        {t:'加入美术社（凯莉👑）',a:[{id:'kaili',v:8}],f:'凯莉打量了你一下。「嗯——可以。下午茶时间是四点。」',club:'美术社'},
+        {t:'加入体育社（佩利🐺）',a:[{id:'peili',v:8},{id:'jin',v:3}],f:'佩利拍了一下你的背（很重）。「好！！以后一起跑步！！」',club:'体育社'},
+        {t:'不加入任何社团，保持自由',a:[],f:'你没有加入社团。自由时间更多了——但也少了些归属感。',club:null},
+      ]};render('event');return;
+    }
+    if(cal.aa||cal.attr){const chs=[{t:'认真地度过这一天',a:cal.aa?Object.keys(CH).filter(k=>CH[k]).map(k=>({id:k,v:dv(cal.aa)})):[],f:`${cal.n}——这一天结束了。`}];
+      if(cal.attr){Object.entries(cal.attr).forEach(([k,v])=>{G.attr[k]=clamp(G.attr[k]+v,1,10);});}
+      curEv={type:'calendar',narration:`📅 Day ${G.day} · ${cal.n}\n\n`+cal.x,choices:chs};render('event');return;
+    }
+  }
+
+  if(feedback){renderFB(app,feedback);return;}
+
+  // ─── 体力不足请假检查（每次≤50必定触发）───
+  if(!feedback&&G.energy<=50&&(G.slot==='afternoon'||G.slot==='evening')&&!G.flags['sick_leave_'+G.day]){
+    G.flags['sick_leave_'+G.day]=true;
+    const hs=CH[G.homestay];
+    curEv={type:'sick_leave',narration:`🏥 体力不支\n\n你感到一阵眩晕。\n\n这几天太拼了——身体在抗议。\n\n${hs?hs.e+' '+hs.n+'注意到你的脸色：「你该休息了。」':''}\n\n请假条就在桌上。\n\n两天——好好睡一觉。`,
+      choices:[
+        {t:'请假休息两天（跳过Day '+(G.day+1)+'~'+(G.day+2)+'，能量回满，SPR+2）',a:[],f:'你把请假条放在桌上。\n\n钻进被窝——意识很快模糊了。\n\n醒来时——窗外已经是第三天早晨。\n\n身体轻了很多。',skip:2,heal:true},
+        {t:'硬撑着继续（体力-15 · 精神-1~2）',a:[],f:'你喝了一杯咖啡。\n\n「没事。」你对关心的人说。\n\n但头痛欲裂——身体和心灵都在抗议。',skip:0,heal:false},
+      ]};
+    render('event');return;
+  }
+
+  // ─── SPR归零检查：连续2天低精神 → 心魔幻境 ───
+  if(G.lowSprDays>=2&&G.slot==='morning'&&!G.flags['heart_demon_today']){
+    G.flags['heart_demon_today']=true;
+    curEv={type:'heart_demon',narration:`💀 心魔幻境\n\n连续${G.lowSprDays}天的精神低潮——\n\n你的意识开始模糊。教室的墙壁在融化。\n\n同学的面孔扭曲成幻影。\n\n有人——不，有什么——在黑暗中注视着你。\n\n那些你最在意的人——变成了你最深的梦魇。\n\n只有战胜他们——才能回来。`,
+      choices:[{t:'⚔️ 踏入心魔幻境',a:[],f:''}]};
+    render('event');return;
+  }
+
+  // ─── 主线章节检查 ───
+  if(!feedback&&G.slot==='morning'){
+    const mc=checkMainChapter();
+    if(mc&&!G.flags['main_done_'+G.mainChapter]){
+      G.flags['main_done_'+G.mainChapter]=true;
+      curEv={type:'mainstory',ch:mc.t,narration:`📖 主线 · 第${G.mainChapter}章：${mc.t}\n\n${mc.d}`,choices:[
+        {t:'继续前进',a:Object.keys(CH).filter(k=>CH[k]).slice(0,8).map(k=>({id:k,v:dv(4)})),f:`第${G.mainChapter}章——${mc.t}。你的人生——从这里开始改变。`}
+      ]};
+      render('event');return;
+    }
+  }
+  // ─── 支线检查（放学后时段）───
+  const sqChance=0.3+getKarmaEventBonus(); if(!feedback&&G.slot==='afternoon'&&Math.random()<sqChance){
+    const sqResult=checkSideQuest();
+    if(sqResult){
+      triggerSideQuest(sqResult.sq,sqResult.step);
+      return;
+    }
+  }
+
+  // 根据时段和日类型分发
+  const slot=G.slot;const dt=G.dayType;
+  if(dt==='weekend'||dt==='festival'){
+    if(slot==='morning'){renderMorning(app);return;}
+    if(slot==='noon'){renderWeekendExplore(app,'上午');return;}
+    if(slot==='afternoon'){renderWeekendExplore(app,'午后');return;}
+    if(slot==='evening'){renderEvening(app);return;}
+    // 周末跳过class1/class2，自动推进
+    if(slot==='class1'||slot==='class2'){advanceSlot();render('play');return;}
+  } else {
+    // 工作日
+    if(slot==='morning'){renderMorning(app);return;}
+    if(slot==='class1'||slot==='class2'){renderClass(app);return;}
+    if(slot==='noon'){renderNoon(app);return;}
+    if(slot==='afternoon'){renderAfternoon(app);return;}
+    if(slot==='evening'){renderEvening(app);return;}
+  }
+  // 兜底
+  advanceSlot();render('play');
+}
+
+function advanceSlot(){
+  const dt=G.dayType;
+  switch(G.slot){
+    case'morning':
+      if(dt==='weekend'||dt==='festival')G.slot='noon';
+      else {G.slot='class1';G.energy=Math.max(0,G.energy-rn(3,5));} // 早晨出门消耗
+      break;
+    case'class1':G.slot='noon';
+      // 上完上午课——精神微耗
+      if(dt==='weekday')G.attr.SPR=clamp(G.attr.SPR-rn(0,1),0,10);
+      break;
+    case'noon':
+      if(dt==='weekend'||dt==='festival')G.slot='afternoon';
+      else G.slot='class2';
+      break;
+    case'class2':G.slot='afternoon';
+      // 上完下午课——精神微耗
+      if(dt==='weekday')G.attr.SPR=clamp(G.attr.SPR-rn(0,1),0,10);
+      break;
+    case'afternoon':G.slot='evening';break;
+    case'evening':
+      // 频繁社交疲劳检查（今日参与事件≥2 → 精神消耗）
+      if(G.dailyEvents>=4){
+        G.attr.SPR=clamp(G.attr.SPR-2,0,10); // 社交过度
+      }else if(G.dailyEvents>=2){
+        G.attr.SPR=clamp(G.attr.SPR-1,0,10); // 社交疲劳
+      }
+      // 低体力入睡前额外精神消耗（体力<25 → 焦虑失眠）
+      if(G.energy<=25){
+        G.attr.SPR=clamp(G.attr.SPR-rn(1,2),0,10);
+      }
+      G.slot='morning';G.day++;G.dailyEvents=0; // 重置每日事件计数
+      // 连续上学天数追踪
+      if(G.dayType==='weekend'||G.dayType==='festival'){G.schoolStreak=0;}
+      else{G.schoolStreak=(G.schoolStreak||0)+1;}
+      // 精神低迷拖累体力恢复（SPR≤3 → 回血减半）
+      const sprLowPenalty=G.attr.SPR<=3?0.5:1;
+      G.energy=Math.min(100,Math.floor((60+G.attr.STR*3)*sprLowPenalty));
+      G.dayType=calcDayType(G.day);
+      // 每日SPR消耗：周末/假日恢复，工作日微降
+      if(G.dayType==='weekend'||G.dayType==='festival'){
+        G.attr.SPR=clamp(G.attr.SPR+1,0,10); // 周末自然恢复+1
+      } else {
+        // 基础消耗
+        let dailySprCost=1;
+        // 考试日精神消耗翻倍
+        const cal=CAL[G.day-1];
+        if(cal&&(cal.n.includes('考试')||cal.n.includes('小测')||cal.n.includes('测验')))dailySprCost=2;
+        // 周一忧郁（周末后返校）
+        if(getDayName(G.day)==='周一')dailySprCost+=1;
+        // 临近离别焦虑（Day 80+，倒计时压力）
+        if(G.day>=80)dailySprCost+=1;
+        // 连续上学疲劳（≥3天无休）
+        if(G.schoolStreak>=5)dailySprCost+=2;
+        else if(G.schoolStreak>=3)dailySprCost+=1;
+        G.attr.SPR=clamp(G.attr.SPR-dailySprCost-getKarmaSprPenalty(),0,10);
+      }
+      // 高体力入睡 → 额外SPR恢复；低体力 → 额外消耗
+      if(G.energy>=80)G.attr.SPR=clamp(G.attr.SPR+1,0,10);
+      else if(G.energy>=60)G.attr.SPR=clamp(G.attr.SPR+rn(0,1),0,10);
+      else if(G.energy<=30)G.attr.SPR=clamp(G.attr.SPR-1,0,10); // 体力不足入睡困难
+      break;
+  }
+  // 体力归零惩罚：精神受损
+  if(G.energy<=0){
+    G.energy=0;
+    G.attr.SPR=clamp(G.attr.SPR-1,0,10);
+  }
+}
+window._adv=function(){
+  curEv=null;
+  advanceSlot();
+  if(G.day>G.maxDay){render('end');return;}
+  render('play');
+};
+
+// ─── 早晨渲染（借宿剧情）───
+function renderMorning(app){
+  const hs=CH[G.homestay];if(!hs){advanceSlot();render('play');return;}
+  // 周末早晨：提供"睡懒觉"选项
+  if(G.dayType==='weekend'||G.dayType==='festival'){
+    const sprGain=rn(1,2);
+    app.innerHTML=buildShell(`<div class="panel fadein" style="text-align:center"><h2>🌅 周末早晨 · ${hs.e} ${hs.n}家</h2>
+      <p style="color:var(--dim);line-height:2">阳光从窗帘缝隙漏进来。<br>今天不用早起。</p>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-p" onclick="window._sleepIn()" style="border-color:var(--green)">🛏️ 睡个懒觉（SPR+${sprGain}，体力恢复）</button>
+        <button class="btn btn-s" onclick="window._adv()">起床出门 ▸</button>
+      </div></div>`);
+    return;
+  }
+  // 40%触发借宿事件
+  if(Math.random()<0.4||G._tEarly){
+    const ev=genHomeEvent('morning');
+    if(ev){curEv=ev;render('event');return;}
+  }
+  // 否则简短早晨（融入角色个性风味）
+  const flav=CHAR_FLAVOR[G.homestay];
+  const msgs=[`🏠 ${hs.e} ${hs.n}家。`,`清晨的阳光照进来。`];
+  if(flav&&Math.random()<0.6)msgs.push(flav.morning);
+  else if(Math.random()<0.3)msgs.push(`${hs.n}在厨房——「早餐快好了——」`);
+  else msgs.push(`新的一天。${getDayName(G.day)}。`);
+  app.innerHTML=buildShell(`<div class="panel fadein" style="text-align:center"><h2>🌅 早晨 · ${hs.e} ${hs.n}家</h2><p style="color:var(--dim);line-height:2">${msgs.join('<br>')}</p><button class="btn btn-p" onclick="window._adv()">出门上学 ▸</button></div>`);
+}
+
+// ─── 周末睡懒觉 ───
+window._sleepIn=function(){
+  const sprGain=rn(2,3);const energyGain=rn(20,30);
+  G.attr.SPR=clamp(G.attr.SPR+sprGain,0,10);
+  G.energy=Math.min(100,G.energy+energyGain);
+  const hs=CH[G.homestay];
+  const msg=`🛏️ 你睡到了自然醒。\n\n${hs?hs.e+' '+hs.n+'已经起来了——「周末嘛，多睡会儿没关系。」':''}\n\n充足的睡眠是最好的恢复。\n\n感觉整个人都轻了。`;
+  G.journal.push({day:G.day,t:msg});
+  curEv=null;
+  advanceSlot(); // 跳到午间
+  if(G.day>G.maxDay){render('end');return;}
+  render('play',{msg,changes:[],sprDelta:sprGain});
+};
+
+// ─── 课堂渲染 ───
+function renderClass(app){
+  const tn=G.slot==='class1'?'📖 上午课':'📝 下午课';
+  if(Math.random()<0.7){ // 70%概率有课堂事件
+    // 课堂事件不需要地点——在高一B班教室
+    const locs=['classroom','classroom']; // 虚拟地点池，用于占位
+    const events=genEventPreviews(locs,3,genClassEvent,{isClass:true});
+    if(events.length>0){
+      // 课堂事件不需要地点信息，简化显示
+      events.forEach(ev=>{ev.locName='高一B班教室';ev.locEmoji='📖';});
+      renderEventSelect(app,events,`${tn} —— 教室里……`,
+        '<div style="text-align:center;margin-top:10px"><button class="btn btn-s" onclick="window._adv()">认真听课 ▸</button></div>');
+      return;
+    }
+  }
+  // 无事件时简短描述
+  const msgs=[`${tn}。课在进行中。`];
+  const rc=CH[pk(Object.keys(CH).filter(k=>CH[k]&&CH[k].c==='高一B'))];
+  if(rc)msgs.push(`${rc.e} ${rc.n}${pk(['在认真做笔记','从窗外收回目光——继续听课','悄悄伸了个懒腰','在转笔——笔掉了','翻了一页书'])}。`);
+  app.innerHTML=buildShell(`<div class="panel fadein" style="text-align:center"><h2>${tn}</h2><p style="color:var(--dim);line-height:2">${msgs.join('<br>')}</p><button class="btn btn-p" onclick="window._adv()">继续 ▸</button></div>`);
+}
+
+// ─── 午间渲染 ───
+function renderNoon(app){
+  // 社交达人天赋：午间事件触发概率提升
+  if(Math.random()<0.4||G._tSocial){
+    const locs=['cafeteria','courtyard','rooftop','classroom'];
+    const events=genEventPreviews(locs,3,genRandomEvent);
+    if(events.length>0){
+      renderEventSelect(app,events,'☀️ 午间 —— 大家都在做什么？',
+        '<div style="text-align:center;margin-top:10px"><button class="btn btn-s" onclick="window._adv()">跳过 ▸</button></div>');
+      return;
+    }
+  }
+  // 无事件时简短午间
+  const msgs=[`☀️ 午休时间。`];
+  const rc=CH[pk(Object.keys(CH).filter(k=>CH[k]))];
+  if(rc&&Math.random()<0.5)msgs.push(`${rc.e} ${rc.n}${pk(['端着餐盘从你旁边经过','在天台上晒太阳','在小卖部排队','在教室里吃便当'])}。`);
+  app.innerHTML=buildShell(`<div class="panel fadein" style="text-align:center"><h2>☀️ 午间</h2><p style="color:var(--dim);line-height:2">${msgs.join('<br>')}</p><button class="btn btn-p" onclick="window._adv()">继续 ▸</button></div>`);
+}
+
+// ─── 周末自由探索渲染 ───
+function renderWeekendExplore(app,label){
+  const locPool=Object.keys(LC_OUT);
+  const events=genEventPreviews(locPool,4,genWeekendEvent,{cpChance:G._tSeventh?0.20:0.10});
+  const title=label==='上午'?'🏙️ 周末上午 —— 去哪里逛逛？':'☕ 周末午后 —— 有什么在等着呢？';
+  if(events.length>0){
+    renderEventSelect(app,events,title,
+      `<div style="text-align:center;margin-top:10px"><button class="btn btn-s" onclick="window._adv()">随便逛逛 ▸</button></div>`);
+    return;
+  }
+  // 无事件时保留选择
+  app.innerHTML=buildShell(`<div class="panel fadein"><h2>${label==='上午'?'🏙️ 上午自由时间':'☕ 午后时光'}</h2><p style="color:var(--dim);font-size:0.8em">周末——校园外有什么在等着呢？</p><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">
+    ${Object.entries(LC_OUT).map(([id,loc])=>`<button class="btn btn-loc" onclick="window._goOut('${id}')"><span class="locemoji">${loc.e}</span><div class="locinfo"><div class="locname">${loc.n}</div><div class="lochars">${loc.ch.filter(c=>CH[c]&&G.aff[c]>=10).slice(0,4).map(c=>CH[c].e).join('')||'🔍 探索'}</div></div></button>`).join('')}
+  </div><div style="text-align:center;margin-top:8px"><button class="btn btn-s" onclick="window._adv()">随便逛逛 ▸</button></div></div>`);
+}
+window._goOut=function(locId){
+  G.energy=Math.max(0,G.energy-Math.max(3,11-G.attr.STR));curEv=null; // 体力高消耗少
+  // CP事件触发
+  const cpChance=G._tSeventh?0.20:0.10;
+  if(Math.random()<cpChance){
+    const avail=Object.entries(CPS).filter(([key,data])=>{
+      let stage=1;if(G.flags["cp_"+key+"_s1"])stage=2;if(G.flags["cp_"+key+"_s2"])stage=3;if(G.flags["cp_"+key+"_s3"])stage=4;if(G.flags["cp_"+key+"_s4"])stage=5;
+      if(!data[stage])return false;
+      const avg=cpAvg(key);
+      if(stage===1&&avg<10)return false;if(stage===2&&avg<25)return false;if(stage===3&&avg<45)return false;if(stage===4&&avg<60)return false;if(stage===5&&avg<75)return false;
+      return !G.flags['cp_'+key+'_s'+stage+'_done'];
+    });
+    if(avail.length>0){
+      const pick2=avail[Math.floor(Math.random()*avail.length)];
+      const[key,data]=pick2;let stage=1;
+      if(G.flags['cp_'+key+'_s1'])stage=2;if(G.flags['cp_'+key+'_s2'])stage=3;
+      if(data[stage]){
+        G.flags['cp_'+key+'_s'+stage+'_done']=true;
+        curEv={type:'cp',cp:key,stage,narration:`💫 ${CP[key]?.n||''} · Day ${G.day}\n\n`+data[stage].x,choices:data[stage].c};
+        render('event');return;
+      }
+    }
+  }
+  const ev=genWeekendEvent(locId);
+  if(ev){curEv=ev;render('event');}
+  else render('play',{msg:'这里今天很安静。也许换个时间会有不同的偶遇。',changes:[]});
+};
+
+function renderAfternoon(app){
+  const locPool=Object.keys(LC);
+  const events=genEventPreviews(locPool,5,genRandomEvent,{cpChance:G._tSeventh?0.25:0.12});
+  if(events.length>0){
+    renderEventSelect(app,events,'🌆 放学了 —— 今天发生着这些事……',
+      `<div style="display:flex;gap:6px;margin-top:10px;justify-content:center">
+        <button class="btn btn-s" onclick="window._rest()" style="border-color:var(--green);color:var(--green)">🧘 回家休息（恢复SPR+体力）</button>
+        <button class="btn btn-s" onclick="window._adv()">直接回家 ▸</button>
+      </div>`);
+    return;
+  }
+  // 无事件时保留原有界面
+  app.innerHTML=buildShell(`<div class="panel fadein"><h2>🌆 放学了。去哪里？</h2><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">
+    ${Object.entries(LC).map(([id,loc])=>`<button class="btn btn-loc" onclick="window._go('${id}')"><span class="locemoji">${loc.e}</span><div class="locinfo"><div class="locname">${loc.n}</div><div class="lochars">${loc.ch.filter(c=>CH[c]&&G.aff[c]>=20).slice(0,4).map(c=>CH[c].e).join('')||'🔍 探索'}</div></div></button>`).join('')}
+  </div><div style="display:flex;gap:6px;margin-top:8px;justify-content:center">
+    <button class="btn btn-s" onclick="window._rest()" style="border-color:var(--green);color:var(--green)">🧘 回家休息（恢复SPR+体力）</button>
+    <button class="btn btn-s" onclick="window._adv()">直接回家 ▸</button>
+  </div></div>`);
+}
+
+window._go=function(locId){
+  G.energy=Math.max(0,G.energy-Math.max(4,14-G.attr.STR));curEv=null; // 体力高消耗少
+  // CP事件触发（天赋加成）
+  const cpChance=G._tSeventh?0.25:0.12;
+  if(Math.random()<cpChance){
+    const avail=Object.entries(CPS).filter(([key,data])=>{
+      let stage=1;if(G.flags["cp_"+key+"_s1"])stage=2;if(G.flags["cp_"+key+"_s2"])stage=3;if(G.flags["cp_"+key+"_s3"])stage=4;if(G.flags["cp_"+key+"_s4"])stage=5;
+      if(!data[stage])return false;
+      const avg=cpAvg(key);
+      if(stage===1&&avg<10)return false;if(stage===2&&avg<25)return false;if(stage===3&&avg<45)return false;if(stage===4&&avg<60)return false;if(stage===5&&avg<75)return false;
+      return !G.flags['cp_'+key+'_s'+stage+'_done'];
+    });
+    if(avail.length>0){
+      const pick2=avail[Math.floor(Math.random()*avail.length)];
+      const[key,data]=pick2;let stage=1;
+      if(G.flags['cp_'+key+'_s1'])stage=2;if(G.flags['cp_'+key+'_s2'])stage=3;
+      if(data[stage]){
+        G.flags['cp_'+key+'_s'+stage+'_done']=true;
+        curEv={type:'cp',cp:key,stage,narration:`💫 ${CP[key]?.n||''} · Day ${G.day}\n\n`+data[stage].x,choices:data[stage].c};
+        render('event');return;
+      }
+    }
+  }
+  const ev=genRandomEvent(locId);
+  if(ev){curEv=ev;render('event');}
+  else render('play',{msg:'这里现在很安静。也许换个时间会有人。',changes:[]});
+};
+
+// ─── 主动休息（放学后回家休息恢复SPR+体力）───
+window._rest=function(){
+  const sprGain=rn(2,4);const energyGain=rn(15,25);
+  G.attr.SPR=clamp(G.attr.SPR+sprGain,0,10);
+  G.energy=Math.min(100,G.energy+energyGain);
+  G.slot='evening'; // 直接跳到晚间
+  const hs=CH[G.homestay];
+  const msg=`🧘 你选择回家好好休息。\n\n${hs?hs.e+' '+hs.n+'给你泡了杯热茶。「累了吧——好好歇着。」':''}\n\n你在沙发上窝了一会儿。\n\n窗外的天色渐渐暗下来——但心里亮了很多。`;
+  G.journal.push({day:G.day,t:msg});
+  curEv=null;
+  render('play',{msg,changes:[],sprDelta:sprGain});
+};
+
+// ─── 晚间渲染（借宿剧情）───
+function renderEvening(app){
+  const hs=CH[G.homestay];if(!hs){advanceSlot();render('play');return;}
+  G.energy=Math.max(0,G.energy-5);
+  const flav=CHAR_FLAVOR[G.homestay];
+  const msgs=[`🌙 回到${hs.e} ${hs.n}家。`];
+  if(flav&&Math.random()<0.6)msgs.push(flav.evening);
+  else if(Math.random()<0.5)msgs.push(`${hs.n}在客厅——「今天怎么样？」`);
+  else msgs.push(`你轻手轻脚地进了门。一天的疲惫——在踏入玄关的瞬间消散了。`);
+  if(G._tNight)msgs.push('（夜猫子天赋：晚间体力消耗减半）');
+  app.innerHTML=buildShell(`<div class="panel fadein" style="text-align:center"><h2>🌙 晚间 · ${hs.e} ${hs.n}家</h2><p style="color:var(--dim);line-height:2">${msgs.join('<br>')}</p>
+    <p style="color:var(--dim);font-size:0.75em;margin-top:8px">睡前做什么？每晚只能选一件——</p>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-p" onclick="window._restSleep()" style="border-color:var(--green)">🛌 好好休息（体力 +20~30）</button>
+      <button class="btn btn-s" onclick="window._diary()" style="border-color:var(--purple);color:var(--purple)">📓 写日记（精神 +2~4 · 体力 -8~12）</button>
+    </div></div>`);
+}
+
+// ─── 晚间好好休息（恢复体力，推进到次日）───
+window._restSleep=function(){
+  const energyGain=rn(20,30);
+  const hs=CH[G.homestay];
+  const msgs=[
+    `🛌 你早早洗漱完，钻进了被窝。\n\n${hs?hs.e+' '+hs.n+'轻手轻脚地关了走廊的灯。「晚安。」':''}\n\n被窝很暖。意识慢慢模糊——\n\n今天结束了。明天又是新的一天。`,
+    `🛌 你躺在被窝里。\n\n窗外的灯光一格一格暗下去。\n\n今天过得怎么样？你想。\n\n……还不错。`,
+  ];
+  const msg=pk(msgs);
+  G.journal.push({day:G.day,t:msg});
+  curEv=null;
+  // 推进到次日（advanceSlot会回满体力）
+  advanceSlot();
+  // 充足睡眠额外恢复（在回满基础上叠加）
+  G.energy=Math.min(100,G.energy+energyGain);
+  if(G.day>G.maxDay){render('end');return;}
+  render('play',{msg:`${msg}\n\n🔋 体力 +${energyGain}`,changes:[]});
+};
+
+// ─── 写日记（恢复精神，不睡觉不恢复体力，推进到次日）───
+window._diary=function(){
+  const baseGain=rn(2,4);
+  const bonusGain=G._tJournal?2:0;
+  const actualGain=baseGain+bonusGain;
+  const energyCost=rn(8,12);
+  const bonusMsg=G._tJournal?'（命运的笔记者天赋：额外+2精神）':'';
+  G.attr.SPR=clamp(G.attr.SPR+actualGain,0,10);
+  // 保存当前体力——熬夜写日记不会睡觉回体力
+  const savedEnergy=G.energy;
+  const hs=CH[G.homestay];
+  const entries=[
+    `📓 写下了今天发生的事。\n\n有些细节——如果不记下来，可能会忘记吧。\n\n合上笔记本。${hs?hs.e+' '+hs.n+'给你倒了杯水放在桌边。':''}\n\n心里轻了很多。`,
+    `📓 翻看前几天的日记。\n\n不知不觉——已经写了这么多页了。\n\n每一页都是活的。\n\n笔停了。该睡了。`,
+    `📓 写了几行。然后停住了。\n\n有些心情——好像不适合写在纸上。\n\n但写下来之后——确实轻松了一点。\n\n关灯。明天见。`,
+  ];
+  const msg=`${pk(entries)}\n${bonusMsg}\n\n（💡 熬夜写日记 · 没有睡觉恢复体力 · 体力 -${energyCost}）`;
+  G.journal.push({day:G.day,t:msg});
+  curEv=null;
+  // 推进到次日（天数/SPR变化等正常处理）
+  advanceSlot();
+  // 熬夜不睡 → 体力不恢复，反而消耗
+  G.energy=Math.max(0,savedEnergy-energyCost);
+  if(G.day>G.maxDay){render('end');return;}
+  render('play',{msg,changes:[],sprDelta:actualGain});
+};
+
+function rEvent(app,data){
+  const ev=data||curEv;if(!ev){render('play');return;}
+  let badge='';
+  if(ev.type==='cp')badge=`<span style="display:inline-block;background:var(--purple);color:#fff;padding:2px 10px;border-radius:12px;font-size:0.7em;margin-bottom:6px">💫 ${CP[ev.cp]?.n||''} 事件</span>`;
+  else if(ev.type==='class')badge=`<span style="display:inline-block;background:var(--blue);color:#fff;padding:2px 10px;border-radius:12px;font-size:0.7em;margin-bottom:6px">📖 课堂事件</span>`;
+  else if(ev.type==='home')badge=`<span style="display:inline-block;background:var(--accent);color:#fff;padding:2px 10px;border-radius:12px;font-size:0.7em;margin-bottom:6px">🏠 借宿事件</span>`;
+  else if(ev.type==='weekend')badge=`<span style="display:inline-block;background:var(--green);color:#fff;padding:2px 10px;border-radius:12px;font-size:0.7em;margin-bottom:6px">🏖️ 周末偶遇</span>`;
+  else if(ev.type==='calendar')badge=`<span style="display:inline-block;background:var(--gold);color:#000;padding:2px 10px;border-radius:12px;font-size:0.7em;margin-bottom:6px">📅 特别日</span>`;
+  else if(ev.type==='forced_end')badge=`<span style="display:inline-block;background:var(--accent);color:#fff;padding:2px 10px;border-radius:12px;font-size:0.7em;margin-bottom:6px">⚠️ 精神崩溃</span>`;
+  else if(ev.type==='sick_leave')badge=`<span style="display:inline-block;background:#ff9800;color:#fff;padding:2px 10px;border-radius:12px;font-size:0.7em;margin-bottom:6px">🏥 体力告急</span>`;
+  else badge=`<span style="display:inline-block;background:#555;color:#fff;padding:2px 10px;border-radius:12px;font-size:0.7em;margin-bottom:6px">✨ 日常</span>`;
+  app.innerHTML=buildShell(`${badge}<div class="eventbox fadein"><p class="narration">${ev.narration}</p></div><div>${ev.choices.map((ch,i)=>`<button class="btn btn-choice fadein" style="animation-delay:${i*0.08}s" onclick="window._ch(${i})">${ch.t}</button>`).join('')}</div>`);
+  try{document.getElementById('dayDisp').classList.add('pulse');setTimeout(()=>document.getElementById('dayDisp')?.classList.remove('pulse'),600);}catch(e){}
+}
+window._ch=function(idx){
+  if(!curEv)return;
+  // 心魔幻境入口
+  if(curEv.type==='heart_demon'){
+    G.dailyEvents++;
+    startHeartDemonBattle();
+    return;
+  }
+  // 今日事件计数（强制结束和请假不计数——不是"社交"事件）
+  if(curEv.type!=='forced_end'&&curEv.type!=='sick_leave'){
+    G.dailyEvents++;
+  }
+  // 处理社团选择
+  const ch=curEv.choices[idx];
+  if(ch&&ch.club!==undefined){G.club=ch.club;}
+  const result=execChoice(curEv,idx);
+  try{localStorage.setItem('aotu4_ach',JSON.stringify(G.achievements));}catch(e){}
+  if(result&&result.mode!=="forced")render('play',result);
+};
+
+function renderFB(app,fb){
+  let html=buildShell('');
+  html+=`<div class="feedback fadein"><div class="fbtitle">💬 ${fb.mode==='match'?'你选择了助攻——':'你做出了选择——'}</div><div class="fbtext">${fb.msg}</div>`;
+  if(fb.changes.length>0){html+=`<div class="fbaff">`;fb.changes.forEach(c=>{html+=`<span class="${c.val>0?'fbup':'fbdown'}">${c.e} ${c.n}：${c.val>0?'+'+c.val:c.val}</span> `;});html+=`</div>`;}
+  else html+=`<div class="fbaff">（没有明显的好感度变化——但有些东西不需要数字来衡量）</div>`;
+  // 属性变化显示
+  if(fb.attrDelta){const albs={INT:'📐学力',CHR:'💫魅力',STR:'💪体能',AFF:'💕亲和'};let ah='';Object.entries(fb.attrDelta).forEach(([k,v])=>{if(v!==0)ah+='<span class="'+(v>0?'fbup':'fbdown')+'">'+albs[k]+' '+(v>0?'+'+v:v)+'</span> ';});if(ah)html+='<div class="fbaff">'+ah+'</div>';}
+  if(fb.sprDelta&&fb.sprDelta!==0)html+=`<div class="fbaff"><span class="${fb.sprDelta>0?'fbup':'fbdown'}">🧘精神 ${fb.sprDelta>0?'+'+fb.sprDelta:fb.sprDelta}</span></div>`;
+  html+=`</div><div style="text-align:center;margin:10px 0"><button class="btn btn-p" onclick="window._adv()">继续 ▸</button></div>`;
+  app.innerHTML=html;
+  try{document.getElementById('dayDisp').classList.add('pulse');setTimeout(()=>document.getElementById('dayDisp')?.classList.remove('pulse'),600);}catch(e){}
+}
+
+// ─── 子面板 ───
+function rAff(app){
+  const sorted=Object.entries(G.aff).filter(([id])=>CH[id]).sort((a,b)=>b[1]-a[1]);
+  app.innerHTML=`<div style="text-align:center;padding:10px 0"><h1>💕 好感度</h1></div>
+<div class="panel fadein"><div class="affgrid">${sorted.map(([id,val])=>{const c=CH[id];const bc=val>=70?'#e94560':val>=50?'#f0c040':val>=30?'#81c784':'#666';
+  return`<div class="affcard"><span class="affemoji">${c.e}</span><div class="affinfo"><div class="affname">${c.n}<span style="font-size:0.65em;color:var(--dim)"> ${c.c}</span></div><div class="affbar"><div class="afffill" style="width:${val}%;background:${bc}"></div></div><div class="affstage">${stageName(val)} · ${val}</div></div></div>`;}).join('')}</div></div>
+<button class="btn btn-p" onclick="window._nav('play')" style="display:block;margin:8px auto">🔙 返回</button>`;
+}
+function rCP(app){
+  app.innerHTML=`<div style="text-align:center;padding:10px 0"><h1>💑 CP羁绊</h1></div><div class="panel fadein">
+    ${Object.entries(CP).map(([k,cp])=>{const a=cpAvg(k);const st=a>=85?'💖 告白':a>=60?'💗 深化':a>=35?'💛 发展':a>=10?'💚 萌芽':'😶 初始';const bc=a>=60?'#e94560':a>=35?'#f0c040':a>=10?'#81c784':'#666';
+    return`<div style="background:var(--card);border-radius:10px;padding:12px;margin:8px 0;border:1px solid #30363d">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:bold">${cp.e} ${cp.n}</span><span style="font-size:0.8em;color:${bc}">${st} · ${a}%</span></div>
+      <div style="font-size:0.7em;color:var(--dim);margin:2px 0">${cp.d} · ${CH[cp.c1]?.n}:${G.aff[cp.c1]||0} / ${CH[cp.c2]?.n}:${G.aff[cp.c2]||0}</div>
+      <div style="height:5px;background:#333;border-radius:3px;margin:4px 0"><div style="height:100%;background:${bc};border-radius:3px;width:${a}%"></div></div>
+      <div style="font-size:0.65em;color:var(--dim)">${G.flags['cp_'+k+'_s1']?'✅初见':''}${G.flags['cp_'+k+'_s2']?' ✅发展':''}${G.flags['cp_'+k+'_s3']?' ✅告白':''}${G.memories.includes(k)?' 📸':''}</div></div>`;}).join('')}
+  </div><button class="btn btn-p" onclick="render('play')" style="display:block;margin:8px auto">🔙 返回</button>`;
+}
+function rMem(app){
+  const all=Object.keys(CP);
+  app.innerHTML=`<div style="text-align:center;padding:10px 0"><h1>📸 回忆相册</h1><div style="color:var(--dim);font-size:0.8em">解锁条件：CP事件第三阶段触发</div></div>
+<div class="panel fadein"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px">
+  ${all.map(k=>{const cp=CP[k];const un=G.memories.includes(k);
+    return`<div style="aspect-ratio:1;background:var(--card);border:2px solid ${un?'var(--gold)':'#30363d'};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:${un?'2.5em':'1.5em'};${un?'cursor:pointer;animation:pulse 2s infinite':'opacity:0.3'}" ${un?`onclick="alert('${cp.n}：珍贵的百日回忆。')"`:''}>${un?cp.e:'🔒'}</div>`;}).join('')}
+</div><div style="font-size:0.8em;color:var(--dim);margin-top:8px">已解锁：${G.memories.length} / ${all.length}</div></div>
+<button class="btn btn-p" onclick="render('play')" style="display:block;margin:8px auto">🔙 返回</button>`;
+}
+function rJournal(app){
+  app.innerHTML=`<div style="text-align:center;padding:10px 0"><h1>📓 百日日记</h1><div style="color:var(--dim);font-size:0.8em">Day ${G.day} · 还剩 ${G.maxDay-G.day} 天</div></div>
+<div class="panel fadein">${G.journal.length===0?'<p style="color:var(--dim)">日记是空的。去经历些什么吧。</p>':G.journal.slice(-40).reverse().map(j=>`<div style="background:var(--card);border-radius:8px;padding:10px;margin:4px 0;border-left:3px solid #333;font-size:0.8em;line-height:1.6;color:var(--dim)"><div style="color:var(--accent);font-weight:bold;margin-bottom:3px">📅 Day ${j.day}${j.cp?' · '+CP[j.cp]?.n||'':''}</div><div style="white-space:pre-line">${j.t}</div></div>`).join('')}</div>
+<button class="btn btn-p" onclick="render('play')" style="display:block;margin:8px auto">🔙 返回</button>`;
+}
+
+
+// ─── 任务面板 ───
+function rQuest(app){
+  const mc=MAIN_CHAPTERS['ch'+G.mainChapter];
+  const sqProgress=SIDE_QUESTS.map(sq=>{
+    const cur=G.sideQuests[sq.id]||1;
+    const done=G.completedSQ.includes(sq.id);
+    const max=sq.steps.length;
+    return {n:sq.n,e:sq.e,d:sq.d,id:sq.id,cur:done?max+1:cur,max,done};
+  }).sort((a,b)=>b.done-a.done||(b.cur-b.max)-(a.cur-a.max));
+  let html='<div style="text-align:center;padding:10px 0"><h1>📋 任务</h1></div>';
+  html+='<div class="panel fadein"><h2>📖 主线 · 第'+G.mainChapter+'章</h2>';
+  html+='<div style="background:var(--card);border:2px solid var(--gold);border-radius:10px;padding:14px;margin:8px 0">';
+  html+='<div style="font-weight:bold;color:var(--gold);font-size:1em">'+mc.t+'</div>';
+  html+='<div style="color:var(--dim);font-size:0.8em;white-space:pre-line;margin-top:4px">'+mc.d.slice(0,120)+'…</div>';
+  html+='<div style="font-size:0.7em;color:var(--accent);margin-top:6px">Day '+G.day+' · 进度 '+G.mainChapter+'/10</div>';
+  html+='</div></div>';
+  html+='<div class="panel fadein"><h2>📋 支线 ('+G.completedSQ.length+'/'+SIDE_QUESTS.length+')</h2>';
+  sqProgress.forEach(sq=>{
+    const stepData=SIDE_QUESTS.find(q=>q.id===sq.id)?.steps[sq.cur-1];
+    const bc=sq.done?'var(--green)':sq.cur>1?'var(--gold)':'#444';
+    const op=sq.cur>1||sq.done?1:0.5;
+    html+='<div style="background:var(--card);border-radius:8px;padding:10px;margin:4px 0;border-left:3px solid '+bc+';opacity:'+op+'">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    html+='<span>'+sq.e+' <strong>'+sq.n+'</strong></span>';
+    html+='<span style="font-size:0.7em;color:'+(sq.done?'var(--green)':'var(--dim)')+'">'+(sq.done?'✅完成':sq.cur+'/'+sq.max)+'</span>';
+    html+='</div>';
+    html+='<div style="font-size:0.7em;color:var(--dim);margin-top:2px">'+sq.d+' · 好感≥'+(stepData?.req?.aff||'?')+'</div>';
+    html+='<div style="height:3px;background:#333;border-radius:2px;margin-top:4px"><div style="height:100%;background:'+(sq.done?'var(--green)':'var(--gold)')+';border-radius:2px;width:'+Math.min(100,(sq.cur/sq.max)*100)+'%"></div></div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  html+='<button class="btn btn-p" onclick="window._nav(\'play\')" style="display:block;margin:8px auto">🔙 返回</button>';
+  app.innerHTML=html;
+}
+
+// ─── 因果商店 ───
+function rKarmaShop(app){
+  const karma=loadKarma();
+  let h='<div style="text-align:center;padding:10px 0"><h1>🏪 因果商店</h1><div style="color:var(--dim);font-size:0.8em">累计因果値：<strong style="color:var(--gold);font-size:1.2em">'+karma+'</strong></div></div>';
+  h+='<div class="panel fadein">';
+  KARMA_SHOP.forEach((item,idx)=>{
+    const canBuy=karma>=item.cost;
+    h+='<div style="background:var(--card);border-radius:10px;padding:12px;margin:8px 0;border:1px solid '+(canBuy?'var(--gold)':'#444')+';opacity:'+(canBuy?1:0.5)+'">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    h+='<span>'+item.e+' <strong>'+item.n+'</strong> <span style="font-size:0.65em;color:var(--dim)">'+item.d+'</span></span>';
+    h+='<span style="color:'+(canBuy?'var(--gold)':'var(--dim)')+';font-weight:bold">'+item.cost+' 🪙</span>';
+    h+='</div>';
+    h+=canBuy?'<button class="btn btn-xs btn-p" onclick="window._buyKarma('+idx+')" style="margin-top:6px">购买</button>':'<span style="font-size:0.65em;color:var(--dim)">因果値不足</span>';
+    h+='</div>';
+  });
+  h+='</div>';
+  h+='<div style="font-size:0.7em;color:var(--dim);text-align:center;margin-top:8px">因果値通过完成轮回获得 · 购买后仅下个新轮回生效（一次性）</div>';
+  h+='<button class="btn btn-p" onclick="render(\'title\')" style="display:block;margin:12px auto">🔙 返回标题</button>';
+  app.innerHTML=h;
+}
+window._buyKarma=function(idx){
+  const item=KARMA_SHOP[idx];if(!item)return;
+  const karma=loadKarma();
+  if(karma<item.cost){alert('因果値不足！');return;}
+  saveKarma(karma-item.cost);
+  try{const bought=JSON.parse(localStorage.getItem('aotu4_shop')||'[]');if(!bought.includes(idx))bought.push(idx);localStorage.setItem('aotu4_shop',JSON.stringify(bought));}catch(e){}
+  render('karmashop');
+  alert('✅ 已购买：'+item.n+'！\n仅下次新轮回生效，使用后需重新购买。');
+};
+
+// ─── 结局 ───
+function rEnd(app){
+  try{localStorage.setItem('aotu4_ach',JSON.stringify(G.achievements));}catch(e){}
+  // 轮回结算：计算并保存因果值
+  const karmaEarned=calcKarmaEarned();
+  G.karma=loadKarma()+karmaEarned;
+  saveKarma(G.karma);
+  // 精神崩溃强制结局
+  if(G.day>G.maxDay&&G.lowSprDays>=2&&!G.flags['forced_end_done']){
+    G.flags['forced_end_done']=true;
+    app.innerHTML=`<div class="cdbanner"><div class="daynum" style="color:var(--accent)">${G.maxDay-G.day+1}</div><div class="daylabel">提 前 离 开</div></div>
+<div class="endbox fadein"><div class="endicon">🧘💔</div><h2 style="color:var(--accent)">精神之海 · 干涸</h2><p class="endtext">你没有撑到一百天。\n\n转校生——离开了。\n\n走廊还是那个走廊。教室还是那个教室。\n\n只是少了一个人。\n\n有人问起——然后沉默。\n有人把一张空桌子收拾干净。\n有人往你的鞋柜里放了一封信——虽然没有人会打开。\n\n也许下一次——\n试着照顾一下自己。</p>
+<div style="margin:25px 0"><button class="btn btn-p pulse" onclick="window._newLoop()" style="font-size:1.1em;padding:12px 36px">🔄 重新开始——这一次，好好照顾自己</button></div>
+<button class="btn btn-s" onclick="render('title')">🏠 回到标题</button>
+<div style="margin-top:16px;font-size:0.8em;color:var(--dim)">🏆 成就：${G.achievements.length} · 📸 记忆：${G.memories.length}/${Object.keys(CP).length} · 📓 日记：${G.journal.length}条</div><div style="background:linear-gradient(135deg,#1a1a3e,#2d1a1e);border:1px solid var(--gold);border-radius:10px;padding:12px;margin-top:10px;text-align:center"><div style="font-size:0.7em;color:var(--dim)">✦ 轮回结算 ✦</div><div style="font-size:1.1em;color:var(--gold);margin:4px 0">因果値 <strong style="font-size:1.3em">+${karmaEarned}</strong></div><div style="font-size:0.65em;color:var(--dim)">累计因果値：${G.karma} · 可在标题画面消费</div></div></div>`;
+    return;
+  }
+  const cpR=[];for(const[k,cp]of Object.entries(CP)){const a=cpAvg(k);if(a>=80)cpR.push({k,cp,type:"he",a});else if(a>=45)cpR.push({k,cp,type:"ne",a});}cpR.sort((a,b)=>b.a-a.a);
+  const tops=Object.entries(G.aff).filter(([id])=>CH[id]).sort((a,b)=>b[1]-a[1]);
+  let et,emoji,title,text;
+  if(cpR.length>0&&cpR[0].type==='he'){const b=cpR[0];et='cp_he';emoji=b.cp.e;title=b.cp.n+' · 完美结局';
+    text=`一百天。\n\n${b.cp.d}。\n\n你见证了这一切。从试探到靠近，从对视到牵手。\n\n「谢谢。」他们对你说。「谢谢你来了。」\n\n你将离开。\n但你知道——有些东西，比一百天长得多。`;}
+  else if(cpR.length>0){const b=cpR[0];et='cp_ne';emoji=b.cp.e;title=b.cp.n+' · 未完待续';
+    text=`一百天太短了。\n\n${b.cp.d}。\n\n你看到了开始——但来不及看到结局。\n\n他们交换了联系方式，约定「以后再联系」。\n\n你相信他们会继续走下去。只是你不在场了。`;}
+  else if(tops.length>0&&tops[0][1]>=60){const c=CH[tops[0][0]];et='single';emoji=c.e;title='与'+c.n+'的羁绊';
+    text=`一百天。\n\n你与${c.n}走得很近。\n\n很多个下午、很多次午餐、很多个平凡又珍贵的瞬间。\n\n你将离开。但你说：「我会写信的。」`;}
+  else{et='solo';emoji='🏫';title='独自前行';
+    text=`一百天结束了。\n\n你没有特别亲近的人。\n\n离开那天，你回头看了一眼校门。\n\n也许下一次——可以试着走近一些人。`;}
+
+  const highAff3=Object.values(G.aff).filter(v=>v>=90).length>=3;
+  if(G.karma>=500&&highAff3&&cpR.length>0&&cpR[0].type==="he"){
+    const b=cpR[0];et="true_end";emoji="🌌";title="圆环之理 · "+b.cp.n;
+    text="你已无数次穿越这个百日。\n\n"+b.cp.d+"。\n\n因果缠绕——命运终于松开了它的手。\n\n这一次——你不用离开。\n\n教室的门开着。有人在等你。\n\n「欢迎回来。」";
+  }
+  if(!G.achievements.includes('end_'+et)){G.achievements.push('end_'+et);try{localStorage.setItem('aotu4_ach',JSON.stringify(G.achievements));}catch(e){}}
+
+  app.innerHTML=`<div class="cdbanner"><div class="daynum" style="color:var(--gold)">0</div><div class="daylabel">今 天 离 开</div></div>
+<div class="endbox fadein"><div class="endicon">${emoji}</div><h2 style="color:${et==='cp_he'?'var(--accent)':'var(--gold)'}">${title}</h2><p class="endtext">${text}</p>
+<div style="margin:25px 0"><button class="btn btn-p pulse" onclick="window._newLoop()" style="font-size:1.1em;padding:12px 36px">🔄 重新开始一百天</button></div>
+<button class="btn btn-s" onclick="render('title')">🏠 回到标题</button>
+<div style="margin-top:16px;font-size:0.8em;color:var(--dim)">🏆 成就：${G.achievements.length} · 📸 记忆：${G.memories.length}/${Object.keys(CP).length} · 📓 日记：${G.journal.length}条</div><div style="background:linear-gradient(135deg,#1a1a3e,#2d1a1e);border:1px solid var(--gold);border-radius:10px;padding:12px;margin-top:10px;text-align:center"><div style="font-size:0.7em;color:var(--dim)">✦ 轮回结算 ✦</div><div style="font-size:1.1em;color:var(--gold);margin:4px 0">因果値 <strong style="font-size:1.3em">+${karmaEarned}</strong></div><div style="font-size:0.65em;color:var(--dim)">累计因果値：${G.karma} · 可在标题画面消费</div></div></div>`;
+}
+window._newLoop=function(){startNew();};
+
+// ─── 读档 ───
+function rLoad(app){
+  const ss=[];for(let i=1;i<=5;i++){const r=localStorage.getItem('aotu4_'+i);if(r){try{const d=JSON.parse(r);ss.push({s:i,n:d.name,day:d.day,t:d._t});}catch(e){}}else ss.push({s:i,n:null});}
+  app.innerHTML=`<div style="text-align:center;padding:10px 0"><h1>📂 读取存档</h1></div><div class="panel fadein">
+    ${ss.map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--card);border-radius:8px;margin:4px 0">
+      <div><strong>存档 ${s.s}</strong>${s.n?` — ${s.n} · 第${s.day||'?'}天`:''}${s.t?`<div style="font-size:0.7em;color:var(--dim)">${new Date(s.t).toLocaleString()}</div>`:''}</div>
+      ${s.n?`<button class="btn btn-xs btn-p" onclick="window._ld(${s.s})">读取</button>`:'<span style="color:var(--dim)">空</span>'}</div>`).join('')}
+  </div><button class="btn btn-s" onclick="render('title')" style="display:block;margin:8px auto">🔙 返回</button>`;
+}
+window._ld=function(s){if(loadFrom(s)){curEv=null;G.phase='play';render('play');}};
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  心魔幻境 · 大乱斗 (v5.7 - Canvas即时制枪战肉鸽)             ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+const BATTLE_CHAR_SKILLS={
+  jin:{n:'矢量箭头',d:'发射追踪箭矢',act:(e,p)=>{if(e._cd<=0){e._cd=60;e._bullets.push({x:e.x,y:e.y,vx:(p.x-e.x)*0.04,vy:(p.y-e.y)*0.04,life:80});}}},
+  gerui:{n:'冰霜领域',d:'减速玩家',act:(e,p)=>{const d=dist(e,p);if(d<120&&e._cd<=0){e._cd=90;p.slow=30;}}},
+  leishi:{n:'雷霆震击',d:'范围电击',act:(e,p)=>{if(e._cd<=0){e._cd=70;if(dist(e,p)<150)p.hp-=8;}}},
+  anmixiu:{n:'骑士冲锋',d:'高速突进',act:(e,p)=>{if(e._cd<=0){e._cd=80;e.vx=(p.x-e.x)*0.08;e.vy=(p.y-e.y)*0.08;e._dash=15;}}},
+  kamier:{n:'围巾缠绕',d:'拉近玩家',act:(e,p)=>{if(e._cd<=0&&dist(e,p)<180){e._cd=100;p.x+=(e.x-p.x)*0.3;p.y+=(e.y-p.y)*0.3;}}},
+  aimi:{n:'呆毛冲刺',d:'随机闪现',act:(e)=>{if(e._cd<=0){e._cd=50;e.x+=rn(-100,100);e.y+=rn(-100,100);}}},
+  kaili:{n:'星月卡牌',d:'扇形弹幕',act:(e,p)=>{if(e._cd<=0){e._cd=55;for(let i=-2;i<=2;i++){const a=Math.atan2(p.y-e.y,p.x-e.x)+i*0.3;e._bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*3,vy:Math.sin(a)*3,life:60});}}}},
+  anlijie:{n:'水晶预言',d:'预判玩家位置',act:(e,p)=>{if(e._cd<=0){e._cd=120;e._predict={x:p.x+p.vx*30,y:p.y+p.vy*30};}}},
+  leide:{n:'恋爱笔记',d:'自身加速',act:(e)=>{if(e._cd<=0){e._cd=80;e.spd*=1.8;e._buff=40;}}},
+  zuma:{n:'沉默压制',d:'禁用射击',act:(e,p)=>{if(e._cd<=0&&dist(e,p)<130){e._cd=100;p.silence=25;}}},
+  jiadeluosi:{n:'烈焰路径',d:'留下火焰',act:(e)=>{if(e._cd<=0){e._cd=45;e._trail.push({x:e.x,y:e.y,life:40});}}},
+  paluosi:{n:'暗影分身',d:'制造分身',act:(e,p)=>{if(e._cd<=0&&e._clones<2){e._cd=90;e._clones++;enemies.push({...e,x:e.x+rn(-50,50),y:e.y+rn(-50,50),_clones:0,_clone:true,hp:15});}}},
+  peili:{n:'狂战士冲锋',d:'直线猛冲',act:(e,p)=>{if(e._cd<=0){e._cd=65;e.vx=(p.x-e.x)*0.12;e.vy=(p.y-e.y)*0.12;e._dash=10;}}},
+  aibi:{n:'呆毛指挥',d:'召唤援军',act:()=>{if(enemies.length<12&&Math.random()<0.3)spawnEnemy(1);}},
+  yinjue:{n:'猫群召唤',d:'召唤猫灵',act:()=>{if(Math.random()<0.25)spawnEnemy(2);}},// 2只猫
+  guihu:{n:'魅惑反转',d:'反转操作',act:(e,p)=>{if(e._cd<=0&&dist(e,p)<150){e._cd=110;p.reverse=35;}}},
+  daniel:{n:'教师威压',d:'范围减速',act:(e,p)=>{if(dist(e,p)<160)p.slow=Math.max(p.slow||0,15);}},
+  leizhi:{n:'雷电管教',d:'天降雷击',act:(e,p)=>{if(e._cd<=0){e._cd=75;p.hp-=6;p._flash=8;}}},
+};
+function dist(a,b){return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2);}
+
+let battleCtx=null,battleAnim=null,player=null,enemies=[],bullets=[],particles=[];
+let battleScore=0,battleTime=60,battleWave=1,battleOver=false,battleWon=false;
+
+function startHeartDemonBattle(){
+  const app=document.getElementById('app');
+  app.innerHTML='<canvas id="battleCanvas" width="800" height="500" style="border:2px solid var(--accent);border-radius:12px;background:#0a0a14;display:block;margin:10px auto;cursor:crosshair"></canvas>';
+  const canvas=document.getElementById('battleCanvas');
+  battleCtx=canvas.getContext('2d');
+  battleScore=0;battleTime=60;battleWave=1;battleOver=false;battleWon=false;
+  enemies=[];bullets=[];particles=[];
+  player={x:400,y:250,vx:0,vy:0,spd:2.5,hp:100,maxHp:100,shootCD:0,shootRate:Math.max(8,22-G.attr.INT*1.5),dmg:1+Math.floor(G.attr.STR/3),slow:0,silence:0,reverse:0,_flash:0,invincible:600};// 前10秒霸体(600帧)
+  spawnWave();
+  document.addEventListener('keydown',battleKeyDown);document.addEventListener('keyup',battleKeyUp);
+  canvas.addEventListener('mousemove',battleMouseMove);canvas.addEventListener('click',battleClick);
+  if(battleAnim)cancelAnimationFrame(battleAnim);
+  battleLoop();
+}
+
+function spawnWave(){
+  const count=3+battleWave*2;
+  for(let i=0;i<count;i++)spawnEnemy(1);
+  battleWave++;
+}
+
+function spawnEnemy(n){
+  for(let i=0;i<n;i++){
+    const ids=Object.keys(CH).filter(k=>CH[k]&&CH[k].c!=='教师');
+    const id=pk(ids);const ch=CH[id];
+    const aff=G.aff[id]||0;
+    const hp=10+Math.floor(aff/10);
+    const spd=1+Math.random()*1.5+aff*0.02;
+    const worth=1+Math.floor(aff/20);
+    // 随机从屏幕各处出现——边缘或内部（但离玩家至少100px）
+    let x,y;
+    if(Math.random()<0.5){
+      // 屏幕内部随机位置
+      do{x=rn(50,750);y=rn(50,450);}while(player&&dist({x,y},player)<120);
+    }else{
+      // 屏幕边缘随机位置
+      const side=Math.floor(Math.random()*4);
+      switch(side){
+        case 0:x=Math.random()*800;y=-20;break;
+        case 1:x=820;y=Math.random()*500;break;
+        case 2:x=Math.random()*800;y=520;break;
+        case 3:x=-20;y=Math.random()*500;break;
+      }
+    }
+    enemies.push({id,x,y,vx:0,vy:0,spd,hp,maxHp:hp,worth,ch,aff,_cd:rn(30,90),_bullets:[],_trail:[],_dash:0,_buff:0,_clones:0,_clone:false,_predict:null,_target:null,slow:0,silence:0,reverse:0,_flash:0});
+  }
+}
+
+const battleKeys={};
+function battleKeyDown(e){battleKeys[e.key.toLowerCase()]=true;e.preventDefault();}
+function battleKeyUp(e){battleKeys[e.key.toLowerCase()]=false;e.preventDefault();}
+function battleMouseMove(e){
+  if(!player)return;
+  const r=e.target.getBoundingClientRect();
+  player.mx=e.clientX-r.x;player.my=e.clientY-r.y;
+}
+function battleClick(e){
+  if(!player||player.silence>0||player.shootCD>0)return;
+  const r=e.target.getBoundingClientRect();
+  const mx=e.clientX-r.x,my=e.clientY-r.y;
+  const a=Math.atan2(my-player.y,mx-player.x);
+  bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*7,vy:Math.sin(a)*7,life:70,from:'player'});
+  player.shootCD=player.shootRate;
+}
+
+function battleLoop(){
+  if(battleOver){renderBattleResult();return;}
+  battleCtx.clearRect(0,0,800,500);
+  battleTime-=1/60;
+  if(battleTime<=0){battleOver=true;battleWon=true;renderBattleResult();return;}
+  if(battleTime<=45&&battleWave===2)spawnWave();
+  if(battleTime<=30&&battleWave===3)spawnWave();
+  if(battleTime<=15&&battleWave===4)spawnWave();
+
+  // Player movement
+  if(!player.reverse||player.reverse<=0){
+    if(battleKeys['w']||battleKeys['arrowup'])player.vy=-player.spd;
+    else if(battleKeys['s']||battleKeys['arrowdown'])player.vy=player.spd;
+    else player.vy*=0.8;
+    if(battleKeys['a']||battleKeys['arrowleft'])player.vx=-player.spd;
+    else if(battleKeys['d']||battleKeys['arrowright'])player.vx=player.spd;
+    else player.vx*=0.8;
+  }else{
+    if(battleKeys['w']||battleKeys['arrowup'])player.vy=player.spd;
+    else if(battleKeys['s']||battleKeys['arrowdown'])player.vy=-player.spd;
+    else player.vy*=0.8;
+    if(battleKeys['a']||battleKeys['arrowleft'])player.vx=player.spd;
+    else if(battleKeys['d']||battleKeys['arrowright'])player.vx=-player.spd;
+    else player.vx*=0.8;
+  }
+  const spdMul=player.slow>0?0.5:1;
+  player.x=Math.max(15,Math.min(785,player.x+player.vx*spdMul));
+  player.y=Math.max(15,Math.min(485,player.y+player.vy*spdMul));
+  if(player.shootCD>0)player.shootCD--;
+  if(player.slow>0)player.slow--;
+  if(player.silence>0)player.silence--;
+  if(player.reverse>0)player.reverse--;
+  if(player._flash>0)player._flash--;
+  if(player.invincible>0)player.invincible--;
+
+  // Auto-shoot toward mouse
+  if(player.shootCD<=0&&player.mx!==undefined&&player.silence<=0){
+    const a=Math.atan2(player.my-player.y,player.mx-player.x);
+    bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*7,vy:Math.sin(a)*7,life:60,from:'player'});
+    player.shootCD=player.shootRate;
+  }
+
+  // Update enemies
+  enemies=enemies.filter(e=>e.hp>0);
+  enemies.forEach(e=>{
+    if(e._clone&&e._clones===undefined)e._clones=0;
+    // Pick target: 40% chance to target another enemy, 60% player
+    if(!e._target||e._target.hp<=0||Math.random()<0.005){
+      const others=enemies.filter(o=>o!==e&&o.hp>0);
+      if(others.length>0&&Math.random()<0.4){
+        e._target=pk(others);
+      }else{
+        e._target=player;
+      }
+    }
+    const target=e._target||player;
+    // Movement toward target
+    const a=Math.atan2(target.y-e.y,target.x-e.x);
+    if(e._dash>0){e._dash--;}else{e.vx=Math.cos(a)*e.spd;e.vy=Math.sin(a)*e.spd;}
+    if(e._buff>0)e._buff--;
+    if(e.slow>0)e.slow--;
+    if(e.silence>0)e.silence--;
+    if(e.reverse>0)e.reverse--;
+    if(e._flash>0)e._flash--;
+    e.x=Math.max(10,Math.min(790,e.x+e.vx));
+    e.y=Math.max(10,Math.min(490,e.y+e.vy));
+    if(e._cd>0)e._cd--;
+    // Execute character skill against current target
+    const sk=BATTLE_CHAR_SKILLS[e.id];
+    if(sk&&sk.act&&Math.random()<0.03)sk.act(e,target);
+    // Enemy bullets (move)
+    if(e._bullets&&e._bullets.length>0){
+      e._bullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.life--;});
+      e._bullets=e._bullets.filter(b=>b.life>0&&b.x>0&&b.x<800&&b.y>0&&b.y<500);
+    }
+    // Trail
+    if(e._trail&&e._trail.length>0){
+      e._trail.forEach(t=>t.life--);
+      e._trail=e._trail.filter(t=>t.life>0);
+    }
+  });
+
+  // Update bullets
+  bullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.life--;});
+  bullets=bullets.filter(b=>b.life>0&&b.x>0&&b.x<800&&b.y>0&&b.y<500);
+
+  // Player bullets hit enemy
+  bullets.filter(b=>b.from==='player').forEach(b=>{
+    enemies.forEach(e=>{
+      if(dist(b,e)<18+Math.max(0,e.aff/15)){
+        e.hp-=player.dmg;b.life=0;
+        if(e.hp<=0){
+          battleScore+=e.worth;
+          // Death particles
+          for(let i=0;i<8;i++)particles.push({x:e.x,y:e.y,vx:rn(-3,3),vy:rn(-3,3),life:20,color:e.ch?.clr||'#fff'});
+        }
+      }
+    });
+  });
+  // Enemy bullets hit other enemies（互相对攻）
+  enemies.forEach(shooter=>{
+    if(shooter._bullets)shooter._bullets.forEach(b=>{
+      enemies.forEach(e=>{
+        if(e!==shooter&&dist(b,e)<18){
+          e.hp-=4;b.life=0;
+          if(e.hp<=0){
+            battleScore+=e.worth;
+            for(let i=0;i<8;i++)particles.push({x:e.x,y:e.y,vx:rn(-3,3),vy:rn(-3,3),life:20,color:e.ch?.clr||'#fff'});
+          }
+        }
+      });
+    });
+  });
+  // Enemy-enemy contact damage（互相锁定=互殴）
+  enemies.forEach(e1=>{
+    enemies.forEach(e2=>{
+      if(e1!==e2&&dist(e1,e2)<20&&e1._target===e2&&e2._target===e1){
+        e1.hp-=0.8;e2.hp-=0.8;
+        if(e1.hp<=0){
+          battleScore+=e1.worth;
+          for(let i=0;i<8;i++)particles.push({x:e1.x,y:e1.y,vx:rn(-3,3),vy:rn(-3,3),life:20,color:e1.ch?.clr||'#fff'});
+        }
+        if(e2.hp<=0){
+          battleScore+=e2.worth;
+          for(let i=0;i<8;i++)particles.push({x:e2.x,y:e2.y,vx:rn(-3,3),vy:rn(-3,3),life:20,color:e2.ch?.clr||'#fff'});
+        }
+      }
+    });
+  });
+  // Enemy bullets/contact hit player（霸体期间免疫伤害）
+  if(player.invincible<=0){
+    enemies.forEach(e=>{
+      if(e._bullets)e._bullets.forEach(b=>{
+        if(dist(b,player)<15){player.hp-=4;b.life=0;player._flash=5;}
+      });
+      if(dist(e,player)<20){player.hp-=2;player._flash=5;}
+      if(e._trail)e._trail.forEach(t=>{
+        if(dist(t,player)<18){player.hp-=3;}
+      });
+    });
+  }
+
+  // Update particles
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;});
+  particles=particles.filter(p=>p.life>0);
+
+  // Player death
+  if(player.hp<=0){battleOver=true;battleWon=false;renderBattleResult();return;}
+
+  // ---- RENDER ----
+  // Background grid
+  battleCtx.strokeStyle='#1a1a2e';battleCtx.lineWidth=1;
+  for(let i=0;i<800;i+=40){battleCtx.beginPath();battleCtx.moveTo(i,0);battleCtx.lineTo(i,500);battleCtx.stroke();}
+  for(let i=0;i<500;i+=40){battleCtx.beginPath();battleCtx.moveTo(0,i);battleCtx.lineTo(800,i);battleCtx.stroke();}
+
+  // Particles
+  particles.forEach(p=>{
+    battleCtx.fillStyle=p.color;battleCtx.globalAlpha=p.life/20;
+    battleCtx.fillRect(p.x-2,p.y-2,4,4);battleCtx.globalAlpha=1;
+  });
+
+  // Enemy trails
+  enemies.forEach(e=>{
+    if(e._trail)e._trail.forEach(t=>{
+      battleCtx.fillStyle='rgba(255,100,0,0.4)';battleCtx.beginPath();battleCtx.arc(t.x,t.y,14,0,Math.PI*2);battleCtx.fill();
+    });
+  });
+
+  // Enemy bullets
+  enemies.forEach(e=>{
+    if(e._bullets)e._bullets.forEach(b=>{
+      battleCtx.fillStyle=e.ch?.clr||'#f44';battleCtx.beginPath();battleCtx.arc(b.x,b.y,4,0,Math.PI*2);battleCtx.fill();
+    });
+  });
+
+  // Enemies
+  enemies.forEach(e=>{
+    const clr=e.ch?.clr||'#f44';
+    battleCtx.fillStyle=clr;battleCtx.beginPath();battleCtx.arc(e.x,e.y,14+Math.floor(e.aff/15),0,Math.PI*2);battleCtx.fill();
+    battleCtx.fillStyle='#fff';battleCtx.font='bold 9px sans-serif';battleCtx.textAlign='center';
+    battleCtx.fillText(e.ch?.e||'?',e.x,e.y+4);
+    // HP bar
+    battleCtx.fillStyle='#333';battleCtx.fillRect(e.x-15,e.y-22,30,4);
+    battleCtx.fillStyle='#f44';battleCtx.fillRect(e.x-15,e.y-22,30*(e.hp/e.maxHp),4);
+    // Worth
+    battleCtx.fillStyle='#f0c040';battleCtx.font='bold 8px sans-serif';
+    battleCtx.fillText('+'+e.worth,e.x,e.y-26);
+  });
+
+  // Player bullets
+  bullets.filter(b=>b.from==='player').forEach(b=>{
+    battleCtx.fillStyle='#58a6ff';battleCtx.beginPath();battleCtx.arc(b.x,b.y,3,0,Math.PI*2);battleCtx.fill();
+  });
+
+  // Player
+  if(player._flash%2===0){
+    // 霸体光环
+    if(player.invincible>0){
+      battleCtx.strokeStyle='#f0c040';battleCtx.lineWidth=3;battleCtx.globalAlpha=0.5+Math.sin(Date.now()*0.01)*0.3;
+      battleCtx.beginPath();battleCtx.arc(player.x,player.y,22,0,Math.PI*2);battleCtx.stroke();
+      battleCtx.globalAlpha=1;
+      battleCtx.fillStyle='#f0c040';battleCtx.font='bold 10px sans-serif';battleCtx.textAlign='center';
+      battleCtx.fillText('🛡️霸体 '+Math.ceil(player.invincible/60)+'s',player.x,player.y-30);
+    }
+    battleCtx.fillStyle='#58a6ff';battleCtx.beginPath();battleCtx.arc(player.x,player.y,15,0,Math.PI*2);battleCtx.fill();
+    battleCtx.fillStyle='#fff';battleCtx.font='bold 11px sans-serif';battleCtx.textAlign='center';
+    battleCtx.fillText('🛡️',player.x,player.y+4);
+    if(player.slow>0){battleCtx.strokeStyle='#8bf';battleCtx.lineWidth=2;battleCtx.beginPath();battleCtx.arc(player.x,player.y,17,0,Math.PI*2);battleCtx.stroke();}
+    if(player.reverse>0){battleCtx.strokeStyle='#f8f';battleCtx.lineWidth=2;battleCtx.beginPath();battleCtx.arc(player.x,player.y,19,0,Math.PI*2);battleCtx.stroke();}
+  }
+
+  // HUD
+  battleCtx.fillStyle='rgba(0,0,0,0.7)';battleCtx.fillRect(0,0,800,40);
+  battleCtx.fillStyle='#fff';battleCtx.font='bold 16px sans-serif';battleCtx.textAlign='left';
+  battleCtx.fillText('💀 心魔幻境',15,28);
+  battleCtx.fillStyle='#e94560';battleCtx.fillText('⏱ '+Math.ceil(Math.max(0,battleTime))+'s',250,28);
+  battleCtx.fillStyle='#f0c040';battleCtx.fillText('⭐ '+battleScore+' / 60',410,28);
+  battleCtx.fillStyle='#3fb950';battleCtx.fillText('❤️ '+player.hp,560,28);
+  battleCtx.fillText('🌊 Wave '+battleWave,680,28);
+
+  // 操作提示（持续显示）
+  battleCtx.fillStyle='rgba(255,255,255,0.5)';battleCtx.font='11px sans-serif';battleCtx.textAlign='center';
+  battleCtx.fillText('WASD 移动 | 鼠标瞄准 | 点击射击 | 生存60秒即胜利',400,485);
+
+  battleAnim=requestAnimationFrame(battleLoop);
+}
+
+function renderBattleResult(){
+  if(battleAnim)cancelAnimationFrame(battleAnim);
+  document.removeEventListener('keydown',battleKeyDown);document.removeEventListener('keyup',battleKeyUp);
+  const canvas=document.getElementById('battleCanvas');
+  if(canvas){canvas.removeEventListener('mousemove',battleMouseMove);canvas.removeEventListener('click',battleClick);}
+
+  const app=document.getElementById('app');
+  if(battleWon){
+    const sprGain=Math.max(1,Math.floor(battleScore/10));
+    G.attr.SPR=clamp(G.attr.SPR+sprGain,0,10);
+    G.lowSprDays=0;G.sprWarned=false;
+    G.flags['heart_demon_won']=true;
+    app.innerHTML=buildShell(`<div class="feedback fadein"><div class="fbtitle">💀 心魔幻境 · 突破！</div>
+      <div class="fbtext">你战胜了内心深处的梦魇。\n\n那些扭曲的面孔恢复了原样——\n\n教室回来了。阳光照在课桌上。\n\n你深吸一口气。\n\n还活着。还能继续。</div>
+      <div class="fbaff"><span class="fbup">🧘精神 +${sprGain}</span> <span style="color:var(--gold)">⭐得分 ${battleScore}</span></div>
+      </div><div style="text-align:center;margin:10px 0"><button class="btn btn-p" onclick="window._adv()">继续 ▸</button></div>`);
+  }else{
+    curEv={type:'forced_end',narration:`💀 心魔吞噬\n\n60秒过去了。\n\n你没有战胜那些幻影。\n\n教室越来越远——\n\n有人在叫你的名字。\n\n但你已经听不清了。`,
+      choices:[{t:'……回不去了',a:[],f:'丹尼尔老师打了电话。\n\n你的家人来接你了。\n\n离开那天——你没有告诉任何人。\n\n校门关上。\n\n这一次——没有回头。'}]};
+    render('event');
+  }
+}
+
+// ─── 启动 ───
+render('title');
+//# sourceURL=game.js
+
+</script>
+</body>
+</html>
+  
