@@ -982,7 +982,7 @@ let G={
   history:[],loop:1,phase:'title',
   homestay:null,dayType:'weekday',
   mainChapter:1,sideQuests:{},completedSQ:[],
-  lowSprDays:0,sprWarned:false,dailyEvents:0,schoolStreak:0,karma:0,_ksSpr:false,_ksEnergy:false,_ksHome:false,_tBonus:false,
+  lowSprDays:0,sprWarned:false,dailyEvents:0,schoolStreak:0,karma:0,_ksSpr:false,_ksEnergy:false,_ksHome:false,_tBonus:false,_bonusToday:false,
   _tAngel:false,_tJournal:false,_tSeventh:false,_tWatch:false,
   _tStuco:false,_tSocial:false,_tEarly:false,_tNight:false,
   _tBento:false,_tRun:false,_tWeather:false,_tJoke:false,
@@ -998,7 +998,7 @@ function initG(){
   G.talents=[];G.talentNames=[];
   G.homestay=pk(HOMESTAY_POOL); // 随机借宿角色
   G.homeInfo=getHomeInfo(G.homestay); G.sideQuests={}; G.completedSQ=[]; G.lowSprDays=0; G.sprWarned=false; G.dailyEvents=0; G.schoolStreak=0;
-  G.karma=loadKarma();applyKarmaPassive(); G._ksSpr=false; G._ksEnergy=false; G._ksHome=false; G._tBonus=false;
+  G.karma=loadKarma();applyKarmaPassive(); G._ksSpr=false; G._ksEnergy=false; G._ksHome=false; G._tBonus=false; G._bonusToday=false;
   ['_tAngel','_tJournal','_tSeventh','_tWatch','_tStuco','_tSocial','_tEarly','_tNight','_tBento','_tRun','_tWeather','_tJoke','_tLucky','_tLib','_tRooftop','_tChill'].forEach(k=>G[k]=false);
 }
 initG();
@@ -2524,6 +2524,12 @@ function advanceSlot(){
     G.energy=0;
     G.attr.SPR=clamp(G.attr.SPR-1,0,10);
   }
+  // 🛡️ 钢之决意：SPR不低于3
+  if(G._ksSpr&&G.attr.SPR<3)G.attr.SPR=3;
+  // 🔋 充沛活力：每日体力+10
+  if(G._ksEnergy)G.energy=Math.min(100,G.energy+10);
+  // 🌌 番外·回声：前7天标记额外事件
+  if(G._tBonus&&G.day<=7)G._bonusToday=true;
 }
 window._adv=function(){
   curEv=null;
@@ -2533,7 +2539,30 @@ window._adv=function(){
 };
 
 // ─── 早晨渲染（借宿剧情）───
+// 🌌 番外·回声 — 前7天每日特殊事件（因果商店120消费解锁）
+function genBonusEvent(){
+  const day=G.day;
+  const evs=[
+    {x:`🌌 番外·回声 · Day ${day}\n\n你做了一个梦。\n\n梦里——这个世界你已经来过很多次了。\n每一张脸都熟悉。每一个转角——都发生过什么。\n\n你在梦中伸出手——\n抓住了什么。\n\n醒来时——手心是温的。`,c:[{t:'「这不是第一次了——对吗？」',a:[],f:'你没有对任何人说。但今天——你看每个人的眼神——都多了一层东西。'},{t:'把梦记在日记里',a:[],f:'梦会消散。但文字不会。\n你写下了梦里记得的一切——\n然后发现——这些不是梦。\n是记忆。'}]},
+    {x:`🌌 番外·回声 · Day ${day}\n\n课间。\n\n你路过走廊。\n\n有人在讨论——「转校生好像来过我们学校一样」——\n「你怎么知道——」「上课回答的问题——」\n「不是课本上的——像是经历过——」\n\n你停下来。她们看到你——不好意思地散了。\n但你知道——她们说的是真的。`,c:[{t:'微笑——然后继续走',a:[],f:'她们不知道的是——你的确来过。\n无数次。\n每一次——你都会找到他们。'},{t:'回头——记住那两个人的脸',a:[],f:'观察者。\n她们的名字不重要。\n但对这个世界——有人开始注意到了。\n这是因果的痕迹。'}]},
+    {x:`🌌 番外·回声 · Day ${day}\n\n放学路上。\n\n你看到了一个熟悉的背影。\n\n是某个人——但不是今天认识的那个人。\n是上周目的。\n\n你愣在原地。\n那人走远了。\n\n你慢慢意识到——\n不是错觉。\n\n因果值越高——\n两个世界的边界就越薄。`,c:[{t:'追上去——但叫不出名字',a:[],f:'你追了几步。然后停下来。\n因为他已经——不记得你了。\n但下次。\n下次你一定——会从一开始就遇到他。'},{t:'站住——让记忆沉淀',a:[],f:'有些相遇——不在这个周目。\n但因果记得。\n你记得。\n这就够了。'}]},
+    {x:`🌌 番外·回声 · Day ${day}\n\n你坐在借宿的房间里。\n\n窗外是同样的星空。\n\n但你突然想到——\n在另一个轮回里——\n你是不是也在这个房间——\n在同一个时间——\n想着同一件事？\n\n每一次的细微选择——\n汇成了不同的河流。\n但你总是在这里。\n总是和他们在一起。`,c:[{t:'看向窗外的星空',a:[],f:'命运是河流。\n你是船上的人——也是撑船的人。\n每一条支流——你都走过。'},{t:'写下此刻的想法',a:[],f:'文字模糊了。\n不是因为墨水——\n是你自己在不同周目的记忆交叠。\n你看到了自己写过的——\n也看到了自己将要写的。'}]},
+    {x:`🌌 番外·回声 · Day ${day}\n\n有人在轻轻呼唤你的名字。\n\n你回头——没有人。\n\n但你听到了。\n\n那是上次——上上次——\n那些曾经把你看得很重要的人——\n的残响。\n\n声音很轻。\n像是在说——\n「又见到你了。」`,c:[{t:'「嗯。我回来了。」',a:[],f:'你的声音也很轻。\n轻到只有因果能听见。\n但——足够了。\n这是你第N次回到这里。\n每一次——都是新的。'},{t:'闭上眼睛——感受羁绊的重量',a:[],f:'不是幻觉。\n是因果。\n是无数次选择织成的网。\n你站在网的中心——\n被每一根丝线温柔地拉着。'}]},
+    {x:`🌌 番外·回声 · Day ${day}\n\n同一个场景又出现了。\n\n这一次——\n你提前知道谁会在转角出现。\n\n你等在那里。\n他出现了。\n\n「——你在等我？」\n\n你点了点头。\n\n「你怎么知道我会从这里过——」\n\n你笑了笑——没有解释。\n\n有些事——不用解释。`,c:[{t:'「我也不知道。就是想等等看。」',a:[],f:'你没办法告诉他——\n你已经见过这个场景太多次了。\n但每次——\n他的表情——都不一样。\n这让你觉得——一切都值得。'},{t:'「只是一个感觉罢了」',a:[],f:'他歪了歪头——\n似乎在消化这句话。\n然后笑了。\n「你这个人——挺有意思的。」\n你心想：你也是。每次都一样有意思。'}]},
+    {x:`🌌 番外·回声 · Day ${day}\n\n第七天。\n\n你站在校门口。\n\n回头看。\n\n100天很短。\n但你知道吗——\n这不是第一次。也不是最后一次。\n\n你想起每一个曾经告别的瞬间——\n每一次——你都选择了回来。\n\n因为这里——\n有你在乎的人。\n\n第7天的夕阳很暖。\n你走进了校门——\n一如往常。\n\n圆环在转动。\n而你——\n选择了继续。`,c:[{t:'走进校门——新的一天',a:[],f:'圆环永无止境。\n但你不是在重复。\n你是在——一点点接近某种东西。\n某种比轮回更重要的东西。'},{t:'回头看了一眼——然后笑了',a:[],f:'你看见了。\n所有周目的你——\n都在同一刻回了头。\n然后都笑了。\n\n因为答案是一样的——\n你们都知道。'}]},
+  ];
+  const ev=evs[Math.min(day-1,evs.length-1)];
+  if(!ev)return null;
+  return {type:'bonus',narration:ev.x,choices:ev.c,chars:[]};
+}
+
 function renderMorning(app){
+  // 🌌 番外·回声：前7天额外特殊事件
+  if(G._bonusToday){
+    G._bonusToday=false;
+    const bonusEv=genBonusEvent();
+    if(bonusEv){curEv=bonusEv;render('event');return;}
+  }
   const hs=CH[G.homestay];if(!hs){advanceSlot();render('play');return;}
   const home=G.homeInfo||getHomeInfo(G.homestay);
   // 周末早晨：提供"睡懒觉"选项
