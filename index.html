@@ -1011,6 +1011,9 @@ function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
 function cpAvg(key){return G.cpAff?.[key]||0;}
 function stageName(v){return v>=90?'💖心动':v>=70?'💗亲密':v>=50?'💛好友':v>=30?'💚朋友':v>=10?'🤝认识':'😶初识';}
 
+// 检查因果商店物品是否已购买（从localStorage读取）
+function hasKarmaItem(id){try{const b=JSON.parse(localStorage.getItem('aotu4_shop')||'[]');return b.includes(id);}catch(e){return false;}}
+
 // ─── 日类型计算 ───
 function calcDayType(day){
   if(typeof CAL!=='undefined'&&CAL[day]?.fest)return'festival';
@@ -2207,6 +2210,11 @@ function rCreate(app){
   window._rndAttrs=rndAttrs;
   window._rndTalents=rndTalents;window._rndPickCount=pickCount;
   window._rndHome=rndHome;
+
+  // 🏠 居場所：如果因果商店已购买，显示借宿角色选择器而非随机
+  const ksHomeActive=hasKarmaItem('ks_home');
+  if(!ksHomeActive)window._selHome=null;
+  else if(!window._selHome)window._selHome=HOMESTAY_POOL[0]; // 默认选中第一个
   const attrLabels={INT:'📐 学力',CHR:'💫 魅力',STR:'💪 体能',AFF:'💕 亲和力',SPR:'🧘 精神'};
 
   // 构建借宿家庭卡片
@@ -2232,10 +2240,18 @@ function rCreate(app){
   <p style="color:var(--dim);font-size:0.7em">性别不影响任何人的攻略可能性。</p>
 </div>
 <div class="panel fadein"><h2>🏠 借宿家庭</h2>
+  ${ksHomeActive?`
+  <div style="text-align:center;padding:12px;background:var(--card);border:2px solid var(--gold);border-radius:10px">
+    <div style="color:var(--gold);font-size:0.9em;margin-bottom:8px">🏠 居場所 · 选择你想借宿的角色</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px" id="homeGrid">
+      ${HOMESTAY_POOL.map(hid=>{const c=CH[hid];if(!c)return'';const sel=window._selHome===hid;return`<button class="btn btn-xs ${sel?'btn-p':''}" style="padding:8px;text-align:center;${sel?'background:var(--accent);color:#fff;border-color:var(--accent)':'background:var(--card);color:var(--text);border:1px solid #555;'}" data-hid="${hid}" onclick="window._selHome='${hid}';var bts=document.querySelectorAll('#homeGrid button');bts.forEach(b=>{b.style.background='var(--card)';b.style.color='var(--text)';b.style.border='1px solid #555';b.classList.remove('btn-p');});this.style.background='var(--accent)';this.style.color='#fff';this.style.border='1px solid var(--accent)';this.classList.add('btn-p');"><div style="font-size:1.5em">${c.e}</div><div style="font-size:0.7em;margin-top:2px">${c.n}</div></button>`;}).join('')}
+    </div>
+  </div>`
+  :`
   <div style="text-align:center;padding:12px;background:var(--card);border:2px solid var(--accent);border-radius:10px">
     ${homeCardHTML}
   </div>
-  <button class="btn btn-xs btn-s" id="rerollHomeBtn" style="margin-top:8px;display:block;margin-left:auto;margin-right:auto">🏠 换一个借宿家庭</button>
+  <button class="btn btn-xs btn-s" id="rerollHomeBtn" style="margin-top:8px;display:block;margin-left:auto;margin-right:auto">🏠 换一个借宿家庭</button>`}
 </div>
 <div class="panel fadein"><h2>🌟 天赋</h2>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px">
@@ -2257,7 +2273,8 @@ function rCreate(app){
     window._rndAttrs=a;window._rndTalents=t;
     render('create');
   };
-  document.getElementById('rerollHomeBtn').onclick=function(){
+  const rerollHomeBtn=document.getElementById('rerollHomeBtn');
+  if(rerollHomeBtn)rerollHomeBtn.onclick=function(){
     window._rndHome=pk(HOMESTAY_POOL);
     render('create');
   };
@@ -2268,12 +2285,14 @@ function rCreate(app){
     G.attr={...(window._rndAttrs||rndAttrs)};
     G.talents=(window._rndTalents||rndTalents).map(t=>t.id);
     G.talentNames=(window._rndTalents||rndTalents).map(t=>t.n);
-    G.homestay=window._rndHome||pickHomestay(G.talents);
+    (window._rndTalents||rndTalents).forEach(t=>{if(t&&t.eff)t.eff();});
+    // ⚠️ 先应用因果商店效果（居場所需在借宿分配前生效）
+    try{const bought=JSON.parse(localStorage.getItem('aotu4_shop')||'[]');bought.forEach(idx=>{const item=KARMA_SHOP[idx];if(item&&item.eff)item.eff();});localStorage.removeItem('aotu4_shop');}catch(e){}
+    // 🏠 居場所：使用玩家选择的借宿角色；否则随机
+    G.homestay=(G._ksHome&&window._selHome)?window._selHome:(window._rndHome||pickHomestay(G.talents));
     G.homeInfo=getHomeInfo(G.homestay);
     G.dayType='weekday';G.loop=1;
     try{const ae=localStorage.getItem('aotu4_ach');if(ae)G.achievements=JSON.parse(ae);}catch(e){}
-    (window._rndTalents||rndTalents).forEach(t=>{if(t&&t.eff)t.eff();});
-    try{const bought=JSON.parse(localStorage.getItem('aotu4_shop')||'[]');bought.forEach(idx=>{const item=KARMA_SHOP[idx];if(item&&item.eff)item.eff();});localStorage.removeItem('aotu4_shop');}catch(e){} // 生效后清除
     render('play');
   };
 }
