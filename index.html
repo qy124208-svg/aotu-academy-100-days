@@ -1859,7 +1859,11 @@ function genEventPreviews(locPool,count,genFn,opts={}){
       return true;
     });
     if(avail.length>0){
-      const pick2=avail[Math.floor(Math.random()*avail.length)];
+      // 按CP好感度加权随机选择
+      const weights=avail.map(([key])=>cpAvg(key)+1);
+      const totalW=weights.reduce((a,b)=>a+b,0);
+      let r=Math.random()*totalW,s=0;
+      const pick2=avail[weights.findIndex(w=>(s+=w)>r)];
       const[key,data]=pick2;let stage=1;
       if(G.flags['cp_'+key+'_s1'])stage=2;if(G.flags['cp_'+key+'_s2'])stage=3;if(G.flags['cp_'+key+'_s3'])stage=4;if(G.flags['cp_'+key+'_s4'])stage=5;
       if(data[stage]){
@@ -2608,7 +2612,7 @@ function renderNoon(app){
 // ─── 周末自由探索渲染 ───
 function renderWeekendExplore(app,label){
   const locPool=Object.keys(LC_OUT);
-  const events=genEventPreviews(locPool,4,genWeekendEvent,{cpChance:G._tSeventh?0.30:0.15});
+  const events=genEventPreviews(locPool,4,genWeekendEvent,{cpChance:G._tSeventh?0.35:0.20});
   const title=label==='上午'?'🏙️ 周末上午 —— 去哪里逛逛？':'☕ 周末午后 —— 有什么在等着呢？';
   if(events.length>0){
     renderEventSelect(app,events,title,
@@ -2623,7 +2627,7 @@ function renderWeekendExplore(app,label){
 window._goOut=function(locId){
   G.energy=Math.max(0,G.energy-Math.max(3,11-G.attr.STR));curEv=null; // 体力高消耗少
   // CP事件触发
-  const cpChance=G._tSeventh?0.30:0.15;
+  const cpChance=G._tSeventh?0.35:0.20;
   if(Math.random()<cpChance){
     const avail=Object.entries(CPS).filter(([key,data])=>{
       let stage=1;if(G.flags["cp_"+key+"_s1"])stage=2;if(G.flags["cp_"+key+"_s2"])stage=3;if(G.flags["cp_"+key+"_s3"])stage=4;if(G.flags["cp_"+key+"_s4"])stage=5;
@@ -2633,7 +2637,11 @@ window._goOut=function(locId){
       return !G.flags['cp_'+key+'_s'+stage+'_done'];
     });
     if(avail.length>0){
-      const pick2=avail[Math.floor(Math.random()*avail.length)];
+      // 按CP好感度加权随机选择
+      const weights=avail.map(([key])=>cpAvg(key)+1);
+      const totalW=weights.reduce((a,b)=>a+b,0);
+      let r=Math.random()*totalW,s=0;
+      const pick2=avail[weights.findIndex(w=>(s+=w)>r)];
       const[key,data]=pick2;let stage=1;
       if(G.flags['cp_'+key+'_s1'])stage=2;if(G.flags['cp_'+key+'_s2'])stage=3;
       if(data[stage]){
@@ -2650,7 +2658,7 @@ window._goOut=function(locId){
 
 function renderAfternoon(app){
   const locPool=Object.keys(LC);
-  const events=genEventPreviews(locPool,5,genRandomEvent,{cpChance:G._tSeventh?0.35:0.18});
+  const events=genEventPreviews(locPool,5,genRandomEvent,{cpChance:G._tSeventh?0.40:0.25});
   if(events.length>0){
     renderEventSelect(app,events,'🌆 放学了 —— 今天发生着这些事……',
       `<div style="display:flex;gap:6px;margin-top:10px;justify-content:center">
@@ -2671,7 +2679,7 @@ function renderAfternoon(app){
 window._go=function(locId){
   G.energy=Math.max(0,G.energy-Math.max(4,14-G.attr.STR));curEv=null; // 体力高消耗少
   // CP事件触发（天赋加成）
-  const cpChance=G._tSeventh?0.35:0.18;
+  const cpChance=G._tSeventh?0.40:0.25;
   if(Math.random()<cpChance){
     const avail=Object.entries(CPS).filter(([key,data])=>{
       let stage=1;if(G.flags["cp_"+key+"_s1"])stage=2;if(G.flags["cp_"+key+"_s2"])stage=3;if(G.flags["cp_"+key+"_s3"])stage=4;if(G.flags["cp_"+key+"_s4"])stage=5;
@@ -2681,7 +2689,11 @@ window._go=function(locId){
       return !G.flags['cp_'+key+'_s'+stage+'_done'];
     });
     if(avail.length>0){
-      const pick2=avail[Math.floor(Math.random()*avail.length)];
+      // 按CP好感度加权随机选择
+      const weights=avail.map(([key])=>cpAvg(key)+1);
+      const totalW=weights.reduce((a,b)=>a+b,0);
+      let r=Math.random()*totalW,s=0;
+      const pick2=avail[weights.findIndex(w=>(s+=w)>r)];
       const[key,data]=pick2;let stage=1;
       if(G.flags['cp_'+key+'_s1'])stage=2;if(G.flags['cp_'+key+'_s2'])stage=3;
       if(data[stage]){
