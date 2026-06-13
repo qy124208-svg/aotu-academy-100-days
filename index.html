@@ -1037,6 +1037,7 @@ let G={
   homestay:null,dayType:'weekday',
   mainChapter:1,sideQuests:{},completedSQ:[],
   lowSprDays:0,sprWarned:false,dailyEvents:0,schoolStreak:0,karma:0,_ksSpr:false,_ksEnergy:false,_ksHome:false,_tBonus:false,_bonusToday:false,
+  witch_active:false,witch_day:0,witch_hero:null,
   _tAngel:false,_tJournal:false,_tSeventh:false,_tWatch:false,
   _tStuco:false,_tSocial:false,_tEarly:false,_tNight:false,
   _tBento:false,_tRun:false,_tWeather:false,_tJoke:false,
@@ -1052,6 +1053,7 @@ function initG(){
   G.talents=[];G.talentNames=[];
   G.homestay=pk(HOMESTAY_POOL); // 随机借宿角色
   G.homeInfo=getHomeInfo(G.homestay); G.sideQuests={}; G.completedSQ=[]; G.lowSprDays=0; G.sprWarned=false; G.dailyEvents=0; G.schoolStreak=0;
+  G.witch_active=false; G.witch_day=0; G.witch_hero=null;
   G.karma=loadKarma();applyKarmaPassive(); G._ksSpr=false; G._ksEnergy=false; G._ksHome=false; G._tBonus=false; G._bonusToday=false;
   ['_tAngel','_tJournal','_tSeventh','_tWatch','_tStuco','_tSocial','_tEarly','_tNight','_tBento','_tRun','_tWeather','_tJoke','_tLucky','_tLib','_tRooftop','_tChill'].forEach(k=>G[k]=false);
 }
@@ -2470,6 +2472,226 @@ function rCreate(app){
   };
 }
 
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  溃离魔女 · 角色击杀文本（18人，性格化）                       ║
+// ╚══════════════════════════════════════════════════════════════╝
+const CHAR_WITCH_SLAY={
+  jin:{
+    t:'⭐ 金 · 最后一支矢量箭头',
+    x:`金的手在发抖——但他没有后退一步。\n\n「对不起——」\n\n矢量箭头从他的指尖射出——穿透了悲叹之种。\n\n他没有看爆炸的结界。\n\n他抱住了你正在消散的身体。\n\n「我答应过——会让你不再痛苦。」\n\n他的眼泪——滴在你手背上。\n\n是热的。\n\n「在那边——不要再逞强了。」`
+  },
+  gerui:{
+    t:'❄️ 格瑞 · 烈斩终幕',
+    x:`格瑞的表情——和平时一模一样。\n\n但他握烈斩的手——指节发白。\n\n「……你该休息了。」\n\n烈斩的绿光划开结界——干脆利落。\n\n悲叹之种——在刀锋下——无声地裂成两半。\n\n他收刀。跪在你身边——很久很久没有动。\n\n有人想拉他起来。\n\n他摇了摇头。\n\n「我再坐一会儿。」`
+  },
+  leishi:{
+    t:'🦁 雷狮 · 雷锤裁决',
+    x:`「恶党就该由恶党来杀。」\n\n雷神之锤砸下——紫色的电光炸穿了结界——\n\n悲叹之种在雷霆中碎成粉末。\n\n他把你的身体从废墟里抱起来——动作意外地轻。\n\n「……谁都不准说TA的不是。」\n\n他的声音很低。\n\n像是——在对自己说的命令。`
+  },
+  anmixiu:{
+    t:'⚔️ 安迷修 · 最后的骑士礼',
+    x:`「以骑士之名——送你最后一程。」\n\n双剑出鞘——左刃燃着火焰——右刃凝着冰霜。\n\n结界在冷焰交织中裂成两半——干净利落。\n\n他单膝跪下——用骑士的礼仪——对你行最后一礼。\n\n「你的痛苦——我收到了。」\n\n「在另一个世界——不需要再做魔女。」\n\n他站起来——风吹过空荡荡的走廊。\n\n骑士收剑。\n\n没有人看到他转身后的表情。`
+  },
+  kamier:{
+    t:'🧣 卡米尔 · 无重力',
+    x:`卡米尔什么都没说。\n\n他把自己的围巾解下来——轻轻盖在你身上。\n\n然后——他的身体变轻了——轻到几乎没有重量——\n\n穿过结界——像穿过一层水。\n\n一刀。\n\n很快。\n\n快到——你甚至没有感觉到疼。\n\n他重新系好围巾——上面沾了黑色的灰。\n\n他没有擦掉。\n\n「……回家。」\n\n只有这两个字。`
+  },
+  aimi:{
+    t:'😇 埃米 · 男子汉',
+    x:`埃米在哭。\n\n但他没有后退。\n\n「我——是男子汉——」\n\n「不能让你——再伤害别人了——」\n\n恶魔之爪撕裂了结界——\n\n他几乎是闭着眼挥出那一击的。\n\n结界碎开的时候——他跪在地上——\n\n哭得说不出话。\n\n艾比站在他身后——没有像平时那样敲他的头。\n\n她只是把手搭在他肩上。`
+  },
+  kaili:{
+    t:'👑 凯莉 · 最后一枚星月刃',
+    x:`「别以为本小姐会手软。」\n\n星月刃划破结界——月刃近斩——星镖飞散——\n\n锋利得像她的嘴。\n\n但她最后一枚星镖——慢了半拍。\n\n「——笨蛋。」\n\n她说这两个字的时候——声音和平时不一样。\n\n然后她转身。\n\n「呆头鹅——不准算我的卦。」\n\n安莉洁在旁边——没有回答。\n\n凯莉的后背——有小片水渍。`
+  },
+  anlijie:{
+    t:'🍋 安莉洁 · 最后的冰棺',
+    x:`「今天的占卜——是'死神'。」\n\n她伸出手——没有拿水晶球。\n\n冰霜从她的指尖涌出——\n\n不是攻击——是拥抱。\n\n悲叹之种被封入透明的冰棺——\n\n在冰层里——黑色的碎片停止了脉动。\n\n她轻轻敲了一下冰面。\n\n碎了。\n\n「但下一张——」\n\n她对着你消散的方向——\n\n睫毛上结着霜——\n\n「下一张——是'星星'。」\n\n星星代表希望。\n\n下一次轮回——你不会是魔女。`
+  },
+  leide:{
+    t:'📖 雷德 · 最后一页',
+    x:`「故事的最后——总要有一个人放下笔。」\n\n他撕下笔记本的最后一页。\n\n雷电鞭缠绕在纸片上——\n\n电光裹着字迹——穿透了结界。\n\n他没有念上面的字。\n\n但他看着你——笑了一下。\n\n「你的故事——我来写完。」\n\n「所以——安心睡吧。」\n\n他把那页纸——折成纸飞机——\n\n飞向了你消失的方向。`
+  },
+  zuma:{
+    t:'🗿 祖玛 · 沉默的战士',
+    x:`祖玛没有表情。\n\n但她举起风之巨剑的动作——很轻。\n\n像怕吵醒你。\n\n结界在旋风刃下无声地碎裂——\n\n她收剑——站了很久。\n\n沉默——很长的沉默。\n\n然后她把悲叹之种的碎片——一片一片收起来。\n\n「战士的归宿——我尊重。」\n\n「下次——并肩作战。」`
+  },
+  jiadeluosi:{
+    t:'🔥 嘉德罗斯 · 最后的渣渣',
+    x:`「渣渣——把自己搞成这副样子。」\n\n大罗神通棍横扫——结界的碎片在棍风里飞散——\n\n火光映在他脸上——\n\n没有平时的轻蔑。\n\n「……和格瑞那个混蛋一样——」\n\n一棍——贯穿了悲叹之种。\n\n碎片飞溅。\n\n他在灰烬里站了几秒。\n\n「……让人火大。」\n\n他的声音——比平时轻了太多。`
+  },
+  paluosi:{
+    t:'🖊️ 帕洛斯 · 最后的谎言',
+    x:`「说谎的人——最清楚什么是真的。」\n\n影子从四面涌来——\n\n每一个都是他——每一个都是别人——\n\n影子实体化——缠住了悲叹之种。\n\n他没有笑。\n\n「我骗过很多人。」\n\n种子碎了——所有影子同时消散。\n\n「——但这次——没骗你。」\n\n他在空无一人的结界里——\n\n站了很久——\n\n像在想——哪一句是真的。`
+  },
+  peili:{
+    t:'🐺 佩利 · 重力崩坏',
+    x:`「你是个好对手。」\n\n重力球在他掌心凝聚——越来越沉——\n\n然后——砸进结界。\n\n纯粹的重量——没有技巧——\n\n只有尊重。\n\n悲叹之种在重力碾压下四分五裂——\n\n他对着你消散的方向——\n\n敬了个不标准的礼。\n\n「在那边——也要好好打。」\n\n「下次——你来当我的对手。」`
+  },
+  aibi:{
+    t:'😈 艾比 · 笨蛋',
+    x:`「——笨蛋！！」\n\n她喊得最大声。\n\n但她的呆毛——垂下来了。\n\n天使之弓拉满——光箭蓄到了极限——\n\n「为什么要自己扛——」\n\n「你明明——什么都不会——」\n\n光箭贯穿结界——用尽全力。\n\n结界碎片落下来——\n\n她背对着所有人。\n\n「……不准看我。」\n\n埃米在旁边——\n\n轻轻拉住了她的袖口。`
+  },
+  yinjue:{
+    t:'🐱 银爵 · 锁链无声',
+    x:`银爵从头到尾没有说一个字。\n\n他蹲下来——把一只小猫放在结界边缘。\n\n猫咪舔了舔空气中的黑色碎片——\n\n叫了一声。\n\n然后——锁链从他袖中飞出——\n\n无声地——缠住了悲叹之种。\n\n收紧。碎裂。\n\n干净利落。\n\n小猫又喵了一声。\n\n他垂下了眼——锁链收回袖中。\n\n抱起猫——走远了。\n\n背上——有细小的抓痕。`
+  },
+  guihu:{
+    t:'🦊 鬼狐 · 最不划算的赌注',
+    x:`「你是我见过——最不划算的赌注。」\n\n鬼狐摇了摇头。\n\n「明明能逃——却选择留下。」\n\n他复制的技能——一道接一道——\n\n精准——不拖泥带水——像计算好的棋局。\n\n结界碎掉的时候——\n\n他伸手接住了一片黑色碎片。\n\n「——但这局——」\n\n他把碎片攥进手心。\n\n「是我输了。」\n\n收手后——\n\n他在空无一人的结界里——站了很久。`
+  },
+  zitanghuan:{
+    t:'🐾 紫堂幻 · 不敢逃跑的人',
+    x:`「我——我一直——不敢——」\n\n他的声音在抖——\n\n但他没有退。\n\n召唤兽冲破了结界——\n\n他自己都不敢相信自己做到了。\n\n悲叹之种碎裂的瞬间——\n\n他跪下来——喘着气——\n\n眼眶红了。\n\n「……这一次——」\n\n他的手指抠进地里。\n\n「我没有逃。」`
+  },
+  shenjinyao:{
+    t:'🗡️ 神近耀 · 第999次',
+    x:`「第999次。」\n\n他面无表情——\n\n九把苦无一齐射出——\n\n穿透了颜色——穿透了结界——\n\n精确得像命运。\n\n他没有看爆炸的结界。\n\n他在数。\n\n「第1次到第998次——都是第9名。」\n\n苦无收回。\n\n黑色的碎片落在他肩头——\n\n他没有弹开。\n\n「但这一次——」\n\n「我必须中。」`
+  }
+};
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  溃离魔女 · 十日崩塌                                         ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+function renderWitchDay(app){
+  if(!G.witch_hero||!CH[G.witch_hero])G.witch_hero=Object.keys(CH).find(k=>CH[k]&&CH[k].c!=='教师')||'jin';
+  const hero=CH[G.witch_hero];
+  const heroName=hero?(hero.e+' '+hero.n):'那个人';
+  const heroEmoji=hero?hero.e:'💫';
+  const home=G.homeInfo||getHomeInfo(G.homestay);
+  const hs=CH[G.homestay];
+  const homeLabel=home?(home.isFamily?home.allEmoji+' '+home.displayName:hs.e+' '+hs.n+'家'):'';
+  let heroFamily=[];
+  const heroFam=FAMILY_HOMES[G.witch_hero];
+  if(heroFam)heroFamily=heroFam.members.filter(id=>id!==G.witch_hero);
+  const day=G.witch_day;
+  let title,narration,choices,isFinalBattle=false;
+
+  switch(day){
+    case 1:
+      title='🌑 第一日 · 觉醒';
+      narration=`心魔幻境崩塌的时候——\n\n你没有死。\n\n你的灵魂宝石——那颗承载着你全部存在的结晶——\n\n在最后一缕光熄灭之后——\n\n碎了。\n\n碎了的灵魂宝石——不叫灵魂宝石了。\n\n叫悲叹之种。\n\n孵化者说——灵魂宝石离开身体100米就会失效。\n\n但现在——你的身体是你的牢笼。\n\n不对——悲叹之种才是你的本体。身体只是容器。\n\n你在${homeLabel}的镜子里看到了自己。\n\n瞳孔——暗红色。和溃离症发作时的安迷修一样——\n\n但你不会醒来了。\n\n墙壁上——开始浮现看不懂的文字——扭曲的符文——\n\n那是魔女文字。\n\n你的性质——写在上面。\n\n「溃离」。\n\n害怕分离。害怕告别。害怕一百天后必须离开。\n\n所以——你要让整个世界——都留在你的结界里。\n\n窗外——天空变色。玻璃碎裂。\n\n你伸出手——\n\n结界——展开了。`;
+      choices=[{t:'……悲叹之种在胸腔里震动。不是心跳。是诅咒。',a:[],f:''}];break;
+
+    case 2:
+      title='🕸️ 第二日 · 结界';
+      narration=`第一天——没有人发现异常。\n\n只是觉得天空的颜色不太对——淡紫色的薄雾笼罩了凹凸学园。\n\n上课时——有人在走廊里看到了不该存在的人影。\n\n不是人。是使魔。\n\n魔女的使魔——从结界里渗出来的影子——\n\n还没有实体——但它们在学园里游荡——\n\n像在寻找什么。\n\n「那是什么——」\n\n「大概眼花了吧——最近太累了——」\n\n没有人说到点子上。\n\n但${heroName}——注意到了。\n\n「今天看到转校生了吗？」\n\n他问遍了每个教室。\n\n没有人。没有书包。没有座位。\n\n你的课桌上——落了一层细小的黑色尘埃。\n\n像悲叹之种表面那种——一碰就会碎的灰。\n\n他伸手碰了一下。\n\n指尖——感觉到了结界的脉动。\n\n不是心跳。是结界的。\n\n${heroName}握紧了拳头。`;
+      choices=[{t:'从结界的中心——感知使魔的轨迹',a:[],f:''}];break;
+
+    case 3:
+      title='💔 第三日 · 崩落';
+      narration=`第三天——第一个学生倒下了。\n\n在走廊里——突然捂住胸口。\n\n「救——救我——」\n\n没有外伤。没有血迹。\n\n但她的手腕上——出现了一个纹章。\n\n魔女之吻。\n\n每一个魔女都有自己独特的吻痕——\n\n你的是碎裂的环形——像要断开又没完全断开的锁链。\n\n溃离——分离——崩坏——\n\n被标记的人不会立刻死亡。\n\n他们被引诱——被吸引——\n\n一步步走向结界深处。\n\n丘比说过——世间的自杀、杀人——许多都与魔女之吻有关。\n\n你不想伤害他们。\n\n但你想让他们留下来。永远。\n\n校门被紫色的屏障封锁了。\n\n丹尼尔📋试图联系外界——只有杂音。\n\n「我去看看。」${heroName}说。\n\n他走向了${homeLabel}。\n\n他记得——那是你借宿的地方。`;
+      choices=[{t:'……等待他',a:[],f:''}];break;
+
+    case 4:
+      title='🖤 第四日 · 蔓延';
+      narration=`第四天。\n\n半数学生被魔女之吻标记。\n\n他们不会死亡——但眼睛变得空洞。\n\n重复着最后做的事——\n\n擦黑板。翻书。在操场上跑——一圈又一圈。\n\n使魔在走廊里有了形状——\n\n像黑色剪影——模仿着学生们的样子。\n\n官方的说法是：使魔吃掉足够多的人类后——\n\n会长出自己的悲叹之种——变成独立的魔女。\n\n结界在扩大。教学楼在扭曲。\n\n教室的门——推开是另一间教室。\n\n走廊的长度——不再固定。\n\n「这是——魔女的结界——」\n\n安莉洁🍋抱着水晶球——球体裂了。\n\n「她在很近的地方——但——不在我们能到达的地方——」\n\n${heroName}找了三天。\n\n${homeLabel}——空无一人。满地黑色尘埃。\n\n和你枕头下的日记——\n\n他翻开了。\n\n「……我想留下来。但规则不允许。」`;
+      choices=[{t:'在结界深处——看着自己的笔迹',a:[],f:''}];break;
+
+    case 5:
+      title='⛓️ 第五日 · 绝望';
+      narration=`第五天。\n\n连老师们也被标记了。\n\n丹尼尔📋是最后一个清醒的教师。\n\n「这种力量——不是这个世界该有的——」\n\n他坐在教职员室里——计算结界扩张的速度。\n\n结论——整座城市。\n\n「传说中有一种魔女——」他翻着能找到的所有文献——\n\n「救济的魔女——Kriemhild Gretchen——\n\n她的结界能在十天内吞噬整个地球。」\n\n他放下笔。\n\n「这个——比不上那个——」\n\n「但一座城市——够了。」\n\n${heroName}站起来。\n\n「我知道她在哪。」\n\n他的声音很稳——比任何时候都稳。\n\n「在${homeLabel}——最深的地方。」\n\n「在那个——已经不再是${homeLabel}的地方。」`;
+      choices=[{t:'救济的魔女用了十天吞噬地球。你的结界——也还剩五天。',a:[],f:''}];break;
+
+    case 6:
+      title='⚔️ 第六日 · 对峙';
+      narration=`第六天。\n\n${heroName}找到了TA。\n\n在${homeLabel}——TA的房间里。\n\nTA坐在床边——看起来和以前一样。\n\n但眼睛——是红色的。\n\n溃离症发作时——安迷修的眼睛也是这个颜色。\n\n他事后什么都不记得。\n\n但TA——不是发作。TA不会醒。\n\n「……转校生。」\n\n他的声音——比平时轻。\n\nTA没有反应。\n\n他往前走了一步。结界在他脚下——像水面一样起了涟漪。\n\nTA抬起头——\n\n看着他——但视线穿过他——\n\n像在看——一个不认识的人。\n\n「你不记得我了——是不是。」\n\n不是问句。\n\n他伸出手——结界把他弹开了。\n\n他撞在墙上——没有受伤——\n\n但他看着TA——\n\n眼神——像一个被忘记了名字的人。`;
+      choices=[{t:'TA不认识他。这就是溃离——分离——连记忆都不留。',a:[],f:''}];break;
+
+    case 7:
+      title='💫 第七日 · 共鸣';
+      narration=`第七天。\n\n${heroName}没有再来。\n\n但他没有走远——就在结界的外层。\n\n不是试图破解——是在回忆。\n\n人鱼的魔女 Oktavia——TA的结界里——\n\n有一个只有TA能听到的演奏会。\n\n但TA听不见演奏会以外的任何声音。\n\n那个演奏会——只是TA生前执念的残响——不是TA本人。\n\nTA早就不在了。\n\n结界里回响的——只是记忆的余烬。\n\n你的结界——也一样。\n\n他想起你刚来那天——你和他第一次说话——\n\n你坐在他旁边——没什么特别的——\n\n那些时刻——结界在自动回放——\n\n像 Oktavia 的演奏会——只有旋律——没有意识。\n\n悲叹之种裂了一道缝。\n\n不是因为你在回应。\n\n是因为那些记忆——是结界里最后一点——没有变成诅咒的东西。\n\n他看到了那道裂缝。\n\n他把手贴上去。\n\n「——你在——」\n\n没有回答。从来就没有。\n\n裂缝不是回应。裂缝只是——悲叹之种快要孵化的前兆。`;
+      choices=[{t:'Oktavia听不见。你也听不见。但他在叫你的名字。',a:[],f:''}];break;
+
+    case 8:
+      title='🔥 第八日 · 牺牲';
+      let sn=`第八天。\n\n不是${heroName}一个人。\n\n有其他人。\n\n`;
+      if(heroFamily.length>0){
+        sn+=heroFamily.map(id=>{const ch=CH[id];return ch?`${ch.e} ${ch.n}站在结界的外层。\n\n他们什么都没说。\n\n但他们把最后的清醒——留给了${heroName}。\n\n`:'';}).join('');
+      }
+      const otherAllies=Object.entries(G.aff).filter(([id,v])=>v>=50&&id!==G.witch_hero&&!heroFamily.includes(id)&&CH[id]&&CH[id].c!=='教师').sort((a,b)=>b[1]-a[1]).slice(0,2);
+      if(otherAllies.length>0){
+        sn+=otherAllies.map(([id])=>{const ch=CH[id];return ch?`${ch.e} ${ch.n}——被魔女之吻标记了。\n\n在失去意识之前——看着${heroName}的方向。\n\n「——拜托你了。」\n\n`:'';}).join('');
+      }
+      sn+=`\n他们的牺牲——不是为了拯救。\n\n已经没有人可以被拯救了。\n\n转校生——在灵魂宝石碎裂的那一刻——就已经不在了。\n\n他们的牺牲——是为了终结。\n\n终结这场溃离——终结这个结界——\n\n让那具空壳——不再被魔女当作容器。\n\n${heroName}穿过结界的外层。\n\n这次——没有被推开。`;
+      narration=sn;choices=[{t:'……不……不要过来……',a:[],f:''}];break;
+
+    case 9:
+      title='✨ 第九日 · 决意';
+      narration=`第九天。\n\n结界在缩小。\n\n不是因为魔女变弱了——\n\n是悲叹之种进入了最终阶段。\n\n即将彻底孵化。孵化之后——连这具空壳——都会被吞噬。\n\n溃离症里有一句话——TA只是不懂得如何来表达而已啊。\n\n但这里——不是不懂表达。\n\n是没有人可以表达了。\n\n${heroName}走到了TA面前。\n\n这次——没有屏障。\n\nTA站在那里——瞳孔是空的红色。\n\n溃离症发作后的安迷修——醒来什么都不记得。\n\n但TA不会醒。\n\n「……是我。」\n\n他叫了TA的名字。\n\n没有反应。\n\n「你记得吗——第一天——」\n\n他说起TA帮过他的事——说起TA坐在他旁边的那天——\n\n一样一样——像翻一本只有他知道页码的书。\n\nTA的眼睛——没有任何变化。\n\n他停住了。沉默了很长时间。\n\n然后——握紧了武器。\n\n「你不在里面了——是不是。」\n\n不是问句。\n\n灵魂宝石碎了——悲叹之种不是灵魂。\n\n只是绝望的结晶。\n\n他蹲下来——武器放在膝上——\n\n「明天。」\n\n他的声音——像在对自己下命令。\n\n「明天——我来让你自由。」`;
+      choices=[{t:'……继续',a:[],f:''}];break;
+
+    case 10:
+      isFinalBattle=true;
+      title='🌅 第十日 · 终幕';
+      const slay=CHAR_WITCH_SLAY[G.witch_hero]||CHAR_WITCH_SLAY['jin'];
+      narration=`最后一天。\n\n结界几乎完全透明了。\n\n${heroName}站在TA面前——和TA之间——隔着最后一片黑色的玻璃。\n\n悲叹之种在跳动。\n\n像心脏——但跳动的不是TA的。\n\n是结界的脉搏。\n\n他叫了TA的名字——最后一次。\n\n没有回应。\n\n他早就知道不会有。\n\n——\n\n${slay.x}\n\n——\n\n结界碎裂的声音——是这十天里——唯一真实的声响。`;
+      choices=[
+        {t:'一刀——干净利落。他不想让TA多疼一秒。',a:[],f:'',witch_ending:'redemption'},
+        {t:'他犹豫了。他试着再叫一次TA的名字——然后——不得不——',a:[],f:'',witch_ending:'consumption'}
+      ];break;
+  }
+
+  const witchShell=buildWitchShell(title,narration,choices,isFinalBattle);
+  app.innerHTML=witchShell;
+}
+
+function buildWitchShell(title,narration,choices,isFinalBattle){
+  const hero=CH[G.witch_hero];
+  const heroClr=hero?hero.clr:'#bc8cff';
+  let html=`<div class="cdbanner fadein" style="background:linear-gradient(135deg,#1a0a1e,#2d0a1e);border:2px solid var(--purple)">
+    <div style="text-align:center">
+      <div class="daynum" style="color:var(--purple);text-shadow:0 0 20px rgba(188,140,255,0.5)">${G.witch_day}</div>
+      <div class="daylabel" style="color:var(--purple)">溃 离 纪 元</div>
+    </div>
+  </div>
+  <div class="statusbar fadein" style="background:#1a0a1e;border:1px solid var(--purple)">
+    <span style="font-size:0.6em;color:var(--dim)">魔女结界</span>
+    <span style="color:var(--purple);font-size:0.75em">💎 性质：溃离</span>
+    <span style="color:var(--dim);font-size:0.65em">悲叹之种</span>
+    ${hero?`<span style="color:${heroClr};font-size:0.75em;margin-left:auto">${hero.e} ${hero.n} · 英雄</span>`:''}
+  </div>
+  <div class="eventbox fadein" style="border-left:3px solid var(--purple);background:var(--card);margin:8px 0">
+    <p class="narration" style="white-space:pre-line">${narration}</p>
+  </div>
+  <div style="margin:8px 0">`;
+
+  if(isFinalBattle&&choices.length===2){
+    html+=`
+    <button class="btn btn-choice fadein" style="border:2px solid var(--gold);background:#1a1a0e"
+      onclick="window._witchRespond('${choices[0].witch_ending}')">
+      ${choices[0].t}
+    </button>
+    <button class="btn btn-choice fadein" style="animation-delay:0.08s;border:1px solid #444"
+      onclick="window._witchRespond('${choices[1].witch_ending}')">
+      ${choices[1].t}
+    </button>`;
+  }else{
+    html+=`
+    <button class="btn btn-p pulse" style="font-size:1.1em;padding:12px 36px;background:var(--purple);color:#fff;border:none;box-shadow:0 0 20px rgba(188,140,255,0.4)"
+      onclick="window._witchAdvance()">
+      ${G.witch_day===9?'▸ 终末降临':'▸ 下一天'}
+    </button>`;
+  }
+
+  html+=`</div>`;
+  return html;
+}
+
+// ─── 魔女推进与终幕全局函数 ───
+window._witchAdvance=function(){
+  curEv=null;
+  advanceSlot();
+  if(G.witch_day<=10&&G.witch_active)render('play');
+};
+
+window._witchRespond=function(endingType){
+  G.flags['witch_ending_type']=endingType;
+  G.witch_day=11;
+  advanceSlot();
+};
+
 // ─── 主游戏 ───
 function buildShell(content){
   const dl=G.maxDay-G.day;const pct=(G.day/G.maxDay)*100;
@@ -2501,6 +2723,8 @@ window._toggleAI=function(){
 };
 
 function rPlay(app,feedback){
+  // ─── 溃离魔女分岐：接管游戏流程 ───
+  if(G.witch_active){renderWitchDay(app);return;}
   if(G.day>G.maxDay){render('end');return;}
 
   // 日历事件检查（在任何时段都优先）
@@ -2635,6 +2859,12 @@ function rPlay(app,feedback){
 }
 
 function advanceSlot(){
+  // ─── 溃离魔女分岐：跳过正常时段推进 ───
+  if(G.witch_active){
+    G.witch_day++;
+    if(G.witch_day>10){G.flags['witch_massacre_complete']=true;G.day=G.maxDay+1;render('end');return;}
+    return;
+  }
   G._eventCache={}; // 清除事件缓存，时段变化后重新生成
   const dt=G.dayType;
   switch(G.slot){
@@ -3228,9 +3458,71 @@ window._buyKarma=function(idx){
   alert('✅ 已购买：'+item.n+'！\n仅下次新轮回生效，使用后需重新购买。');
 };
 
+// ─── 溃离魔女结局渲染 ───
+function renderWitchEnding(app){
+  const hero=CH[G.witch_hero];
+  const heroName=hero?(hero.e+' '+hero.n):'那个人';
+  const endingType=G.flags['witch_ending_type']||'redemption';
+  const karmaAtTransform=G.flags['witch_karma_at_transform']||G.karma||0;
+  // 因果惩罚：悲叹之种消耗40%因果值
+  const karmaLoss=Math.floor(karmaAtTransform*0.4);
+  const oldKarma=loadKarma();
+  G.karma=Math.max(0,oldKarma-karmaLoss);
+  saveKarma(G.karma);
+  // 成就
+  if(!G.achievements.includes('end_witch')){
+    G.achievements.push('end_witch');
+    G.achievements.push('end_witch_'+endingType);
+    try{localStorage.setItem('aotu4_ach',JSON.stringify(G.achievements));}catch(e){}
+  }
+
+  let endingTitle,endingText,endingEmoji;
+  const slay=CHAR_WITCH_SLAY[G.witch_hero];
+  const slayTitle=slay?slay.t:'';
+
+  if(endingType==='redemption'){
+    endingTitle='溃离の魔女 · 安息';
+    endingEmoji='💎✨';
+    endingText=`他出手很快。\n\n快到悲叹之种没有来得及抵抗——\n\n这是他能给的——最后的温柔。\n\n悲叹之种裂开——没有惨叫——没有挣扎。\n\n身体只是容器。灵魂宝石碎了之后——\n\n那个转校生——早就不在那里了。\n\n黑色的碎片——在半空中——变成了灰。\n\n然后灰变成了光。\n\n结界消散。被标记的同学——一个接一个醒来——\n\n不记得发生了什么——\n\n但他们都看到了——\n\n${heroName}跪在废墟中央——\n\n手里捧着什么——已经看不清了。\n\n他没有哭。\n\n但他的肩膀——在发抖。\n\n——\n\n${slayTitle}\n\nTA只是不懂得如何来表达而已啊。\n\nTA没有回来。\n\n但TA的痛苦——结束了。\n\n一百天太短。\n\n但够让一个人——\n\n在最深的诅咒里——\n\n被另一个人——记住。`;
+  }else{
+    endingTitle='溃离の魔女 · 永劫';
+    endingEmoji='💎🖤';
+    endingText=`他犹豫了。\n\n在最后一刻——他又叫了一遍TA的名字。\n\n「求你——」\n\n回答他的——只有悲叹之种的脉动。\n\nTA听不到。\n\n灵魂宝石碎掉的那一刻——TA就已经不在了。\n\n悲叹之种里的——只是溃离。\n\n魔女结界炸开——黑色的冲击波——\n\n把他推到了墙上。\n\n他爬起来——嘴角有血——\n\n但他没有擦。\n\n他冲进去——武器穿过黑暗——\n\n击碎了悲叹之种的核心。\n\n碎片割破了他的脸。\n\n他没有躲。\n\n「……对不起——」\n\n他对着空无一人的方向说。\n\n「——我来晚了。」\n\n——\n\n${slayTitle}\n\n溃离症发作后——什么都不记得。\n\n但羁绊——不会清零。\n\n因果还留着。圆环会转动。\n\n而下一次——\n\n他会更早——在灵魂宝石碎裂之前——\n\n站在TA面前。`;
+  }
+
+  app.innerHTML=`<div class="cdbanner" style="background:linear-gradient(135deg,#1a0a1e,#2d1a1e);border:2px solid var(--purple)">
+    <div class="daynum" style="color:var(--purple);text-shadow:0 0 20px rgba(188,140,255,0.5)">0</div>
+    <div class="daylabel" style="color:var(--purple)">溃 离 终 末</div>
+  </div>
+  <div class="endbox fadein">
+    <div class="endicon">${endingEmoji}</div>
+    <h2 style="color:var(--purple);letter-spacing:3px">${endingTitle}</h2>
+    <p class="endtext" style="white-space:pre-line">${endingText}</p>
+    <div style="margin:25px 0">
+      <button class="btn btn-p pulse" onclick="window._newLoop()" style="font-size:1.1em;padding:12px 36px;background:var(--purple);color:#fff;border:none;box-shadow:0 0 20px rgba(188,140,255,0.4)">
+        🔄 重开轮回——那些羁绊不会消失
+      </button>
+    </div>
+    <button class="btn btn-s" onclick="render('title')">🏠 回到标题</button>
+    <div style="margin-top:16px;font-size:0.8em;color:var(--dim)">
+      🏆 成就：${G.achievements.length} · 📸 记忆：${G.memories.length}/${Object.keys(CP).length} · 📓 日记：${G.journal.length}条
+    </div>
+    <div style="background:linear-gradient(135deg,#1a0a1e,#2d1a1e);border:1px solid var(--purple);border-radius:10px;padding:12px;margin-top:10px;text-align:center">
+      <div style="font-size:0.7em;color:var(--dim)">✦ 魔女轮回结算 ✦</div>
+      <div style="font-size:1.1em;color:var(--purple);margin:4px 0">
+        因果値 <strong style="font-size:1.3em;color:#f85149">-${karmaLoss}</strong>
+      </div>
+      <div style="font-size:0.65em;color:var(--dim)">悲叹之种消耗了积蓄的因果 —— 但核心的羁绊还在。</div>
+      <div style="font-size:0.65em;color:var(--dim);margin-top:4px">累计因果値：${G.karma} · 性质「溃离」已记录</div>
+    </div>
+  </div>`;
+}
+
 // ─── 结局 ───
 function rEnd(app){
   try{localStorage.setItem('aotu4_ach',JSON.stringify(G.achievements));}catch(e){}
+  // ─── 溃离魔女结局（最高优先）───
+  if(G.flags['witch_transformation']||G.flags['witch_massacre_complete']){renderWitchEnding(app);return;}
   // 轮回结算：计算并保存因果值
   const karmaEarned=calcKarmaEarned();
   G.karma=loadKarma()+karmaEarned;
@@ -3297,25 +3589,25 @@ window._ld=function(s){if(loadFrom(s)){curEv=null;G.phase='play';render('play');
 
 const BATTLE_CHAR_SKILLS={
   jin:{n:'矢量箭头',d:'发射追踪箭矢',act:(e,p)=>{if(e._cd<=0){e._cd=60;e._bullets.push({x:e.x,y:e.y,vx:(p.x-e.x)*0.04,vy:(p.y-e.y)*0.04,life:80});}}},
-  gerui:{n:'冰霜领域',d:'减速玩家',act:(e,p)=>{const d=dist(e,p);if(d<120&&e._cd<=0){e._cd=90;p.slow=30;}}},
-  leishi:{n:'雷霆震击',d:'范围电击',act:(e,p)=>{if(e._cd<=0){e._cd=70;if(dist(e,p)<150)p.hp-=8;}}},
-  anmixiu:{n:'骑士冲锋',d:'高速突进',act:(e,p)=>{if(e._cd<=0){e._cd=80;e.vx=(p.x-e.x)*0.08;e.vy=(p.y-e.y)*0.08;e._dash=15;}}},
-  kamier:{n:'围巾缠绕',d:'拉近玩家',act:(e,p)=>{if(e._cd<=0&&dist(e,p)<180){e._cd=100;p.x+=(e.x-p.x)*0.3;p.y+=(e.y-p.y)*0.3;}}},
-  aimi:{n:'呆毛冲刺',d:'随机闪现',act:(e)=>{if(e._cd<=0){e._cd=50;e.x+=rn(-100,100);e.y+=rn(-100,100);}}},
-  kaili:{n:'星月卡牌',d:'扇形弹幕',act:(e,p)=>{if(e._cd<=0){e._cd=55;for(let i=-2;i<=2;i++){const a=Math.atan2(p.y-e.y,p.x-e.x)+i*0.3;e._bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*3,vy:Math.sin(a)*3,life:60});}}}},
-  anlijie:{n:'水晶预言',d:'预判玩家位置',act:(e,p)=>{if(e._cd<=0){e._cd=120;e._predict={x:p.x+p.vx*30,y:p.y+p.vy*30};}}},
-  leide:{n:'恋爱笔记',d:'自身加速',act:(e)=>{if(e._cd<=0){e._cd=80;e.spd*=1.8;e._buff=40;}}},
-  zuma:{n:'沉默压制',d:'禁用射击',act:(e,p)=>{if(e._cd<=0&&dist(e,p)<130){e._cd=100;p.silence=25;}}},
-  jiadeluosi:{n:'烈焰路径',d:'留下火焰',act:(e)=>{if(e._cd<=0){e._cd=45;e._trail.push({x:e.x,y:e.y,life:40});}}},
-  paluosi:{n:'暗影分身',d:'制造分身',act:(e,p)=>{if(e._cd<=0&&e._clones<2){e._cd=90;e._clones++;enemies.push({...e,x:e.x+rn(-50,50),y:e.y+rn(-50,50),_clones:0,_clone:true,hp:15});}}},
-  peili:{n:'狂战士冲锋',d:'直线猛冲',act:(e,p)=>{if(e._cd<=0){e._cd=65;e.vx=(p.x-e.x)*0.12;e.vy=(p.y-e.y)*0.12;e._dash=10;}}},
-  aibi:{n:'呆毛指挥',d:'召唤援军',act:()=>{if(enemies.length<12&&Math.random()<0.3)spawnEnemy(1);}},
-  yinjue:{n:'猫群召唤',d:'召唤猫灵',act:()=>{if(Math.random()<0.25)spawnEnemy(2);}},// 2只猫
-  guihu:{n:'魅惑反转',d:'反转操作',act:(e,p)=>{if(e._cd<=0&&dist(e,p)<150){e._cd=110;p.reverse=35;}}},
+  gerui:{n:'烈斩',d:'绿色刀光斩击',act:(e,p)=>{const d=dist(e,p);if(d<100&&e._cd<=0){e._cd=70;p.hp-=10;p._flash=10;}}},
+  leishi:{n:'雷神之锤',d:'放电大锤范围砸击',act:(e,p)=>{if(e._cd<=0){e._cd=80;if(dist(e,p)<140){p.hp-=12;p._flash=12;}for(let i=0;i<3;i++){const a=Math.random()*Math.PI*2;e._bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*2.5,vy:Math.sin(a)*2.5,life:40});}}}},
+  anmixiu:{n:'双剑·冷焰',d:'火冰双属性能量斩',act:(e,p)=>{if(e._cd<=0){e._cd=70;const d=dist(e,p);if(d<120){p.hp-=8;p.slow=15;p._flash=8;}e._bullets.push({x:e.x,y:e.y,vx:(p.x-e.x)*0.06,vy:(p.y-e.y)*0.06,life:50});e._bullets.push({x:e.x,y:e.y,vx:(p.x-e.x)*0.04,vy:(p.y-e.y)*0.04,life:70});}}},
+  kamier:{n:'无重力',d:'改变自身重量瞬移',act:(e,p)=>{if(e._cd<=0){e._cd=55;e.x+=(p.x-e.x)*0.5;e.y+=(p.y-e.y)*0.5;e.spd*=1.5;e._buff=30;}}},
+  aimi:{n:'恶魔之爪',d:'巨大爪击击退',act:(e,p)=>{if(e._cd<=0&&dist(e,p)<100){e._cd=75;p.hp-=7;p.x+=(p.x-e.x)*0.5;p.y+=(p.y-e.y)*0.5;p._flash=8;}}},
+  kaili:{n:'星月刃',d:'月刃近战+星镖远程',act:(e,p)=>{if(e._cd<=0){e._cd=50;const d=dist(e,p);if(d<90){p.hp-=8;p._flash=8;}for(let i=0;i<4;i++){const a=Math.atan2(p.y-e.y,p.x-e.x)+(i-1.5)*0.25;e._bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*3.5,vy:Math.sin(a)*3.5,life:55});}}}},
+  anlijie:{n:'冰霜结界',d:'范围冻结减速',act:(e,p)=>{const d=dist(e,p);if(d<130&&e._cd<=0){e._cd=100;p.slow=40;p._flash=5;}}},
+  leide:{n:'雷电鞭',d:'中距离鞭击+感电',act:(e,p)=>{const d=dist(e,p);if(d<150&&e._cd<=0){e._cd=60;p.hp-=6;p._flash=8;for(let i=0;i<2;i++){const a=Math.atan2(p.y-e.y,p.x-e.x)+(i-0.5)*0.3;e._bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*3.5,vy:Math.sin(a)*3.5,life:45});}}}},
+  zuma:{n:'风之巨剑',d:'旋风斩击范围伤害',act:(e,p)=>{if(e._cd<=0){e._cd=75;if(dist(e,p)<130){p.hp-=9;p.slow=15;p._flash=10;}for(let i=0;i<5;i++){const a=Math.random()*Math.PI*2;e._bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*2.5,vy:Math.sin(a)*2.5,life:55});}}}},
+  jiadeluosi:{n:'大罗神通棍',d:'棍击连打+冲击波',act:(e,p)=>{if(e._cd<=0){e._cd=55;const d=dist(e,p);if(d<110){p.hp-=9;p._flash=10;}for(let i=0;i<2;i++){const a=Math.atan2(p.y-e.y,p.x-e.x)+(i-0.5)*0.4;e._bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*4,vy:Math.sin(a)*4,life:50});}}}},
+  paluosi:{n:'暗影实体',d:'影子复制场上任一人(含自己)的实体分身',act:(e,p)=>{if(e._cd<=0&&e._clones<3){e._cd=100;e._clones++;const pool=enemies.filter(en=>!en._clone);pool.push(e);const src=pool[Math.floor(Math.random()*pool.length)];const clone={...src,x:src.x+rn(-60,60),y:src.y+rn(-60,60),hp:Math.floor(src.maxHp*0.4),_clones:0,_clone:true,_cd:rn(30,60),_bullets:[],_trail:[],_predict:null,_target:null};enemies.push(clone);}}},
+  peili:{n:'重力球',d:'发射重力弹减速',act:(e,p)=>{if(e._cd<=0){e._cd=60;const a=Math.atan2(p.y-e.y,p.x-e.x);e._bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*3,vy:Math.sin(a)*3,life:70,slow:25});}}},
+  aibi:{n:'天使之弓',d:'蓄力光箭远程狙击',act:(e,p)=>{if(e._cd<=0){e._cd=90;const a=Math.atan2(p.y-e.y,p.x-e.x);e._bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*5,vy:Math.sin(a)*5,life:100,dmg:10});}}},
+  yinjue:{n:'锁链束缚',d:'拉近并定身玩家',act:(e,p)=>{if(e._cd<=0&&dist(e,p)<160){e._cd=90;p.x+=(e.x-p.x)*0.4;p.y+=(e.y-p.y)*0.4;p.slow=20;}}},
+  guihu:{n:'技能复制',d:'随机复制任一角色技能',act:(e,p)=>{if(e._cd<=0){e._cd=65;const allSkills=Object.entries(BATTLE_CHAR_SKILLS).filter(([id])=>CH[id]);const rand=allSkills[Math.floor(Math.random()*allSkills.length)];if(rand&&rand[1]&&rand[1].act)rand[1].act(e,p);}}},
   daniel:{n:'教师威压',d:'范围减速',act:(e,p)=>{if(dist(e,p)<160)p.slow=Math.max(p.slow||0,15);}},
   leizhi:{n:'雷电管教',d:'天降雷击',act:(e,p)=>{if(e._cd<=0){e._cd=75;p.hp-=6;p._flash=8;}}},
   zitanghuan:{n:'召唤·斯巴达',d:'召唤小斯巴达冲锋',act:(e,p)=>{if(e._cd<=0){e._cd=80;for(let i=0;i<3;i++){const a=Math.atan2(p.y-e.y,p.x-e.x)+rn(-30,30)*0.02;e._bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*3.5,vy:Math.sin(a)*3.5,life:70});}}}},
-  shenjinyao:{n:'异色分割',d:'9连苦无沿线切割',act:(e,p)=>{if(e._cd<=0){e._cd=50;for(let i=0;i<9;i++){const a=Math.atan2(p.y-e.y,p.x-e.x)+(i-4)*0.15;e._bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*4.5,vy:Math.sin(a)*4.5,life:80});}}}},
+  shenjinyao:{n:'异色分割',d:'穿透苦无·切割颜色直击本体',act:(e,p)=>{if(e._cd<=0){e._cd=55;for(let i=0;i<9;i++){const a=Math.atan2(p.y-e.y,p.x-e.x)+(i-4)*0.12;e._bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*5,vy:Math.sin(a)*5,life:90,pierce:true});}}}},
 };
 function dist(a,b){return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2);}
 
@@ -3520,7 +3812,7 @@ function battleLoop(){
   if(player.invincible<=0){
     enemies.forEach(e=>{
       if(e._bullets)e._bullets.forEach(b=>{
-        if(dist(b,player)<15){player.hp-=4;b.life=0;player._flash=5;}
+        if(dist(b,player)<15){player.hp-=(b.dmg||4);if(b.slow)player.slow=Math.max(player.slow||0,b.slow);if(!b.pierce)b.life=0;player._flash=5;}
       });
       if(dist(e,player)<20){player.hp-=2;player._flash=5;}
       if(e._trail)e._trail.forEach(t=>{
@@ -3631,6 +3923,21 @@ function renderBattleResult(){
       <div class="fbaff"><span class="fbup">🧘精神 +${sprGain}</span> <span style="color:var(--gold)">⭐得分 ${battleScore}</span></div>
       </div><div style="text-align:center;margin:10px 0"><button class="btn btn-p" onclick="window._adv()">继续 ▸</button></div>`);
   }else{
+    // ─── 溃离魔女分岐：因果>300时转化为魔女 ───
+    const currentKarma=G.karma||loadKarma();
+    if(currentKarma>300){
+      const sorted=Object.entries(G.aff).filter(([id])=>CH[id]&&CH[id].c!=='教师').sort((a,b)=>b[1]-a[1]);
+      // 并列最高好感度 → 随机选取
+      const topAff=sorted[0][1];
+      const tied=sorted.filter(([,v])=>v===topAff);
+      G.witch_hero=tied[Math.floor(Math.random()*tied.length)][0];
+      G.witch_active=true;G.witch_day=0;G.attr.SPR=0;
+      G.flags['witch_transformation']=true;
+      G.flags['witch_karma_at_transform']=currentKarma;
+      document.removeEventListener('keydown',battleKeyDown);document.removeEventListener('keyup',battleKeyUp);
+      const c=document.getElementById('battleCanvas');if(c){c.removeEventListener('mousemove',battleMouseMove);c.removeEventListener('click',battleClick);}
+      render('play');return;
+    }
     curEv={type:'forced_end',narration:`💀 心魔吞噬\n\n60秒过去了。\n\n你没有战胜那些幻影。\n\n教室越来越远——\n\n有人在叫你的名字。\n\n但你已经听不清了。`,
       choices:[{t:'……回不去了',a:[],f:'丹尼尔老师打了电话。\n\n你的家人来接你了。\n\n离开那天——你没有告诉任何人。\n\n校门关上。\n\n这一次——没有回头。'}]};
     render('event');
