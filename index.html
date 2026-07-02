@@ -77,10 +77,2085 @@ body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:var(--bg)
 </head>
 <body>
 <div id="app"></div>
+<!-- 引擎模块 (内联) -->
+<!-- 主游戏逻辑 -->
 <script>
+/**
+ * engine/timer.js — 时间驱动定时器系统
+ * 移植自 game-master/utils.py Timer 类
+ * v1.0
+ */
+
+class Timer {
+  /**
+   * @param {number}  interval  - 定时间隔 (毫秒)
+   * @param {function} callback - 回调函数
+   * @param {boolean}  oneshot  - true=单次触发, false=循环触发
+   */
+  constructor(interval, callback, oneshot = false) {
+    this.interval = interval;
+    this.callback = callback;
+    this.oneshot = oneshot;
+    this.time = 0;
+    this.alive = true;
+  }
+
+  /**
+   * 更新计时器 — 每帧调用
+   * @param {number} dt - 距上帧的时间差 (毫秒)
+   */
+  update(dt) {
+    if (!this.alive) return;
+    this.time += dt;
+    if (this.time >= this.interval) {
+      this.time -= this.interval;
+      this.callback();
+      if (this.oneshot) this.alive = false;
+    }
+  }
+
+  /** 重置计时器 */
+  reset() {
+    this.time = 0;
+    this.alive = true;
+  }
+
+  /** 停止计时器 */
+  stop() {
+    this.alive = false;
+  }
+
+  /** 恢复计时器 */
+  start() {
+    this.alive = true;
+  }
+}
+
+/**
+ * GameClock — 游戏时钟 (移植自 GameTime.java)
+ * 追踪总游戏时间 + delta time + 暂停/恢复
+ */
+class GameClock {
+  constructor() {
+    this._baseTime = 0;
+    this._pausedTime = 0;
+    this._stopTime = 0;
+    this._prevTime = 0;
+    this._currTime = 0;
+    this._stopped = false;
+    this.deltaTime = 0;      // 毫秒
+    this.deltaTimeSeconds = 0; // 秒
+  }
+
+  /** 启动/重置时钟 */
+  reset() {
+    const now = performance.now();
+    this._baseTime = now;
+    this._prevTime = now;
+    this._stopTime = 0;
+    this._stopped = false;
+    this.deltaTime = 0;
+    this.deltaTimeSeconds = 0;
+  }
+
+  /** 每帧调用，计算 delta */
+  tick() {
+    if (this._stopped) {
+      this.deltaTime = 0;
+      this.deltaTimeSeconds = 0;
+      return;
+    }
+
+    this._currTime = performance.now();
+    this.deltaTime = this._currTime - this._prevTime;
+    this._prevTime = this._currTime;
+
+    if (this.deltaTime < 0) this.deltaTime = 0;
+    this.deltaTimeSeconds = this.deltaTime / 1000;
+  }
+
+  /** 获取游戏运行总时间（不含暂停） */
+  get totalTime() {
+    if (this._stopped) {
+      return this._stopTime - this._baseTime;
+    }
+    return (this._currTime - this._pausedTime) - this._baseTime;
+  }
+
+  /** 暂停 */
+  pause() {
+    if (!this._stopped) {
+      this._stopTime = performance.now();
+      this._stopped = true;
+    }
+  }
+
+  /** 恢复 */
+  resume() {
+    if (this._stopped) {
+      const now = performance.now();
+      this._pausedTime += (now - this._stopTime);
+      this._prevTime = now;
+      this._stopTime = 0;
+      this._stopped = false;
+    }
+  }
+
+  get paused() { return this._stopped; }
+}
+
+/**
+ * Cooldown — 冷却计时器（简化版 Timer）
+ * 用于技能冷却、攻击间隔等
+ */
+class Cooldown {
+  /**
+   * @param {number} cooldownMs - 冷却时间 (毫秒)
+   */
+  constructor(cooldownMs) {
+    this.cooldownMs = cooldownMs;
+    this.elapsed = cooldownMs; // 初始就绪
+  }
+
+  /**
+   * 更新冷却
+   * @param {number} dt - 距上帧的时间差 (毫秒)
+   */
+  update(dt) {
+    if (this.elapsed < this.cooldownMs) {
+      this.elapsed += dt;
+    }
+  }
+
+  /** 是否冷却就绪 */
+  get ready() {
+    return this.elapsed >= this.cooldownMs;
+  }
+
+  /** 触发冷却（重置计时） */
+  trigger() {
+    this.elapsed = 0;
+  }
+
+  /** 立即就绪 */
+  reset() {
+    this.elapsed = this.cooldownMs;
+  }
+
+  /** 获取进度 0-1（0=刚触发, 1=就绪） */
+  get progress() {
+    return Math.min(1, this.elapsed / this.cooldownMs);
+  }
+}
+
+/**
+ * Countdown — 倒计时器
+ * 用于限时选项、战斗倒计时等
+ */
+class Countdown {
+  /**
+   * @param {number}   durationMs - 倒计时总时长 (毫秒)
+   * @param {function} onTick     - 每秒回调 (remainingSeconds)
+   * @param {function} onEnd      - 倒计时结束回调
+   */
+  constructor(durationMs, onTick = null, onEnd = null) {
+    this.durationMs = durationMs;
+    this.remaining = durationMs;
+    this.onTick = onTick;
+    this.onEnd = onEnd;
+    this.alive = true;
+    this._lastSecond = Math.ceil(durationMs / 1000);
+  }
+
+  /**
+   * 更新倒计时
+   * @param {number} dt - 时间差 (毫秒)
+   */
+  update(dt) {
+    if (!this.alive) return;
+    this.remaining -= dt;
+    if (this.remaining <= 0) {
+      this.remaining = 0;
+      this.alive = false;
+      if (this.onEnd) this.onEnd();
+      return;
+    }
+    // 每秒tick
+    const sec = Math.ceil(this.remaining / 1000);
+    if (sec !== this._lastSecond) {
+      this._lastSecond = sec;
+      if (this.onTick) this.onTick(sec);
+    }
+  }
+
+  /** 获取剩余秒数 */
+  get seconds() {
+    return Math.ceil(this.remaining / 1000);
+  }
+
+  /** 获取进度 0-1 */
+  get progress() {
+    return this.remaining / this.durationMs;
+  }
+
+  stop() { this.alive = false; }
+  reset(durationMs = null) {
+    if (durationMs !== null) this.durationMs = durationMs;
+    this.remaining = this.durationMs;
+    this.alive = true;
+    this._lastSecond = Math.ceil(this.durationMs / 1000);
+  }
+}
+
+// 导出为全局（兼容现有架构）
+console.log('[engine/timer] Timer | Cooldown | Countdown — 就绪');
+
+/**
+ * engine/vec2d.js — 2D向量数学库
+ * 移植自 game-master/vec2d.py
+ * 精简版：保留游戏需要的核心运算
+ * v1.0
+ */
+
+class Vec2 {
+  constructor(x = 0, y = null) {
+    if (y === null) {
+      // 支持 Vec2([x, y]) 或 Vec2({x, y})
+      if (Array.isArray(x)) {
+        this.x = x[0] || 0;
+        this.y = x[1] || 0;
+      } else if (typeof x === 'object' && x.x !== undefined) {
+        this.x = x.x;
+        this.y = x.y;
+      } else {
+        this.x = x;
+        this.y = x;
+      }
+    } else {
+      this.x = x;
+      this.y = y;
+    }
+  }
+
+  // ─── 基础运算 ───
+
+  add(other) {
+    if (other instanceof Vec2) { this.x += other.x; this.y += other.y; }
+    else if (Array.isArray(other)) { this.x += other[0]; this.y += other[1]; }
+    else { this.x += other; this.y += other; }
+    return this;
+  }
+
+  sub(other) {
+    if (other instanceof Vec2) { this.x -= other.x; this.y -= other.y; }
+    else if (Array.isArray(other)) { this.x -= other[0]; this.y -= other[1]; }
+    else { this.x -= other; this.y -= other; }
+    return this;
+  }
+
+  mul(other) {
+    if (other instanceof Vec2) { this.x *= other.x; this.y *= other.y; }
+    else if (Array.isArray(other)) { this.x *= other[0]; this.y *= other[1]; }
+    else { this.x *= other; this.y *= other; }
+    return this;
+  }
+
+  div(other) {
+    if (other instanceof Vec2) { this.x /= other.x; this.y /= other.y; }
+    else if (Array.isArray(other)) { this.x /= other[0]; this.y /= other[1]; }
+    else { this.x /= other; this.y /= other; }
+    return this;
+  }
+
+  // ─── 不可变版本（返回新Vec2）───
+
+  plus(other) {
+    if (other instanceof Vec2) return new Vec2(this.x + other.x, this.y + other.y);
+    if (Array.isArray(other)) return new Vec2(this.x + other[0], this.y + other[1]);
+    return new Vec2(this.x + other, this.y + other);
+  }
+
+  minus(other) {
+    if (other instanceof Vec2) return new Vec2(this.x - other.x, this.y - other.y);
+    if (Array.isArray(other)) return new Vec2(this.x - other[0], this.y - other[1]);
+    return new Vec2(this.x - other, this.y - other);
+  }
+
+  scale(s) {
+    return new Vec2(this.x * s, this.y * s);
+  }
+
+  // ─── 向量属性 ───
+
+  /** 向量长度 */
+  get length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+
+  /** 设置向量长度（保持方向） */
+  set length(val) {
+    const len = this.length;
+    if (len > 0) {
+      this.x *= val / len;
+      this.y *= val / len;
+    }
+  }
+
+  /** 长度的平方（避免sqrt） */
+  get lengthSq() {
+    return this.x * this.x + this.y * this.y;
+  }
+
+  /** 角度（度） */
+  get angle() {
+    return Math.atan2(this.y, this.x) * 180 / Math.PI;
+  }
+
+  /** 设置角度（保持长度） */
+  set angle(deg) {
+    const len = this.length;
+    const rad = deg * Math.PI / 180;
+    this.x = Math.cos(rad) * len;
+    this.y = Math.sin(rad) * len;
+  }
+
+  // ─── 向量方法 ───
+
+  /** 归一化（返回自身） */
+  normalize() {
+    const len = this.length;
+    if (len > 0) { this.x /= len; this.y /= len; }
+    return this;
+  }
+
+  /** 返回归一化后的新向量 */
+  normalized() {
+    const len = this.length;
+    if (len === 0) return new Vec2(0, 0);
+    return new Vec2(this.x / len, this.y / len);
+  }
+
+  /** 旋转（度），修改自身 */
+  rotate(deg) {
+    const rad = deg * Math.PI / 180;
+    const cos = Math.cos(rad), sin = Math.sin(rad);
+    const x = this.x * cos - this.y * sin;
+    const y = this.x * sin + this.y * cos;
+    this.x = x; this.y = y;
+    return this;
+  }
+
+  /** 旋转（度），返回新向量 */
+  rotated(deg) {
+    const rad = deg * Math.PI / 180;
+    const cos = Math.cos(rad), sin = Math.sin(rad);
+    return new Vec2(this.x * cos - this.y * sin, this.x * sin + this.y * cos);
+  }
+
+  /** 点积 */
+  dot(other) {
+    const o = other instanceof Vec2 ? other : new Vec2(other);
+    return this.x * o.x + this.y * o.y;
+  }
+
+  /** 叉积（2D标量） */
+  cross(other) {
+    const o = other instanceof Vec2 ? other : new Vec2(other);
+    return this.x * o.y - this.y * o.x;
+  }
+
+  /** 距离 */
+  distTo(other) {
+    const o = other instanceof Vec2 ? other : new Vec2(other);
+    return Math.sqrt((this.x - o.x) ** 2 + (this.y - o.y) ** 2);
+  }
+
+  /** 距离的平方 */
+  distToSq(other) {
+    const o = other instanceof Vec2 ? other : new Vec2(other);
+    return (this.x - o.x) ** 2 + (this.y - o.y) ** 2;
+  }
+
+  /** 到另一向量的角度（度） */
+  angleTo(other) {
+    const o = other instanceof Vec2 ? other : new Vec2(other);
+    return Math.atan2(o.y - this.y, o.x - this.x) * 180 / Math.PI;
+  }
+
+  /** 线性插值 */
+  lerp(other, t) {
+    const o = other instanceof Vec2 ? other : new Vec2(other);
+    return new Vec2(this.x + (o.x - this.x) * t, this.y + (o.y - this.y) * t);
+  }
+
+  /** 投影到另一向量 */
+  projectOnto(other) {
+    const o = other instanceof Vec2 ? other : new Vec2(other);
+    const lenSq = o.lengthSq;
+    if (lenSq === 0) return new Vec2(0, 0);
+    return o.scale(this.dot(o) / lenSq);
+  }
+
+  /** 垂直向量（逆时针90度） */
+  perpendicular() {
+    return new Vec2(-this.y, this.x);
+  }
+
+  /** 反射（关于法线） */
+  reflect(normal) {
+    const n = normal instanceof Vec2 ? normal.normalized() : new Vec2(normal).normalize();
+    return this.minus(n.scale(2 * this.dot(n)));
+  }
+
+  // ─── 静态工厂 ───
+
+  /** 从角度和长度创建 */
+  static fromAngle(deg, length = 1) {
+    const rad = deg * Math.PI / 180;
+    return new Vec2(Math.cos(rad) * length, Math.sin(rad) * length);
+  }
+
+  /** 随机方向 */
+  static random(length = 1) {
+    const angle = Math.random() * Math.PI * 2;
+    return new Vec2(Math.cos(angle) * length, Math.sin(angle) * length);
+  }
+
+  /** 两点之间的向量 */
+  static between(from, to) {
+    const f = from instanceof Vec2 ? from : new Vec2(from);
+    const t = to instanceof Vec2 ? to : new Vec2(to);
+    return new Vec2(t.x - f.x, t.y - f.y);
+  }
+
+  // ─── 工具方法 ───
+
+  clone() {
+    return new Vec2(this.x, this.y);
+  }
+
+  /** 限制长度不超过max */
+  clampLength(max) {
+    if (this.lengthSq > max * max) {
+      this.length = max;
+    }
+    return this;
+  }
+
+  /** 转为数组 */
+  toArray() {
+    return [this.x, this.y];
+  }
+
+  /** 转为简单对象 */
+  toObject() {
+    return { x: this.x, y: this.y };
+  }
+
+  toString() {
+    return `Vec2(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
+  }
+
+  // ─── 高级插值 (移植自 game-master Vector2.java) ───
+
+  /**
+   * Catmull-Rom 样条插值
+   * 通过4个控制点生成平滑曲线
+   */
+  static catmullRom(p0, p1, p2, p3, t) {
+    const a = Vec2.from(p0), b = Vec2.from(p1), c = Vec2.from(p2), d = Vec2.from(p3);
+    const t2 = t * t, t3 = t2 * t;
+    return new Vec2(
+      0.5 * ((2 * b.x) + (-a.x + c.x) * t + (2 * a.x - 5 * b.x + 4 * c.x - d.x) * t2 + (-a.x + 3 * b.x - 3 * c.x + d.x) * t3),
+      0.5 * ((2 * b.y) + (-a.y + c.y) * t + (2 * a.y - 5 * b.y + 4 * c.y - d.y) * t2 + (-a.y + 3 * b.y - 3 * c.y + d.y) * t3)
+    );
+  }
+
+  /**
+   * Hermite 样条插值
+   * @param {Vec2} p1 - 起点
+   * @param {Vec2} t1 - 起点切线
+   * @param {Vec2} p2 - 终点
+   * @param {Vec2} t2 - 终点切线
+   * @param {number} amount - 权重 0-1
+   */
+  static hermite(p1, t1, p2, t2, amount) {
+    const a = Vec2.from(p1), ta = Vec2.from(t1), b = Vec2.from(p2), tb = Vec2.from(t2);
+    const a2 = amount * amount, a3 = a2 * amount;
+    const h1 = 2 * a3 - 3 * a2 + 1;
+    const h2 = -2 * a3 + 3 * a2;
+    const h3 = a3 - 2 * a2 + amount;
+    const h4 = a3 - a2;
+    return new Vec2(
+      h1 * a.x + h2 * b.x + h3 * ta.x + h4 * tb.x,
+      h1 * a.y + h2 * b.y + h3 * ta.y + h4 * tb.y
+    );
+  }
+
+  /**
+   * 重心坐标插值
+   * @param {Vec2} v1, v2, v3 - 三角形顶点
+   * @param {number} b2, b3 - 面积坐标
+   */
+  static barycentric(v1, v2, v3, b2, b3) {
+    const a = Vec2.from(v1), b = Vec2.from(v2), c = Vec2.from(v3);
+    const b1 = 1 - b2 - b3;
+    return new Vec2(b1 * a.x + b2 * b.x + b3 * c.x, b1 * a.y + b2 * b.y + b3 * c.y);
+  }
+
+  /**
+   * SmoothStep 插值
+   */
+  static smoothStep(a, b, amount) {
+    const t = amount * amount * (3 - 2 * amount); // 3t² - 2t³
+    return Vec2.from(a).lerp(b, t);
+  }
+}
+
+// 兼容性别名
+const vec2d = Vec2;
+
+console.log('[engine/vec2d] Vec2 — 就绪');
+
+/**
+ * engine/animation.js — 帧动画 + 增强粒子特效系统
+ * 移植自 game-master/simpleanimation.py
+ * v1.0
+ */
+
+/**
+ * SpriteAnimation — 精灵帧动画
+ * 循环/单次播放图片序列
+ */
+class SpriteAnimation {
+  /**
+   * @param {Image[]} images        - 帧图片数组
+   * @param {number}  frameDuration - 每帧持续时间 (毫秒)
+   * @param {number}  totalDuration - 总持续时间 (毫秒), -1 无限循环
+   * @param {boolean} autoStart     - 是否自动开始
+   */
+  constructor(images, frameDuration = 100, totalDuration = -1, autoStart = true) {
+    this.images = images;
+    this.frameDuration = frameDuration;
+    this.totalDuration = totalDuration;
+    this.active = autoStart;
+    this.imgPtr = 0;
+    this.elapsed = 0;
+    this.totalElapsed = 0;
+  }
+
+  /**
+   * 更新动画
+   * @param {number} dt - 距上帧时间差 (毫秒)
+   */
+  update(dt) {
+    if (!this.active) return;
+    this.elapsed += dt;
+    this.totalElapsed += dt;
+
+    if (this.elapsed >= this.frameDuration) {
+      this.elapsed -= this.frameDuration;
+      this.imgPtr = (this.imgPtr + 1) % this.images.length;
+    }
+
+    if (this.totalDuration >= 0 && this.totalElapsed >= this.totalDuration) {
+      this.active = false;
+    }
+  }
+
+  /** 获取当前帧图片 */
+  get currentFrame() {
+    return this.images[this.imgPtr];
+  }
+
+  /**
+   * 绘制当前帧到 Canvas
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} x - 中心x
+   * @param {number} y - 中心y
+   * @param {number} scale - 缩放
+   * @param {number} alpha - 透明度
+   */
+  draw(ctx, x, y, scale = 1, alpha = 1) {
+    if (!this.active || !this.currentFrame) return;
+    const img = this.currentFrame;
+    const w = img.width * scale, h = img.height * scale;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(img, x - w / 2, y - h / 2, w, h);
+    ctx.restore();
+  }
+
+  /** 是否活跃 */
+  get isActive() { return this.active; }
+
+  /** 重新开始 */
+  restart() {
+    this.active = true;
+    this.imgPtr = 0;
+    this.elapsed = 0;
+    this.totalElapsed = 0;
+  }
+
+  stop() { this.active = false; }
+}
+
+/**
+ * Particle — 单个粒子
+ */
+class Particle {
+  constructor(x, y, vx, vy, life, color = '#fff', size = 3, alpha = 1) {
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
+    this.life = life;
+    this.maxLife = life;
+    this.color = color;
+    this.size = size;
+    this.alpha = alpha;
+    this.gravity = 0;
+    this.friction = 1;
+    this.shrink = false; // 粒子缩小
+  }
+
+  update(dt) {
+    const dtScale = dt / 16.67; // 标准化到 60fps
+    this.vy += this.gravity * dtScale;
+    this.vx *= Math.pow(this.friction, dtScale);
+    this.vy *= Math.pow(this.friction, dtScale);
+    this.x += this.vx * dtScale;
+    this.y += this.vy * dtScale;
+    this.life -= dt;
+  }
+
+  get alive() { return this.life > 0; }
+
+  get progress() { return 1 - this.life / this.maxLife; }
+
+  draw(ctx) {
+    const a = this.alpha * (this.life / this.maxLife);
+    const s = this.shrink ? this.size * (this.life / this.maxLife) : this.size;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, a);
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, Math.max(0.5, s), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+/**
+ * ParticleSystem — 粒子系统管理器
+ */
+class ParticleSystem {
+  constructor() {
+    this.particles = [];
+  }
+
+  /**
+   * 生成爆炸粒子
+   * @param {number} x
+   * @param {number} y
+   * @param {number} count
+   * @param {string} color
+   * @param {object} opts - {speed, life, size}
+   */
+  explode(x, y, count = 12, color = '#ff0', opts = {}) {
+    const { speed = 3, life = 30, size = 3 } = opts;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+      const spd = speed * (0.6 + Math.random() * 0.8);
+      const p = new Particle(x, y, Math.cos(angle) * spd, Math.sin(angle) * spd,
+        life * (0.5 + Math.random()), color, size * (0.5 + Math.random()), 0.9);
+      p.friction = 0.95;
+      p.shrink = true;
+      this.particles.push(p);
+    }
+  }
+
+  /**
+   * 生成线性粒子（技能射线、冲刺痕迹）
+   */
+  burst(x, y, angle, count = 8, color = '#58a6ff', opts = {}) {
+    const { speed = 4, life = 25, spread = 30, size = 2 } = opts;
+    for (let i = 0; i < count; i++) {
+      const a = angle + (Math.random() - 0.5) * spread * Math.PI / 180;
+      const spd = speed * (0.5 + Math.random());
+      const p = new Particle(x, y, Math.cos(a) * spd, Math.sin(a) * spd,
+        life * (0.6 + Math.random()), color, size, 0.8);
+      p.friction = 0.92;
+      p.shrink = true;
+      this.particles.push(p);
+    }
+  }
+
+  /**
+   * 生成环形粒子（冲击波）
+   */
+  ring(x, y, radius, count = 20, color = '#fff', opts = {}) {
+    const { speed = 2, life = 25, size = 2 } = opts;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count;
+      const px = x + Math.cos(angle) * radius;
+      const py = y + Math.sin(angle) * radius;
+      const p = new Particle(px, py,
+        Math.cos(angle) * speed, Math.sin(angle) * speed,
+        life, color, size, 0.7);
+      p.friction = 0.98;
+      p.shrink = true;
+      this.particles.push(p);
+    }
+  }
+
+  /**
+   * 生成拖尾粒子
+   */
+  trail(x, y, color = '#ff6', size = 2, life = 15) {
+    const p = new Particle(x, y,
+      (Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 0.5,
+      life, color, size, 0.4);
+    p.shrink = true;
+    this.particles.push(p);
+  }
+
+  /** 更新所有粒子 */
+  update(dt) {
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      this.particles[i].update(dt);
+      if (!this.particles[i].alive) {
+        this.particles.splice(i, 1);
+      }
+    }
+  }
+
+  /** 绘制所有粒子 */
+  draw(ctx) {
+    for (const p of this.particles) {
+      p.draw(ctx);
+    }
+  }
+
+  /** 清空所有粒子 */
+  clear() {
+    this.particles.length = 0;
+  }
+
+  /** 粒子数量 */
+  get count() { return this.particles.length; }
+}
+
+/**
+ * ScreenShake — 屏幕震动效果
+ */
+class ScreenShake {
+  constructor() {
+    this.intensity = 0;
+    this.decay = 0.9;
+    this.ox = 0;
+    this.oy = 0;
+  }
+
+  /**
+   * 触发震动
+   * @param {number} intensity - 震动强度 (像素)
+   * @param {number} decay     - 衰减系数 (0-1, 越小越快)
+   */
+  trigger(intensity = 8, decay = 0.85) {
+    this.intensity = Math.max(this.intensity, intensity);
+    this.decay = decay;
+  }
+
+  /** 更新震动（每帧调用） */
+  update() {
+    if (this.intensity > 0.5) {
+      this.ox = (Math.random() - 0.5) * 2 * this.intensity;
+      this.oy = (Math.random() - 0.5) * 2 * this.intensity;
+      this.intensity *= this.decay;
+    } else {
+      this.intensity = 0;
+      this.ox = 0;
+      this.oy = 0;
+    }
+  }
+
+  /**
+   * 应用震动到 Canvas
+   */
+  apply(ctx) {
+    if (this.intensity > 0) {
+      ctx.translate(this.ox, this.oy);
+    }
+  }
+
+  get isShaking() { return this.intensity > 0; }
+}
+
+/**
+ * Easing — 缓动函数库
+ */
+/**
+ * Easing — Robert Penner 缓动函数全集
+ * 移植自 game-master/src/game/animation/ease/*.java
+ * 11种缓动类型 × 3种模式(in/out/inOut) = 33个函数
+ */
+const Easing = {
+  // ─── Linear ───
+  linear: t => t,
+  easeInLinear: t => t,
+  easeOutLinear: t => t,
+  easeInOutLinear: t => t,
+
+  // ─── Quadratic ───
+  easeInQuad: t => t * t,
+  easeOutQuad: t => t * (2 - t),
+  easeInOutQuad: t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+
+  // ─── Cubic ───
+  easeInCubic: t => t * t * t,
+  easeOutCubic: t => { const t1 = t - 1; return t1 * t1 * t1 + 1; },
+  easeInOutCubic: t => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
+
+  // ─── Quartic ───
+  easeInQuart: t => t * t * t * t,
+  easeOutQuart: t => { const t1 = t - 1; return 1 - t1 * t1 * t1 * t1; },
+  easeInOutQuart: t => t < 0.5 ? 8 * t * t * t * t : 1 - 8 * (--t) * t * t * t,
+
+  // ─── Quintic ───
+  easeInQuint: t => t * t * t * t * t,
+  easeOutQuint: t => { const t1 = t - 1; return 1 + t1 * t1 * t1 * t1 * t1; },
+  easeInOutQuint: t => t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * (--t) * t * t * t * t,
+
+  // ─── Sinusoidal ───
+  easeInSine: t => 1 - Math.cos(t * Math.PI / 2),
+  easeOutSine: t => Math.sin(t * Math.PI / 2),
+  easeInOutSine: t => (1 - Math.cos(Math.PI * t)) / 2,
+
+  // ─── Exponential ───
+  easeInExpo: t => t === 0 ? 0 : Math.pow(2, 10 * (t - 1)),
+  easeOutExpo: t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t),
+  easeInOutExpo: t => {
+    if (t === 0 || t === 1) return t;
+    if (t < 0.5) return Math.pow(2, 20 * t - 10) / 2;
+    return (2 - Math.pow(2, -20 * t + 10)) / 2;
+  },
+
+  // ─── Circular ───
+  easeInCirc: t => 1 - Math.sqrt(1 - t * t),
+  easeOutCirc: t => Math.sqrt(1 - (t - 1) * (t - 1)),
+  easeInOutCirc: t => t < 0.5
+    ? (1 - Math.sqrt(1 - 4 * t * t)) / 2
+    : (Math.sqrt(1 - (2 * t - 2) * (2 * t - 2)) + 1) / 2,
+
+  // ─── Back (overshoot) ───
+  easeInBack: (t, s = 1.70158) => t * t * ((s + 1) * t - s),
+  easeOutBack: (t, s = 1.70158) => { const t1 = t - 1; return t1 * t1 * ((s + 1) * t1 + s) + 1; },
+  easeInOutBack: (t, s = 1.70158) => {
+    const s2 = s * 1.525;
+    if (t < 0.5) return (t *= 2) * t * ((s2 + 1) * t - s2) / 2;
+    return ((t = t * 2 - 2) * t * ((s2 + 1) * t + s2) + 2) / 2;
+  },
+
+  // ─── Bounce ───
+  easeInBounce: t => 1 - Easing.easeOutBounce(1 - t),
+  easeOutBounce: t => {
+    if (t < 1 / 2.75) return 7.5625 * t * t;
+    if (t < 2 / 2.75) { t -= 1.5 / 2.75; return 7.5625 * t * t + 0.75; }
+    if (t < 2.5 / 2.75) { t -= 2.25 / 2.75; return 7.5625 * t * t + 0.9375; }
+    t -= 2.625 / 2.75;
+    return 7.5625 * t * t + 0.984375;
+  },
+  easeInOutBounce: t => t < 0.5
+    ? Easing.easeInBounce(t * 2) * 0.5
+    : Easing.easeOutBounce(t * 2 - 1) * 0.5 + 0.5,
+
+  // ─── Elastic ───
+  easeInElastic: (t, a, p) => {
+    if (t === 0 || t === 1) return t;
+    const period = p || 0.3;
+    const amplitude = a || 1;
+    const s = period / 4;
+    return -(amplitude * Math.pow(2, 10 * (t -= 1)) * Math.sin((t - s) * (2 * Math.PI) / period));
+  },
+  easeOutElastic: (t, a, p) => {
+    if (t === 0 || t === 1) return t;
+    const period = p || 0.3;
+    const amplitude = a || 1;
+    const s = period / 4;
+    return amplitude * Math.pow(2, -10 * t) * Math.sin((t - s) * (2 * Math.PI) / period) + 1;
+  },
+  easeInOutElastic: (t, a, p) => {
+    if (t === 0 || t === 1) return t;
+    const period = (p || 0.3) * 1.5;
+    const amplitude = a || 1;
+    const s = period / 4;
+    if (t < 0.5) {
+      return -0.5 * (amplitude * Math.pow(2, 10 * (t = t * 2 - 2)) * Math.sin((t - s) * (2 * Math.PI) / period));
+    }
+    return amplitude * Math.pow(2, -10 * (t = t * 2 - 1)) * Math.sin((t - s) * (2 * Math.PI) / period) * 0.5 + 1;
+  },
+};
+
+console.log('[engine/animation] SpriteAnimation | ParticleSystem | ScreenShake | Easing — 就绪');
+
+/**
+ * engine/input.js — 键盘 + 鼠标 输入轮询系统
+ * 移植自 game-master/src/game/input/KeyboardInput.java + MouseInput.java
+ * 核心特性: keyDown (持续按住) vs keyDownOnce (按下瞬间)
+ * v1.0
+ */
+
+/**
+ * Keyboard — 键盘状态轮询
+ *
+ * 用法:
+ *   Keyboard.poll()          // 每帧调用一次
+ *   Keyboard.keyDown('a')    // a键是否被按住
+ *   Keyboard.keyDownOnce(' ') // 空格是否刚按下（只触发一次）
+ */
+const Keyboard = {
+  _current: {},   // 当前帧按键状态
+  _state: {},     // 轮询后状态: RELEASED/PRESSED/ONCE
+
+  /** 每帧开始时调用，轮询键盘状态 */
+  poll() {
+    for (const key in this._current) {
+      if (this._current[key]) {
+        // 上帧是 RELEASED → 这一帧标记为 ONCE
+        // 上帧已经按下 → 这一帧标记为 PRESSED
+        this._state[key] = (this._state[key] === 'RELEASED' || !this._state[key]) ? 'ONCE' : 'PRESSED';
+      } else {
+        this._state[key] = 'RELEASED';
+      }
+    }
+  },
+
+  /** 按键是否被按住 (持续) */
+  keyDown(key) {
+    const s = this._state[key];
+    return s === 'ONCE' || s === 'PRESSED';
+  },
+
+  /** 按键是否刚按下 (单次触发) */
+  keyDownOnce(key) {
+    return this._state[key] === 'ONCE';
+  },
+
+  /** 标记按键按下 (由 DOM 事件调用) */
+  _onKeyDown(e) {
+    this._current[e.key.toLowerCase()] = true;
+    // 同时存 keyCode 版本
+    if (e.code) this._current['code:' + e.code] = true;
+  },
+
+  /** 标记按键释放 (由 DOM 事件调用) */
+  _onKeyUp(e) {
+    this._current[e.key.toLowerCase()] = false;
+    if (e.code) this._current['code:' + e.code] = false;
+  },
+
+  /** 初始化 DOM 事件监听 */
+  init(target = window) {
+    target.addEventListener('keydown', (e) => this._onKeyDown(e));
+    target.addEventListener('keyup', (e) => this._onKeyUp(e));
+    // 窗口失焦时重置所有按键
+    window.addEventListener('blur', () => { this._current = {}; });
+  },
+
+  /** 检查是否有任意键被按下 */
+  anyKey() {
+    return Object.values(this._state).some(s => s === 'ONCE' || s === 'PRESSED');
+  },
+};
+
+/**
+ * Mouse — 鼠标状态轮询
+ *
+ * 用法:
+ *   Mouse.poll()              // 每帧调用一次
+ *   Mouse.getPosition()       // 返回 {x, y}
+ *   Mouse.buttonDown(0)       // 左键是否按住
+ *   Mouse.buttonDownOnce(0)   // 左键是否刚点击
+ *   Mouse.buttonDown(2)       // 右键是否按住
+ */
+const Mouse = {
+  _current: [false, false, false], // 左/中/右
+  _state: ['RELEASED', 'RELEASED', 'RELEASED'],
+  _pos: { x: 0, y: 0 },
+  _prevPos: { x: 0, y: 0 },
+  _wheel: 0,
+
+  /** 每帧开始时调用 */
+  poll() {
+    // 保存上一帧位置
+    this._prevPos = { ...this._pos };
+    // 轮询按键
+    for (let i = 0; i < 3; i++) {
+      if (this._current[i]) {
+        this._state[i] = (this._state[i] === 'RELEASED') ? 'ONCE' : 'PRESSED';
+      } else {
+        this._state[i] = 'RELEASED';
+      }
+    }
+    // 重置滚轮
+    this._wheel = 0;
+  },
+
+  /** 获取鼠标位置 */
+  getPosition() {
+    return { ...this._pos };
+  },
+
+  /** 鼠标移动量（本帧位置 - 上帧位置） */
+  getDelta() {
+    return { x: this._pos.x - this._prevPos.x, y: this._pos.y - this._prevPos.y };
+  },
+
+  /** 按钮是否按住 */
+  buttonDown(button = 0) {
+    const s = this._state[button];
+    return s === 'ONCE' || s === 'PRESSED';
+  },
+
+  /** 按钮是否刚点击 */
+  buttonDownOnce(button = 0) {
+    return this._state[button] === 'ONCE';
+  },
+
+  /** 滚轮值 */
+  getWheel() { return this._wheel; },
+
+  /** 鼠标移动 (DOM 事件) */
+  _onMouseMove(e) {
+    this._pos.x = e.clientX;
+    this._pos.y = e.clientY;
+  },
+
+  /** 鼠标按下 */
+  _onMouseDown(e) {
+    const btn = Math.min(e.button, 2);
+    this._current[btn] = true;
+  },
+
+  /** 鼠标释放 */
+  _onMouseUp(e) {
+    const btn = Math.min(e.button, 2);
+    this._current[btn] = false;
+  },
+
+  /** 滚轮 */
+  _onWheel(e) {
+    this._wheel = e.deltaY > 0 ? -1 : 1;
+  },
+
+  /** 初始化 DOM 事件监听 */
+  init(target = window) {
+    target.addEventListener('mousemove', (e) => this._onMouseMove(e));
+    target.addEventListener('mousedown', (e) => this._onMouseDown(e));
+    target.addEventListener('mouseup', (e) => this._onMouseUp(e));
+    target.addEventListener('wheel', (e) => this._onWheel(e), { passive: true });
+    // 触摸也更新位置
+    target.addEventListener('touchmove', (e) => {
+      if (e.touches[0]) { this._pos.x = e.touches[0].clientX; this._pos.y = e.touches[0].clientY; }
+    }, { passive: true });
+  },
+};
+
+// 自动初始化
+if (typeof window !== 'undefined') {
+  Keyboard.init();
+  Mouse.init();
+}
+
+console.log('[engine/input] Keyboard | Mouse — 就绪 (自动初始化)');
+
+/**
+ * engine/style.js — 样式系统 + Observable 事件
+ * 移植自 Babylon.js GUI: style.ts, valueAndUnit.ts, observable.ts
+ * v1.0
+ */
+
+// ═══════════════════════════════════════════
+// Observable — 观察者模式 (移植自 Babylon.js Observable)
+// ═══════════════════════════════════════════
+
+class Observable {
+  constructor() {
+    this._observers = [];
+  }
+
+  /** 添加监听 */
+  add(callback) {
+    this._observers.push(callback);
+    return callback; // 返回用于后续移除
+  }
+
+  /** 移除监听 */
+  remove(callback) {
+    const idx = this._observers.indexOf(callback);
+    if (idx !== -1) this._observers.splice(idx, 1);
+  }
+
+  /** 通知所有观察者 */
+  notify(data) {
+    for (const cb of this._observers) {
+      try { cb(data); } catch (e) { console.warn('[Observable] 回调异常:', e); }
+    }
+  }
+
+  /** 清空 */
+  clear() {
+    this._observers.length = 0;
+  }
+
+  /** 是否有人监听 */
+  get hasObservers() {
+    return this._observers.length > 0;
+  }
+}
+
+// ═══════════════════════════════════════════
+// ValueAndUnit — 值+单位解析 (移植自 Babylon.js)
+// ═══════════════════════════════════════════
+
+class ValueAndUnit {
+  static UNITMODE_PIXEL = 'px';
+  static UNITMODE_PERCENTAGE = '%';
+
+  constructor(value = 0, unit = 'px') {
+    this._value = value;
+    this._unit = unit;
+    this._originalString = '';
+  }
+
+  /** 从字符串解析 "100px" / "50%" / "auto" */
+  fromString(str) {
+    if (typeof str === 'number') {
+      this._value = str;
+      this._unit = 'px';
+      return true;
+    }
+    this._originalString = String(str);
+    const match = String(str).match(/^(-?[\d.]+)\s*(px|%)?$/);
+    if (match) {
+      this._value = parseFloat(match[1]);
+      this._unit = match[2] || 'px';
+      return true;
+    }
+    return false;
+  }
+
+  get value() { return this._value; }
+  set value(v) { this._value = v; }
+
+  get unit() { return this._unit; }
+
+  /** 是否像素单位 */
+  get isPixel() { return this._unit === 'px'; }
+
+  /** 是否百分比 */
+  get isPercentage() { return this._unit === '%'; }
+
+  /** 转为像素值 (需要父容器尺寸做百分比计算) */
+  toPixels(parentSize = 0) {
+    if (this._unit === '%') {
+      return (this._value / 100) * parentSize;
+    }
+    return this._value;
+  }
+
+  toString() {
+    return this._value + this._unit;
+  }
+}
+
+// ═══════════════════════════════════════════
+// Style — 主题样式 (移植自 Babylon.js Style)
+// ═══════════════════════════════════════════
+
+class Style {
+  constructor() {
+    this._fontSize = new ValueAndUnit(16, 'px');
+    this._fontFamily = '"Microsoft YaHei", "PingFang SC", sans-serif';
+    this._fontWeight = 'normal';
+    this._fontStyle = 'normal';
+    this._color = '#e6edf3';
+    this._backgroundColor = '';
+    this._borderColor = '';
+    this._borderWidth = 0;
+    this._borderRadius = 8;
+    this._padding = { top: 0, right: 0, bottom: 0, left: 0 };
+    this._alpha = 1;
+
+    /** 样式变化时触发 */
+    this.onChanged = new Observable();
+  }
+
+  // ─── 字体 ───
+  get fontSize() { return this._fontSize.toString(); }
+  set fontSize(val) {
+    if (this._fontSize.fromString(val)) this.onChanged.notify('fontSize');
+  }
+
+  get fontFamily() { return this._fontFamily; }
+  set fontFamily(val) {
+    if (this._fontFamily !== val) { this._fontFamily = val; this.onChanged.notify('fontFamily'); }
+  }
+
+  get fontWeight() { return this._fontWeight; }
+  set fontWeight(val) {
+    if (this._fontWeight !== val) { this._fontWeight = val; this.onChanged.notify('fontWeight'); }
+  }
+
+  get color() { return this._color; }
+  set color(val) {
+    if (this._color !== val) { this._color = val; this.onChanged.notify('color'); }
+  }
+
+  // ─── 背景 ───
+  get backgroundColor() { return this._backgroundColor; }
+  set backgroundColor(val) {
+    if (this._backgroundColor !== val) { this._backgroundColor = val; this.onChanged.notify('backgroundColor'); }
+  }
+
+  // ─── 边框 ───
+  get borderColor() { return this._borderColor; }
+  set borderColor(val) {
+    if (this._borderColor !== val) { this._borderColor = val; this.onChanged.notify('borderColor'); }
+  }
+
+  get borderWidth() { return this._borderWidth; }
+  set borderWidth(val) {
+    if (this._borderWidth !== val) { this._borderWidth = val; this.onChanged.notify('borderWidth'); }
+  }
+
+  // ─── 透明度 ───
+  get alpha() { return this._alpha; }
+  set alpha(val) {
+    if (this._alpha !== val) { this._alpha = val; this.onChanged.notify('alpha'); }
+  }
+
+  /** 设置统一 padding */
+  setPadding(top, right, bottom, left) {
+    this._padding = { top, right, bottom: bottom ?? top, left: left ?? right ?? top };
+    this.onChanged.notify('padding');
+  }
+
+  /** 克隆 */
+  clone() {
+    const s = new Style();
+    Object.assign(s._fontSize, this._fontSize);
+    s._fontFamily = this._fontFamily;
+    s._fontWeight = this._fontWeight;
+    s._color = this._color;
+    s._backgroundColor = this._backgroundColor;
+    s._borderColor = this._borderColor;
+    s._borderWidth = this._borderWidth;
+    s._borderRadius = this._borderRadius;
+    s._padding = { ...this._padding };
+    s._alpha = this._alpha;
+    return s;
+  }
+}
+
+// ═══════════════════════════════════════════
+// Theme — 预设主题 (匹配凹凸学园配色)
+// ═══════════════════════════════════════════
+
+const Theme = {
+  /** 默认暗色主题 */
+  dark: (() => {
+    const s = new Style();
+    s.color = '#e6edf3';
+    s.backgroundColor = '#1c2128';
+    s.borderColor = '#30363d';
+    s.borderWidth = 1;
+    return s;
+  })(),
+
+  /** 魔女主题 */
+  witch: (() => {
+    const s = new Style();
+    s.color = '#e6edf3';
+    s.backgroundColor = '#1a0a1e';
+    s.borderColor = '#bc8cff';
+    s.borderWidth = 2;
+    s._fontSize = new ValueAndUnit(15, 'px');
+    return s;
+  })(),
+
+  /** 金色强调 */
+  gold: (() => {
+    const s = new Style();
+    s.color = '#0d1117';
+    s.backgroundColor = '#f0c040';
+    s.borderColor = '#d4a017';
+    s.borderWidth = 2;
+    s.fontWeight = 'bold';
+    return s;
+  })(),
+
+  /** 危险/警告 */
+  danger: (() => {
+    const s = new Style();
+    s.color = '#fff';
+    s.backgroundColor = '#e94560';
+    s.borderColor = '#c0392b';
+    s.borderWidth = 1;
+    return s;
+  })(),
+
+  /** 创建自定义主题 */
+  create(overrides = {}) {
+    const s = Theme.dark.clone();
+    Object.keys(overrides).forEach(k => {
+      if (k in s && typeof s[k] !== 'function') s[k] = overrides[k];
+    });
+    return s;
+  },
+};
+
+console.log('[engine/style] Observable | ValueAndUnit | Style | Theme — 就绪');
+
+/**
+ * engine/widgets.js — GUI 组件系统
+ * 移植自 Babylon.js GUI 2D: Control / Container / StackPanel
+ *             + game-master/widgets.py
+ * DOM 版本：Control → Container → StackPanel | Toast / Dialog / TextEntry / FloatingText
+ * v2.0
+ */
+
+// ═══════════════════════════════════════════
+// 对齐常量 (移植自 Babylon.js Control)
+// ═══════════════════════════════════════════
+const HORIZONTAL_ALIGNMENT_LEFT = 0;
+const HORIZONTAL_ALIGNMENT_CENTER = 1;
+const HORIZONTAL_ALIGNMENT_RIGHT = 2;
+const VERTICAL_ALIGNMENT_TOP = 0;
+const VERTICAL_ALIGNMENT_CENTER = 1;
+const VERTICAL_ALIGNMENT_BOTTOM = 2;
+
+// ═══════════════════════════════════════════
+// Control — 所有UI组件的基类 (移植自 Babylon.js control.pure.ts)
+// ═══════════════════════════════════════════
+
+class Control {
+  constructor(name = '') {
+    this.name = name;
+    this._el = null;           // DOM 元素
+    this._parent = null;       // 父容器
+    this._isVisible = true;
+    this._isEnabled = true;
+    this._isDirty = true;      // 需要重新渲染
+    this._alpha = 1;
+    this._zIndex = 0;
+
+    // 尺寸 (ValueAndUnit)
+    this._width = new ValueAndUnit(1, '%');
+    this._height = new ValueAndUnit(1, '%');
+
+    // 对齐
+    this._horizontalAlignment = HORIZONTAL_ALIGNMENT_CENTER;
+    this._verticalAlignment = VERTICAL_ALIGNMENT_CENTER;
+
+    // 内边距 (px)
+    this._paddingLeft = 0;
+    this._paddingRight = 0;
+    this._paddingTop = 0;
+    this._paddingBottom = 0;
+
+    // 变换
+    this._scaleX = 1;
+    this._scaleY = 1;
+    this._rotation = 0;
+
+    // 样式
+    this._style = null;
+    this._disabledColor = '#6a6a6a';
+
+    // 事件
+    this.onPointerClick = new Observable();
+    this.onEnabledChange = new Observable();
+    this.onDirty = new Observable();
+
+    // 自定义数据
+    this.metadata = null;
+    this._tag = null;
+  }
+
+  // ─── 属性 ───
+
+  get el() { return this._el; }
+  get parent() { return this._parent; }
+
+  get isVisible() { return this._isVisible; }
+  set isVisible(v) {
+    if (this._isVisible !== v) {
+      this._isVisible = v;
+      this._markAsDirty();
+    }
+  }
+
+  get isEnabled() { return this._isEnabled; }
+  set isEnabled(v) {
+    if (this._isEnabled !== v) {
+      this._isEnabled = v;
+      this.onEnabledChange.notify(v);
+      this._markAsDirty();
+    }
+  }
+
+  get alpha() { return this._alpha; }
+  set alpha(v) {
+    if (this._alpha !== v) { this._alpha = v; this._markAsDirty(); }
+  }
+
+  get zIndex() { return this._zIndex; }
+  set zIndex(v) { this._zIndex = v; if (this._el) this._el.style.zIndex = v; }
+
+  get width() { return this._width.toString(); }
+  set width(v) { if (this._width.fromString(v)) this._markAsDirty(); }
+
+  get height() { return this._height.toString(); }
+  set height(v) { if (this._height.fromString(v)) this._markAsDirty(); }
+
+  get horizontalAlignment() { return this._horizontalAlignment; }
+  set horizontalAlignment(v) { this._horizontalAlignment = v; this._markAsDirty(); }
+
+  get verticalAlignment() { return this._verticalAlignment; }
+  set verticalAlignment(v) { this._verticalAlignment = v; this._markAsDirty(); }
+
+  get paddingLeft() { return this._paddingLeft; }
+  set paddingLeft(v) { this._paddingLeft = v; this._markAsDirty(); }
+  get paddingRight() { return this._paddingRight; }
+  set paddingRight(v) { this._paddingRight = v; this._markAsDirty(); }
+  get paddingTop() { return this._paddingTop; }
+  set paddingTop(v) { this._paddingTop = v; this._markAsDirty(); }
+  get paddingBottom() { return this._paddingBottom; }
+  set paddingBottom(v) { this._paddingBottom = v; this._markAsDirty(); }
+
+  /** 统设内边距 */
+  setPadding(top, right, bottom, left) {
+    this._paddingTop = top;
+    this._paddingRight = right ?? top;
+    this._paddingBottom = bottom ?? top;
+    this._paddingLeft = left ?? right ?? top;
+    this._markAsDirty();
+  }
+
+  get tag() { return this._tag; }
+  set tag(v) { this._tag = v; }
+
+  /**
+   * 应用 Style 对象
+   */
+  applyStyle(style) {
+    if (!style) return;
+    if (this._style) {
+      this._style.onChanged.remove(this._onStyleChanged);
+    }
+    this._style = style;
+    this._onStyleChanged = () => this._markAsDirty();
+    this._style.onChanged.add(this._onStyleChanged);
+    this._markAsDirty();
+  }
+
+  /**
+   * 构建 CSS 字符串 (应用 Style + 自身属性)
+   */
+  _buildCSS() {
+    if (!this._el) return;
+    const s = this._style;
+    const el = this._el;
+
+    // 可见性
+    if (!this._isVisible) { el.style.display = 'none'; return; }
+    el.style.display = '';
+
+    // 透明度
+    el.style.opacity = this._alpha;
+
+    // 尺寸
+    el.style.width = this._width.toString();
+    el.style.height = this._height.toString();
+
+    // 样式
+    if (s) {
+      el.style.fontFamily = s._fontFamily;
+      el.style.fontSize = s._fontSize.toString();
+      el.style.fontWeight = s._fontWeight;
+      el.style.color = this._isEnabled ? s._color : this._disabledColor;
+      if (s._backgroundColor) el.style.background = s._backgroundColor;
+      if (s._borderColor) el.style.borderColor = s._borderColor;
+      if (s._borderWidth) el.style.borderWidth = s._borderWidth + 'px';
+      if (s._borderRadius) el.style.borderRadius = s._borderRadius + 'px';
+    }
+
+    // 内边距
+    el.style.padding = `${this._paddingTop}px ${this._paddingRight}px ${this._paddingBottom}px ${this._paddingLeft}px`;
+
+    // 变换
+    if (this._scaleX !== 1 || this._scaleY !== 1 || this._rotation !== 0) {
+      el.style.transform = `scale(${this._scaleX},${this._scaleY}) rotate(${this._rotation}deg)`;
+    }
+  }
+
+  /** 标记为脏，下次渲染时更新 */
+  _markAsDirty() {
+    this._isDirty = true;
+    this.onDirty.notify(this);
+    if (this._parent) this._parent._markAsDirty();
+  }
+
+  /** 刷新渲染 */
+  refresh() {
+    this._buildCSS();
+    this._isDirty = false;
+  }
+
+  /** 挂载到DOM */
+  mount(parentEl) {
+    if (!this._el) this._createElement();
+    if (parentEl) {
+      parentEl.appendChild(this._el);
+    }
+    this.refresh();
+  }
+
+  /** 卸载 */
+  unmount() {
+    if (this._el && this._el.parentNode) {
+      this._el.parentNode.removeChild(this._el);
+    }
+  }
+
+  /** 子类覆盖：创建DOM元素 */
+  _createElement() {
+    this._el = document.createElement('div');
+    if (this.name) this._el.setAttribute('data-control', this.name);
+  }
+
+  /** 销毁 */
+  dispose() {
+    this.unmount();
+    if (this._style) {
+      this._style.onChanged.remove(this._onStyleChanged);
+    }
+    this.onPointerClick.clear();
+    this.onEnabledChange.clear();
+    this.onDirty.clear();
+    this._el = null;
+  }
+}
+
+// ═══════════════════════════════════════════
+// Container — 容器基类 (移植自 Babylon.js container.pure.ts)
+// ═══════════════════════════════════════════
+
+class Container extends Control {
+  constructor(name = '') {
+    super(name);
+    this._children = [];
+    this._clipChildren = true;
+  }
+
+  get children() { return [...this._children]; }
+  get childrenCount() { return this._children.length; }
+
+  /** 添加子控件 */
+  addControl(child) {
+    if (child._parent) {
+      child._parent.removeControl(child);
+    }
+    child._parent = this;
+    this._children.push(child);
+    if (this._el && child._el) {
+      this._el.appendChild(child._el);
+    }
+    this._markAsDirty();
+    return this;
+  }
+
+  /** 移除子控件 */
+  removeControl(child) {
+    const idx = this._children.indexOf(child);
+    if (idx !== -1) {
+      this._children.splice(idx, 1);
+      child._parent = null;
+      if (child._el && this._el) {
+        this._el.removeChild(child._el);
+      }
+      this._markAsDirty();
+    }
+    return this;
+  }
+
+  /** 清空所有子控件 */
+  clearControls() {
+    for (const child of this._children) {
+      child._parent = null;
+      if (child._el && this._el) this._el.removeChild(child._el);
+    }
+    this._children.length = 0;
+    this._markAsDirty();
+  }
+
+  _createElement() {
+    super._createElement();
+    this._el.style.position = 'relative';
+    if (this._clipChildren) this._el.style.overflow = 'hidden';
+  }
+
+  refresh() {
+    super.refresh();
+    for (const child of this._children) {
+      child.refresh();
+    }
+  }
+
+  dispose() {
+    for (const child of this._children) child.dispose();
+    this._children.length = 0;
+    super.dispose();
+  }
+}
+
+// ═══════════════════════════════════════════
+// StackPanel — 自动布局面板 (移植自 Babylon.js stackPanel.pure.ts)
+// ═══════════════════════════════════════════
+
+class StackPanel extends Container {
+  constructor(name = '') {
+    super(name);
+    this._isVertical = true;
+    this._spacing = 4;         // 子元素间距 (px)
+    this._manualWidth = false;
+    this._manualHeight = false;
+  }
+
+  get isVertical() { return this._isVertical; }
+  set isVertical(v) {
+    if (this._isVertical !== v) { this._isVertical = v; this._markAsDirty(); }
+  }
+
+  get spacing() { return this._spacing; }
+  set spacing(v) {
+    if (this._spacing !== v) { this._spacing = v; this._markAsDirty(); }
+  }
+
+  _createElement() {
+    super._createElement();
+    this._el.style.display = 'flex';
+    this._applyLayout();
+  }
+
+  _applyLayout() {
+    if (!this._el) return;
+    this._el.style.flexDirection = this._isVertical ? 'column' : 'row';
+    this._el.style.gap = this._spacing + 'px';
+    this._el.style.alignItems = this._isVertical ? 'stretch' : 'center';
+  }
+
+  refresh() {
+    this._applyLayout();
+    super.refresh();
+  }
+}
+
+// ═══════════════════════════════════════════
+// TextBlock — 文本控件 (移植自 Babylon.js textBlock)
+// ═══════════════════════════════════════════
+
+class TextBlock extends Control {
+  constructor(text = '', name = '') {
+    super(name);
+    this._text = text;
+    this._textAlign = 'left';
+    this._whiteSpace = 'pre-line';
+  }
+
+  get text() { return this._text; }
+  set text(v) {
+    if (this._text !== v) { this._text = v; this._markAsDirty(); }
+  }
+
+  _createElement() {
+    super._createElement();
+    this._el.style.whiteSpace = this._whiteSpace;
+    this._el.style.lineHeight = '1.8';
+    this._el.textContent = this._text;
+  }
+
+  refresh() {
+    super.refresh();
+    if (this._el) {
+      this._el.textContent = this._text;
+      this._el.style.textAlign = this._textAlign;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
+// ImageButton — 图片按钮 (无外部素材，纯CSS)
+// ═══════════════════════════════════════════
+
+class ImageButton extends Control {
+  constructor(text = '', name = '') {
+    super(name);
+    this._text = text;
+    this._buttonType = 'primary'; // primary | secondary | danger
+  }
+
+  get text() { return this._text; }
+  set text(v) { this._text = v; this._markAsDirty(); }
+
+  _createElement() {
+    super._createElement();
+    this._el = document.createElement('button');
+    this._el.style.cssText = 'border:none;cursor:pointer;font-family:inherit;transition:all 0.2s;display:inline-block;';
+    this._el.textContent = this._text;
+    this._el.addEventListener('click', (e) => {
+      if (this._isEnabled) this.onPointerClick.notify(e);
+    });
+  }
+
+  _buildCSS() {
+    super._buildCSS();
+    if (!this._el) return;
+    const s = this._style;
+
+    this._el.style.padding = this._paddingTop + 'px ' + this._paddingRight + 'px';
+
+    if (!this._isEnabled) {
+      this._el.style.background = '#444';
+      this._el.style.color = '#888';
+      this._el.style.cursor = 'not-allowed';
+      return;
+    }
+
+    this._el.style.cursor = 'pointer';
+
+    if (s) {
+      this._el.style.background = s._backgroundColor || '#e94560';
+      this._el.style.color = s._color || '#fff';
+      this._el.style.border = (s._borderWidth || 1) + 'px solid ' + (s._borderColor || '#c0392b');
+      this._el.style.borderRadius = (s._borderRadius || 8) + 'px';
+      this._el.style.fontSize = s._fontSize.toString();
+      this._el.style.fontWeight = s._fontWeight || 'bold';
+    }
+  }
+}
+
+/**
+ * Toast — 浮动提示消息
+ * 用于好感变化、属性变化等即时反馈
+ */
+class Toast {
+  /**
+   * @param {string} text    - 提示文本
+   * @param {string} type    - 'info' | 'success' | 'warning' | 'affection'
+   * @param {number} duration - 显示时长 (毫秒)
+   */
+  static show(text, type = 'info', duration = 2000) {
+    const colors = {
+      info: { bg: 'rgba(22,27,34,0.95)', border: '#58a6ff', text: '#e6edf3' },
+      success: { bg: 'rgba(13,40,24,0.95)', border: '#3fb950', text: '#3fb950' },
+      warning: { bg: 'rgba(40,30,10,0.95)', border: '#f0c040', text: '#f0c040' },
+      affection: { bg: 'rgba(40,20,30,0.95)', border: '#e94560', text: '#e94560' },
+    };
+    const c = colors[type] || colors.info;
+
+    const el = document.createElement('div');
+    el.style.cssText = `
+      position:fixed; top:20px; left:50%; transform:translateX(-50%);
+      background:${c.bg}; border:2px solid ${c.border}; color:${c.text};
+      border-radius:12px; padding:10px 24px; z-index:9999;
+      font-size:0.85em; font-weight:bold; white-space:nowrap;
+      animation: toastIn 0.3s ease, toastOut 0.3s ${duration - 300}ms ease forwards;
+      pointer-events:none; font-family:inherit;
+    `;
+    el.textContent = text;
+    document.body.appendChild(el);
+
+    setTimeout(() => {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, duration);
+  }
+}
+
+// 注入Toast的CSS动画
+(function injectToastCSS() {
+  if (document.getElementById('toast-anim-style')) return;
+  const style = document.createElement('style');
+  style.id = 'toast-anim-style';
+  style.textContent = `
+    @keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(-10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+    @keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateX(-50%) translateY(-5px); } }
+  `;
+  document.head.appendChild(style);
+})();
+
+/**
+ * Dialog — 模态对话框
+ * 用于确认操作、重要提示
+ */
+class Dialog {
+  /**
+   * @param {string}   title   - 标题
+   * @param {string}   message - 消息内容
+   * @param {object[]} buttons - [{text, type, callback}]
+   * @param {boolean}  modal   - 是否模态（点击背景不关闭）
+   */
+  static show(title, message, buttons = [{ text: '确定', type: 'primary', callback: null }], modal = true) {
+    // 移除已有对话框
+    const existing = document.querySelector('.engine-dialog-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'engine-dialog-overlay';
+    overlay.style.cssText = `
+      position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9998;
+      display:flex; align-items:center; justify-content:center;
+      animation: fadeIn 0.2s;
+    `;
+
+    const btnHTML = buttons.map((b, i) => {
+      const cls = b.type === 'primary' ? 'btn btn-p' :
+                  b.type === 'danger' ? 'btn btn-p' :
+                  'btn btn-s';
+      return `<button class="${cls}" style="${b.type==='danger'?'background:#f85149':''}"
+        onclick="window._engineDialogBtn(${i})">${b.text}</button>`;
+    }).join('');
+
+    overlay.innerHTML = `
+      <div style="background:var(--panel);border:2px solid var(--gold);border-radius:14px;
+        padding:24px;max-width:360px;width:90%;text-align:center;animation:fadeIn 0.3s">
+        ${title ? `<h3 style="color:var(--gold);margin-bottom:12px;font-size:1em">${title}</h3>` : ''}
+        <p style="white-space:pre-line;color:var(--text);line-height:1.8;font-size:0.9em;margin-bottom:16px">${message}</p>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">${btnHTML}</div>
+      </div>
+    `;
+
+    // 存储回调
+    overlay._buttons = buttons;
+    window._engineDialogBtn = (i) => {
+      const cb = buttons[i]?.callback;
+      overlay.remove();
+      delete window._engineDialogBtn;
+      if (cb) cb();
+    };
+
+    if (!modal) {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+      });
+    }
+
+    document.body.appendChild(overlay);
+  }
+
+  /** 快捷确认框 */
+  static confirm(title, message, onConfirm, onCancel = null) {
+    Dialog.show(title, message, [
+      { text: '取消', type: 'secondary', callback: onCancel },
+      { text: '确定', type: 'primary', callback: onConfirm },
+    ]);
+  }
+
+  /** 快捷提示框 */
+  static alert(title, message, onClose = null) {
+    Dialog.show(title, message, [
+      { text: '确定', type: 'primary', callback: onClose },
+    ]);
+  }
+}
+
+/**
+ * TextEntry — 文本输入组件
+ * 用于玩家自定义名字等
+ */
+class TextEntry {
+  /**
+   * @param {object} opts
+   * @param {string} opts.placeholder
+   * @param {number} opts.maxLength
+   * @param {string} opts.defaultValue
+   * @param {function} opts.onSubmit
+   * @param {function} opts.onChange
+   */
+  static prompt(opts = {}) {
+    const {
+      title = '请输入',
+      placeholder = '',
+      maxLength = 20,
+      defaultValue = '',
+      onSubmit = null,
+    } = opts;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'engine-dialog-overlay';
+    overlay.style.cssText = `
+      position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9998;
+      display:flex; align-items:center; justify-content:center;
+      animation: fadeIn 0.2s;
+    `;
+
+    overlay.innerHTML = `
+      <div style="background:var(--panel);border:2px solid var(--gold);border-radius:14px;
+        padding:24px;max-width:360px;width:90%;text-align:center;animation:fadeIn 0.3s">
+        <h3 style="color:var(--gold);margin-bottom:16px;font-size:1em">${title}</h3>
+        <input id="_engineTextInput" type="text" placeholder="${placeholder}"
+          maxlength="${maxLength}" value="${defaultValue.replace(/"/g,'&quot;')}"
+          style="width:100%;padding:10px 14px;border-radius:8px;border:2px solid #444;
+            background:var(--card);color:var(--text);font-size:0.95em;font-family:inherit;
+            outline:none;transition:border 0.2s"
+          onfocus="this.style.borderColor='var(--gold)'"
+          onblur="this.style.borderColor='#444'">
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:16px">
+          <button class="btn btn-s" onclick="this.closest('.engine-dialog-overlay').remove()">取消</button>
+          <button class="btn btn-p" onclick="window._engineTextSubmit()">确定</button>
+        </div>
+      </div>
+    `;
+
+    window._engineTextSubmit = () => {
+      const input = document.getElementById('_engineTextInput');
+      const value = input ? input.value.trim() : '';
+      overlay.remove();
+      delete window._engineTextSubmit;
+      if (onSubmit) onSubmit(value || defaultValue);
+    };
+
+    document.body.appendChild(overlay);
+
+    // 自动聚焦
+    setTimeout(() => {
+      const input = document.getElementById('_engineTextInput');
+      if (input) input.focus();
+    }, 100);
+
+    // Enter 提交
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const input = document.getElementById('_engineTextInput');
+        const value = input ? input.value.trim() : '';
+        overlay.remove();
+        delete window._engineTextSubmit;
+        if (onSubmit) onSubmit(value || defaultValue);
+      }
+    });
+  }
+}
+
+/**
+ * ProgressBar — 进度条组件
+ * 用于显示冷却、加载、好感度等条状信息
+ */
+class ProgressBar {
+  /**
+   * 创建DOM进度条
+   * @param {object} opts
+   * @returns {HTMLElement}
+   */
+  static create(opts = {}) {
+    const {
+      value = 0, max = 100,
+      height = 4,
+      bgColor = '#333',
+      fillColor = '#3fb950',
+      borderRadius = 2,
+      animate = false,
+    } = opts;
+
+    const container = document.createElement('div');
+    container.style.cssText = `
+      height:${height}px; background:${bgColor}; border-radius:${borderRadius}px;
+      overflow:hidden; width:100%;
+    `;
+
+    const fill = document.createElement('div');
+    const pct = Math.min(100, (value / max) * 100);
+    fill.style.cssText = `
+      height:100%; width:${pct}%; background:${fillColor}; border-radius:${borderRadius}px;
+      ${animate ? 'transition: width 0.3s ease;' : ''}
+    `;
+
+    container.appendChild(fill);
+    container._fill = fill;
+    container._max = max;
+    container.setValue = (v) => {
+      fill.style.width = Math.min(100, (v / container._max) * 100) + '%';
+    };
+
+    return container;
+  }
+}
+
+/**
+ * CountdownDisplay — 倒计时显示
+ */
+class CountdownDisplay {
+  static create(seconds, opts = {}) {
+    const {
+      danger = 10,    // 低于此秒数变红
+      warn = 30,      // 低于此秒数变黄
+      fontSize = '1em',
+    } = opts;
+
+    const el = document.createElement('span');
+    el.style.cssText = `font-size:${fontSize};font-weight:bold;font-family:monospace;`;
+
+    const update = (sec) => {
+      el.textContent = sec + 's';
+      el.style.color = sec <= danger ? '#f85149' : sec <= warn ? '#f0c040' : '#e6edf3';
+    };
+    update(seconds);
+
+    el._update = update;
+    return el;
+  }
+}
+
+/**
+ * FloatingText — 浮动伤害/治疗数字
+ */
+class FloatingText {
+  /**
+   * 在Canvas上绘制浮动文字并自动消失
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} x
+   * @param {number} y
+   * @param {string} text
+   * @param {string} color
+   */
+  static spawn(ctx, x, y, text, color = '#f44') {
+    // 由调用方管理生命周期（添加到数组）
+    return {
+      x, y, text, color,
+      life: 40,
+      vy: -1.5,
+      update() { this.y += this.vy; this.life--; this.vy *= 0.98; },
+      get alive() { return this.life > 0; },
+      draw(ctx) {
+        const alpha = Math.min(1, this.life / 20);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color;
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.text, this.x, this.y);
+        ctx.restore();
+      },
+    };
+  }
+}
+
+console.log('[engine/widgets] Control | Container | StackPanel | TextBlock | ImageButton | Toast | Dialog | TextEntry | FloatingText — 就绪');
+
 
 // ╔══════════════════════════════════════════════════════════════╗
-// ║  凹凸学园 · 百日倒数 v5.7                                   ║
+// ║  凹凸学园 · 百日倒数 v6.8                                   ║
+// ║  Babylon.js GUI架构移植：Control/Container/StackPanel/       ║
+// ║  Style/Observable/Theme + 魔女支线增强(侵蚀/残响/碎片)      ║
 // ║  心魔幻
 // ─── 因果境界 ───
 function getKarmaTier(k){
@@ -1060,6 +3135,7 @@ let G={
   mainChapter:1,sideQuests:{},completedSQ:[],
   lowSprDays:0,sprWarned:false,dailyEvents:0,schoolStreak:0,karma:0,_ksSpr:false,_ksEnergy:false,_ksHome:false,_tBonus:false,_bonusToday:false,
   witch_active:false,witch_day:0,witch_hero:null,
+  witch_corruption:0,witch_shards:[],witch_echoes_seen:[],witch_countdown:10,
   _tAngel:false,_tJournal:false,_tSeventh:false,_tWatch:false,
   _tStuco:false,_tSocial:false,_tEarly:false,_tNight:false,
   _tBento:false,_tRun:false,_tWeather:false,_tJoke:false,
@@ -1076,6 +3152,7 @@ function initG(){
   G.homestay=pk(HOMESTAY_POOL); // 随机借宿角色
   G.homeInfo=getHomeInfo(G.homestay); G.sideQuests={}; G.completedSQ=[]; G.lowSprDays=0; G.sprWarned=false; G.dailyEvents=0; G.schoolStreak=0;
   G.witch_active=false; G.witch_day=0; G.witch_hero=null;
+  G.witch_corruption=0; G.witch_shards=[]; G.witch_echoes_seen=[]; G.witch_countdown=10;
   G.karma=loadKarma();applyKarmaPassive(); G._ksSpr=false; G._ksEnergy=false; G._ksHome=false; G._tBonus=false; G._bonusToday=false;
   ['_tAngel','_tJournal','_tSeventh','_tWatch','_tStuco','_tSocial','_tEarly','_tNight','_tBento','_tRun','_tWeather','_tJoke','_tLucky','_tLib','_tRooftop','_tChill'].forEach(k=>G[k]=false);
 }
@@ -2389,6 +4466,12 @@ function triggerAch(id,name,desc){
 }
 // 自定义弹窗（替换alert，移动端体验更好）
 function showDialog(msg,cb){
+  // ✨ 优先使用引擎 Dialog 组件
+  if(typeof Dialog !== 'undefined'){
+    Dialog.show('',msg,[{text:'确定',type:'primary',callback:cb}]);
+    return;
+  }
+  // 回退：原生实现
   const d=document.createElement('div');
   d.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center';
   d.innerHTML=`<div style="background:var(--panel);border:2px solid var(--gold);border-radius:14px;padding:24px;max-width:320px;text-align:center;animation:fadeIn 0.2s"><p style="white-space:pre-line;color:var(--text);line-height:1.8;font-size:0.9em">${msg}</p><button class="btn btn-p" style="margin-top:16px;padding:10px 36px">确定</button></div>`;
@@ -2396,8 +4479,13 @@ function showDialog(msg,cb){
   d.querySelector('button').onclick=function(){d.remove();if(cb)cb();};
   d.onclick=function(e){if(e.target===d){d.remove();if(cb)cb();}};
 }
-// 轻提示（不打断操作，2秒自动消失）
+// 轻提示（不打断操作，2秒自动消失）✨ 升级为引擎 Toast
 function showToastMsg(msg){
+  if(typeof Toast !== 'undefined'){
+    Toast.show(msg,'info',2000);
+    return;
+  }
+  // 回退：原生实现
   const t=document.createElement('div');
   t.style.cssText='position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:var(--panel);color:var(--text);border:1px solid var(--gold);border-radius:20px;padding:10px 24px;z-index:9990;font-size:0.85em;white-space:nowrap;animation:fadeIn 0.3s;pointer-events:none';
   t.textContent=msg;
@@ -2661,6 +4749,66 @@ const CHAR_WITCH_SLAY={
 };
 
 // ╔══════════════════════════════════════════════════════════════╗
+// ║  溃离魔女 · 记忆碎片 (Momentum 收集品系统移植)               ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+const WITCH_SHARDS = [
+  {id:'shard_1',n:'愿望的起点',e:'💫',
+   x:'「与分离的人——终会重逢。」\n\n这是你对孵化者说的第一句话。\n\n那时候——你刚和某某中学的人告别。\n\n你哭了。孵化者问你——\n\n「你想要什么？」\n\n你说——\n\n你不想再也见不到重要的人。',
+   day:0},
+  {id:'shard_2',n:'转学第一天',e:'🏫',
+   x:'你站在凹凸学园的校门口。\n\n校牌在阳光下反射着白光。\n\n新的教室。新的课桌。新的人。\n\n你又害怕又期待——\n\n和去某某中学第一天的心情一模一样。',
+   day:1},
+  {id:'shard_3',n:'第一个朋友',e:'🤝',
+   x:'谁第一个和你说话？\n\n你已经不太记得了。\n\n但那个人——那时候——\n\n也许只是说了句「这里有人吗」——\n\n你就觉得——这个学校——也许可以留下来。',
+   day:2},
+  {id:'shard_4',n:'午后的天台',e:'🌇',
+   x:'有人对你说——\n\n「天台是个好地方。」\n\n你站在栏杆边——风吹过来。\n\n下面是整个学园。\n\n你想着——\n\n如果时间能停在这里就好了。',
+   day:3},
+  {id:'shard_5',n:'日记的最后一页',e:'📓',
+   x:'「第87天。\n\n今天和他说了很多话。\n\n他问起我以前的事——\n\n我说——以前不重要。\n\n但我知道——\n\n以前很重要。\n\n只是我不能同时活在两个世界。」',
+   day:4},
+  {id:'shard_6',n:'不眠之夜',e:'🌙',
+   x:'你躺在借宿的床上——盯着天花板。\n\n灵魂宝石在床头柜上——又暗了一点。\n\n你在想——\n\n一百天后——你还会记得今天吗？\n\n孵化者说轮回不保留记忆。\n\n但你偷偷希望——至少——能记住一点点。',
+   day:5},
+  {id:'shard_7',n:'某某中学的回声',e:'📎',
+   x:'你记得某某中学。记得那里的走廊——\n\n那里也有一个天台。\n\n也有一个和你一起吃午饭的人。\n\n他的脸——在你记忆里已经有点模糊了。\n\n但你记得他的笑声。\n\n和凹凸学园某个人的笑声——很像。',
+   day:6},
+  {id:'shard_8',n:'灵魂宝石的裂痕',e:'💎',
+   x:'宝石上出现了一道细小的裂缝。\n\n不是被摔的。不是被撞的。\n\n是愿望自己在裂开。\n\n「与分离的人终会重逢」→\n\n到了必须分离的时候——\n\n愿望的背面——就是诅咒。',
+   day:7},
+  {id:'shard_9',n:'溃离的预兆',e:'🕳️',
+   x:'你开始不想起床。\n\n不是累。\n\n是害怕。\n\n每一天——离一百天又近了一步。\n\n每一天——羁绊更深了一点。\n\n分离——也变得更难了一点。\n\n你在想——\n\n如果所有人都困在这里——\n\n是不是就不用分离了？',
+   day:8},
+];
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  溃离魔女 · 残响事件 (Momentum Ghost 系统移植)               ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+const WITCH_ECHOES = [
+  // Day 2-8 随机触发的过往轮回记忆残响
+  {id:'echo_classroom',days:[2,3,4],chance:0.4,
+   title:'🏫 教室的残响',
+   text:'结界里闪过一道半透明的画面——\n\n是教室。是以前的教室。\n\n你坐在靠窗的位子——和现在一样。\n\n有人在叫你的名字。\n\n是某某中学的声音。\n\n但你看不清他的脸。\n\n画面闪烁了一下——消失了。\n\n结界里的记忆——只是残响。不是真的。\n\n但你的心还是慢了半拍。'},
+  {id:'echo_rooftop',days:[3,4,5],chance:0.35,
+   title:'🌇 天台的残响',
+   text:'天台的栏杆——是你在某某中学最喜欢的位置。\n\n现在——结界把它复制了出来。\n\n风吹过——带着不属于这个世界的温度。\n\n有人站在你旁边——\n\n是残影。不是真人。\n\n残影说了一句话——\n\n但你听不清内容。\n\n只听到最后一个词——是某个人的名字。\n\n不是你认识的任何人。\n\n是上一世——被你忘记的人。'},
+  {id:'echo_clock',days:[4,5,6],chance:0.3,
+   title:'⏰ 钟声的残响',
+   text:'走廊里——响起了不属于这个学校的钟声。\n\n是某某中学的下课铃。\n\n你条件反射地想站起来——\n\n但这不是你的教室。这不是你的学校。\n\n钟声在结界里回荡——越来越远——\n\n像有人在很远的地方——敲着一口不属于任何一个世界的钟。\n\n上一次听到这钟声——\n\n是转学的前一天。\n\n那是你最后一次——以某某中学学生的身份——走出校门。'},
+  {id:'echo_mirror',days:[5,6,7],chance:0.25,
+   title:'🪞 镜中的残响',
+   text:'你在结界里看到了一面镜子。\n\n镜子里的人——是你。\n\n但不是现在的你。\n\n是上一世的你。穿着不同的校服——站在不同的学校里——\n\n也在看着镜子。\n\n你们的目光穿过时间——\n\n同时说：「我不想走。」\n\n镜子碎了。残响消散。\n\n上一世的你——也说过同样的话。\n\n也变成了魔女。\n\n这个轮回——已经重复过很多次了。'},
+  {id:'echo_incubator',days:[6,7,8],chance:0.2,
+   title:'🐾 孵化者的残响',
+   text:'结界深处——传来孵化者的声音。\n\n不是对你说话。\n\n是对上一世的你。\n\n「你的愿望——是轮回。」\n\n「你会在新的世界——与旧日的人们重逢。」\n\n「但请记住——」\n\n「重逢的次数越多——分离的次数也就越多。」\n\n「每一世——你都会经历一次百日。」\n\n「每一世——你都会爱上新的人。」\n\n「每一世——你都会在第一百天——」\n\n声音忽然停了。\n\n残响——被结界吞掉了最后一句。'},
+  {id:'echo_hero',days:[7,8],chance:0.2,
+   title:'💫 英雄的残响',
+   text:'你看到了那个人。\n\n是来终结你的人。\n\n但在残响里——他是笑着的。\n\n你们在食堂——在走廊——在天台——\n\n你记起来了——\n\n这些事——确实发生过。\n\n只是不在这一世。\n\n你和他——在上一世——也是朋友。\n\n上一世的最后一天——\n\n他也站在你面前——\n\n表情——和这一世一模一样。\n\n残响里——你说了一句话。\n\n「下次——」\n\n然后残响断了。\n\n下次什么？\n\n你不记得了。他也不会知道。'},
+];
+
+// ╔══════════════════════════════════════════════════════════════╗
 // ║  溃离魔女 · 十日崩塌                                         ║
 // ╚══════════════════════════════════════════════════════════════╝
 
@@ -2755,19 +4903,60 @@ function renderWitchDay(app){
 function buildWitchShell(title,narration,choices,isFinalBattle){
   const hero=CH[G.witch_hero];
   const heroClr=hero?hero.clr:'#bc8cff';
-  let html=`<div class="cdbanner fadein" style="background:linear-gradient(135deg,#1a0a1e,#2d0a1e);border:2px solid var(--purple)">
+  const day=G.witch_day;
+  const corr=G.witch_corruption||0;
+  const shards=G.witch_shards||[];
+  const cd=10-day;
+
+  // ✨ 侵蚀等级
+  const corrTier=corr>=90?'🔴 完全侵蚀':corr>=60?'🟠 深度侵蚀':corr>=30?'🟡 中度侵蚀':'🟢 轻度侵蚀';
+  const corrClr=corr>=90?'#f85149':corr>=60?'#f0c040':corr>=30?'#58a6ff':'#3fb950';
+
+  // ✨ 结界滤镜 — 每天画面更暗更紫
+  const filterCSS=corr>=70
+    ?'filter:sepia(0.3) hue-rotate(-20deg) brightness(0.7);'
+    :corr>=40
+    ?'filter:sepia(0.15) hue-rotate(-10deg) brightness(0.85);'
+    :'';
+
+  let html=`<div class="cdbanner fadein" style="background:linear-gradient(135deg,#1a0a1e,#2d0a1e);border:2px solid var(--purple);${filterCSS}">
     <div style="text-align:center">
-      <div class="daynum" style="color:var(--purple);text-shadow:0 0 20px rgba(188,140,255,0.5)">${G.witch_day}</div>
+      <div class="daynum" style="color:var(--purple);text-shadow:0 0 20px rgba(188,140,255,0.5)">${day}</div>
       <div class="daylabel" style="color:var(--purple)">溃 离 纪 元</div>
     </div>
   </div>
-  <div class="statusbar fadein" style="background:#1a0a1e;border:1px solid var(--purple)">
+
+  <!-- ✨ 结界侵蚀状态面板 (移植自 Momentum Zone 系统) -->
+  <div class="statusbar fadein" style="background:#1a0a1e;border:1px solid var(--purple);flex-wrap:wrap;gap:6px">
     <span style="font-size:0.6em;color:var(--dim)">魔女结界</span>
     <span style="color:var(--purple);font-size:0.75em">💎 性质：溃离</span>
+    <span style="color:${corrClr};font-size:0.7em">${corrTier} ${corr}%</span>
     <span style="color:var(--dim);font-size:0.65em">悲叹之种</span>
     ${hero?`<span style="color:${heroClr};font-size:0.75em;margin-left:auto">${hero.e} ${hero.n} · 英雄</span>`:''}
   </div>
-  <div class="eventbox fadein" style="border-left:3px solid var(--purple);background:var(--card);margin:8px 0">
+
+  <!-- ✨ 侵蚀进度条 -->
+  <div style="background:#1a0a1e;border-radius:8px;padding:6px 10px;margin:4px 0;display:flex;align-items:center;gap:8px">
+    <span style="font-size:0.65em;color:var(--dim);white-space:nowrap">🕸️ 结界侵蚀</span>
+    <div style="flex:1;height:4px;background:#333;border-radius:2px;overflow:hidden">
+      <div style="height:100%;width:${corr}%;background:${corrClr};border-radius:2px;transition:width 0.8s ease"></div>
+    </div>
+    <span style="font-size:0.65em;color:${corrClr};font-weight:bold">${corr}%</span>
+  </div>
+
+  <!-- ✨ 倒计时 + 碎片计数 -->
+  <div style="display:flex;gap:8px;margin:4px 0;flex-wrap:wrap">
+    <div style="flex:1;background:#1a0a1e;border:1px solid var(--purple);border-radius:8px;padding:6px 10px;text-align:center">
+      <div style="font-size:0.6em;color:var(--dim)">⏱ 崩塌倒计时</div>
+      <div style="font-size:1.3em;font-weight:bold;color:${cd<=3?'#f85149':cd<=5?'#f0c040':'var(--purple)'};font-family:monospace">${cd} 天</div>
+    </div>
+    <div style="flex:1;background:#1a0a1e;border:1px solid #333;border-radius:8px;padding:6px 10px;text-align:center">
+      <div style="font-size:0.6em;color:var(--dim)">💠 记忆碎片</div>
+      <div style="font-size:1.3em;font-weight:bold;color:var(--gold);font-family:monospace">${shards.length} / 9</div>
+    </div>
+  </div>
+
+  <div class="eventbox fadein" style="border-left:3px solid var(--purple);background:var(--card);margin:8px 0;${filterCSS}">
     <p class="narration" style="white-space:pre-line">${narration}</p>
   </div>
   <div style="margin:8px 0">`;
@@ -2786,7 +4975,7 @@ function buildWitchShell(title,narration,choices,isFinalBattle){
     html+=`
     <button class="btn btn-p pulse" style="font-size:1.1em;padding:12px 36px;background:var(--purple);color:#fff;border:none;box-shadow:0 0 20px rgba(188,140,255,0.4)"
       onclick="window._witchAdvance()">
-      ${G.witch_day===9?'▸ 终末降临':'▸ 下一天'}
+      ${day===9?'▸ 终末降临':'▸ 下一天'}
     </button>`;
   }
 
@@ -2794,9 +4983,42 @@ function buildWitchShell(title,narration,choices,isFinalBattle){
   return html;
 }
 
-// ─── 魔女推进与终幕全局函数 ───
+// ─── 魔女推进与终幕全局函数 ✨ 增强版 ───
 window._witchAdvance=function(){
   curEv=null;
+  const day=G.witch_day;
+
+  // ✨ 更新结界侵蚀度 (每天+10%，末日=100%)
+  G.witch_corruption=Math.min(100,(day+1)*10);
+  G.witch_countdown=10-day-1;
+
+  // ✨ 记忆碎片收集检测 (Day 1-8, 每天30%概率发现碎片)
+  if(day>=1&&day<=8&&Math.random()<0.3){
+    const availableShards=WITCH_SHARDS.filter(s=>s.day<=day&&!G.witch_shards.includes(s.id));
+    if(availableShards.length>0){
+      const shard=availableShards[Math.floor(Math.random()*availableShards.length)];
+      G.witch_shards.push(shard.id);
+      // 显示碎片发现提示
+      setTimeout(()=>{
+        Toast.show(shard.e+' 发现记忆碎片：「'+shard.n+'」','affection',2500);
+      },500);
+    }
+  }
+
+  // ✨ 残响触发检测 (Day 2-8)
+  if(day>=2&&day<=8){
+    const echoes=WITCH_ECHOES.filter(e=>e.days.includes(day)&&!G.witch_echoes_seen.includes(e.id));
+    echoes.forEach(e=>{
+      if(Math.random()<e.chance){
+        G.witch_echoes_seen.push(e.id);
+        // 残响作为对话框弹出
+        setTimeout(()=>{
+          Dialog.show(e.title,e.text,[{text:'残响消散……',type:'primary',callback:null}]);
+        },800);
+      }
+    });
+  }
+
   advanceSlot();
   if(G.witch_day<=10&&G.witch_active)render('play');
 };
@@ -3729,7 +5951,17 @@ function renderWitchEnding(app){
       </div>
       <div style="font-size:0.65em;color:var(--dim)">悲叹之种消耗了积蓄的因果 —— 但核心的羁绊还在。</div>
       <div style="font-size:0.65em;color:var(--dim);margin-top:4px">累计因果値：${G.karma} · 性质「溃离」已记录</div>
+      ${G.witch_shards&&G.witch_shards.length>0?`<div style="font-size:0.7em;color:var(--gold);margin-top:4px">💠 回收记忆碎片：${G.witch_shards.length} / 9</div>`:''}
     </div>
+    ${G.witch_shards&&G.witch_shards.length>0?`
+    <div style="background:var(--card);border-radius:10px;padding:12px;margin-top:10px;text-align:left">
+      <div style="font-size:0.7em;color:var(--gold);margin-bottom:6px">💠 结界中回收的记忆：</div>
+      ${G.witch_shards.map(sid=>{
+        const s=WITCH_SHARDS.find(w=>w.id===sid);
+        return s?`<div style="font-size:0.7em;color:var(--dim);padding:4px 0;border-bottom:1px solid #222">${s.e} ${s.n}</div>`:'';
+      }).join('')}
+      <div style="font-size:0.65em;color:var(--purple);margin-top:6px">这些碎片——是TA存在过的证明。轮回之后——它们会留在因果的环里。</div>
+    </div>`:''}
   </div>`;
 }
 
@@ -3848,6 +6080,9 @@ let battleCtx=null,battleAnim=null,player=null,enemies=[],bullets=[],particles=[
 let battleScore=0,battleTime=60,battleWave=1,battleOver=false,battleWon=false;
 let battleIsMobile=false,battleJoystick={active:false,ox:0,oy:0,dx:0,dy:0,tid:null},battleCanvasScale=1;
 let battleLastTime=0,battlePaused=false,battleVisHandler=null;
+// ✨ 引擎增强
+let battleParticleSys=null,battleShake=null,battleFloatTexts=[];
+let battlePlayerCooldown=null; // 玩家射击冷却 (Cooldown)
 
 function resizeBattleCanvas(dpr){
   const vh=window.innerHeight;
@@ -3887,6 +6122,11 @@ function startHeartDemonBattle(){
   battleScore=0;battleTime=60;battleWave=1;battleOver=false;battleWon=false;
   enemies=[];bullets=[];particles=[];
   battleLastTime=performance.now();battlePaused=false;
+  // ✨ 初始化引擎增强
+  battleParticleSys=new ParticleSystem();
+  battleShake=new ScreenShake();
+  battleFloatTexts=[];
+  battlePlayerCooldown=new Cooldown(1000/Math.max(3,22-G.attr.INT*1.5)); // 每秒N发
   if(battleVisHandler)document.removeEventListener('visibilitychange',battleVisHandler);
   battleVisHandler=function(){battlePaused=document.hidden;if(!document.hidden)battleLastTime=performance.now();};
   document.addEventListener('visibilitychange',battleVisHandler);
@@ -3939,7 +6179,14 @@ function startHeartDemonBattle(){
 function spawnWave(){
   const count=3+battleWave*2;
   for(let i=0;i<count;i++)spawnEnemy(1);
+  // ✨ 新波次特效：屏幕中央环状冲击波
+  if(battleParticleSys){
+    battleParticleSys.ring(400,250,20+count*5,15+count*3,'rgba(188,140,255,0.6)',{speed:1.5+count*0.3,life:30,size:2.5});
+    battleShake.trigger(4,0.88);
+  }
   battleWave++;
+  // ✨ 波次提示
+  if(battleWave>1)Toast.show('🌊 第 '+battleWave+' 波！','warning',1500);
 }
 
 function spawnEnemy(n){
@@ -4034,11 +6281,20 @@ function battleLoop(){
   battleLastTime=now;
   if(battlePaused)dt=0; // 切后台期间暂停
   if(dt>0.5)dt=0.5;     // 防止切回来后巨大跳跃（最多损失0.5秒）
+  const dtMs=dt*1000;   // 毫秒版本，给Timer/Cooldown用
+
   battleTime-=dt;
   if(battleTime<=0){battleTime=0;battleOver=true;battleWon=true;renderBattleResult();return;}
   if(battleTime<=45&&battleWave===2)spawnWave();
   if(battleTime<=30&&battleWave===3)spawnWave();
   if(battleTime<=15&&battleWave===4)spawnWave();
+
+  // ✨ 更新引擎系统
+  battleParticleSys.update(dtMs);
+  battleShake.update();
+  battlePlayerCooldown.update(dtMs);
+  battleFloatTexts.forEach(ft=>ft.update());
+  battleFloatTexts=battleFloatTexts.filter(ft=>ft.alive);
 
   // Player movement
   if(battleIsMobile){
@@ -4071,6 +6327,10 @@ function battleLoop(){
   const spdMul=player.slow>0?0.5:1;
   player.x=Math.max(15,Math.min(785,player.x+player.vx*spdMul));
   player.y=Math.max(15,Math.min(485,player.y+player.vy*spdMul));
+  // ✨ 玩家移动拖尾
+  if(Math.abs(player.vx)>0.3||Math.abs(player.vy)>0.3){
+    battleParticleSys.trail(player.x,player.y,'#58a6ff',1.5,12);
+  }
   if(player.shootCD>0)player.shootCD--;
   if(player.slow>0)player.slow--;
   if(player.silence>0)player.silence--;
@@ -4078,8 +6338,8 @@ function battleLoop(){
   if(player._flash>0)player._flash--;
   if(player.invincible>0)player.invincible--;
 
-  // Auto-shoot
-  if(player.shootCD<=0&&player.silence<=0){
+  // Auto-shoot ✨ Cooldown 时间驱动
+  if(battlePlayerCooldown.ready&&player.silence<=0){
     if(battleIsMobile){
       // 手机：自动瞄准最近敌人
       let nearest=null,nd=Infinity;
@@ -4087,13 +6347,17 @@ function battleLoop(){
       if(nearest){
         const a=Math.atan2(nearest.y-player.y,nearest.x-player.x);
         bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*7,vy:Math.sin(a)*7,life:60,from:'player'});
-        player.shootCD=player.shootRate;
+        battlePlayerCooldown.trigger();
+        // ✨ 枪口粒子特效
+        battleParticleSys.burst(player.x+Math.cos(a)*15,player.y+Math.sin(a)*15,a,3,'#58a6ff',{speed:1.5,life:8,spread:5,size:1.5});
       }
     }else if(player.mx!==undefined){
       // 桌面端：鼠标瞄准
       const a=Math.atan2(player.my-player.y,player.mx-player.x);
       bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*7,vy:Math.sin(a)*7,life:60,from:'player'});
-      player.shootCD=player.shootRate;
+      battlePlayerCooldown.trigger();
+      // ✨ 枪口粒子特效
+      battleParticleSys.burst(player.x+Math.cos(a)*15,player.y+Math.sin(a)*15,a,2,'#58a6ff',{speed:1.2,life:6,spread:3,size:1.5});
     }
   }
 
@@ -4141,15 +6405,21 @@ function battleLoop(){
   bullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.life--;});
   bullets=bullets.filter(b=>b.life>0&&b.x>0&&b.x<800&&b.y>0&&b.y<500);
 
-  // Player bullets hit enemy
+  // Player bullets hit enemy ✨ 增强特效
   bullets.filter(b=>b.from==='player').forEach(b=>{
     enemies.forEach(e=>{
       if(dist(b,e)<18+Math.max(0,e.aff/15)){
         e.hp-=player.dmg;b.life=0;
         if(e.hp<=0){
           battleScore+=e.worth;
-          // Death particles
-          for(let i=0;i<8;i++)particles.push({x:e.x,y:e.y,vx:rn(-3,3),vy:rn(-3,3),life:20,color:e.ch?.clr||'#fff'});
+          // ✨ 爆炸粒子 + 震动 + 浮动分数
+          battleParticleSys.explode(e.x,e.y,10,e.ch?.clr||'#f44',{speed:3,life:25,size:4});
+          battleShake.trigger(3,0.8);
+          battleFloatTexts.push(FloatingText.spawn(battleCtx,e.x,e.y-10,'+'+e.worth,e.ch?.clr||'#f0c040'));
+        }else{
+          // ✨ 命中火花
+          battleParticleSys.burst(b.x,b.y,Math.atan2(b.vy,b.vx),3,'#ff0',{speed:2,life:8,spread:60,size:2});
+          battleFloatTexts.push(FloatingText.spawn(battleCtx,b.x,b.y,'-'+player.dmg,'#f44'));
         }
       }
     });
@@ -4162,7 +6432,11 @@ function battleLoop(){
           e.hp-=4;b.life=0;
           if(e.hp<=0){
             battleScore+=e.worth;
-            for(let i=0;i<8;i++)particles.push({x:e.x,y:e.y,vx:rn(-3,3),vy:rn(-3,3),life:20,color:e.ch?.clr||'#fff'});
+            // ✨ 爆炸粒子
+            battleParticleSys.explode(e.x,e.y,8,e.ch?.clr||'#f44',{speed:2.5,life:20,size:3});
+            battleFloatTexts.push(FloatingText.spawn(battleCtx,e.x,e.y-10,'+'+e.worth,'#f0c040'));
+          }else{
+            battleParticleSys.burst(b.x,b.y,Math.atan2(b.vy,b.vx),2,'#ff0',{speed:1.5,life:6,spread:45,size:1.5});
           }
         }
       });
@@ -4175,42 +6449,63 @@ function battleLoop(){
         e1.hp-=0.8;e2.hp-=0.8;
         if(e1.hp<=0){
           battleScore+=e1.worth;
-          for(let i=0;i<8;i++)particles.push({x:e1.x,y:e1.y,vx:rn(-3,3),vy:rn(-3,3),life:20,color:e1.ch?.clr||'#fff'});
+          battleParticleSys.explode(e1.x,e1.y,6,e1.ch?.clr||'#f44',{speed:2,life:15,size:2.5});
+          battleFloatTexts.push(FloatingText.spawn(battleCtx,e1.x,e1.y-10,'+'+e1.worth,'#f0c040'));
         }
         if(e2.hp<=0){
           battleScore+=e2.worth;
-          for(let i=0;i<8;i++)particles.push({x:e2.x,y:e2.y,vx:rn(-3,3),vy:rn(-3,3),life:20,color:e2.ch?.clr||'#fff'});
+          battleParticleSys.explode(e2.x,e2.y,6,e2.ch?.clr||'#f44',{speed:2,life:15,size:2.5});
+          battleFloatTexts.push(FloatingText.spawn(battleCtx,e2.x,e2.y-10,'+'+e2.worth,'#f0c040'));
         }
       }
     });
   });
-  // Enemy bullets/contact hit player（霸体期间免疫伤害）
+  // Enemy bullets/contact hit player（霸体期间免疫伤害）✨ 增强受击反馈
   if(player.invincible<=0){
     enemies.forEach(e=>{
       if(e._bullets)e._bullets.forEach(b=>{
-        if(dist(b,player)<15){player.hp-=(b.dmg||4);if(b.slow)player.slow=Math.max(player.slow||0,b.slow);if(!b.pierce)b.life=0;player._flash=5;}
+        if(dist(b,player)<15){
+          const dmg=b.dmg||4;
+          player.hp-=dmg;if(b.slow)player.slow=Math.max(player.slow||0,b.slow);if(!b.pierce)b.life=0;player._flash=5;
+          battleShake.trigger(5,0.85);
+          battleFloatTexts.push(FloatingText.spawn(battleCtx,player.x,player.y-20,'-'+dmg,'#f85149'));
+          battleParticleSys.burst(b.x,b.y,Math.atan2(b.vy,b.vx),4,'#f85149',{speed:2,life:10,spread:40,size:2});
+        }
       });
-      if(dist(e,player)<20){player.hp-=2;player._flash=5;}
+      if(dist(e,player)<20){
+        player.hp-=2;player._flash=5;
+        battleShake.trigger(3,0.9);
+        battleFloatTexts.push(FloatingText.spawn(battleCtx,player.x,player.y-20,'-2','#f85149'));
+      }
       if(e._trail)e._trail.forEach(t=>{
         if(dist(t,player)<18){player.hp-=3;}
       });
     });
   }
 
-  // Update particles
+  // Update old particles (legacy compat - 非引擎创建的粒子仍用旧系统)
   particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;});
   particles=particles.filter(p=>p.life>0);
 
   // Player death
   if(player.hp<=0){battleOver=true;battleWon=false;renderBattleResult();return;}
 
-  // ---- RENDER ----
+  // ---- RENDER ✨ 增强版 ----
+  // ✨ 应用屏幕震动
+  battleCtx.save();
+  if(battleShake.isShaking){
+    battleShake.apply(battleCtx);
+  }
+
   // Background grid
   battleCtx.strokeStyle='#1a1a2e';battleCtx.lineWidth=1;
   for(let i=0;i<800;i+=40){battleCtx.beginPath();battleCtx.moveTo(i,0);battleCtx.lineTo(i,500);battleCtx.stroke();}
   for(let i=0;i<500;i+=40){battleCtx.beginPath();battleCtx.moveTo(0,i);battleCtx.lineTo(800,i);battleCtx.stroke();}
 
-  // Particles
+  // ✨ 新粒子系统渲染
+  battleParticleSys.draw(battleCtx);
+
+  // Legacy particles (兼容旧代码中的粒子)
   particles.forEach(p=>{
     battleCtx.fillStyle=p.color;battleCtx.globalAlpha=p.life/20;
     battleCtx.fillRect(p.x-2,p.y-2,4,4);battleCtx.globalAlpha=1;
@@ -4248,6 +6543,12 @@ function battleLoop(){
   bullets.filter(b=>b.from==='player').forEach(b=>{
     battleCtx.fillStyle='#58a6ff';battleCtx.beginPath();battleCtx.arc(b.x,b.y,3,0,Math.PI*2);battleCtx.fill();
   });
+
+  // ✨ 浮动文字（伤害/分数）
+  battleFloatTexts.forEach(ft=>ft.draw(battleCtx));
+
+  // ✨ 恢复震动上下文（HUD 不震动）
+  battleCtx.restore();
 
   // Player
   if(player._flash%2===0){
@@ -4344,6 +6645,8 @@ function renderBattleResult(){
     G.attr.SPR=clamp(G.attr.SPR+sprGain,0,10);
     G.lowSprDays=0;G.sprWarned=false;
     G.flags['heart_demon_won']=true;
+    // ✨ Toast 战斗胜利通知
+    Toast.show('💀 心魔幻境 · 突破！精神 +'+sprGain,'success',2500);
     app.innerHTML=buildShell(`<div class="feedback fadein"><div class="fbtitle">💀 心魔幻境 · 突破！</div>
       <div class="fbtext">你战胜了内心深处的梦魇。\n\n那些扭曲的面孔恢复了原样——\n\n教室回来了。阳光照在课桌上。\n\n你深吸一口气。\n\n还活着。还能继续。</div>
       <div class="fbaff"><span class="fbup">🧘精神 +${sprGain}</span> <span style="color:var(--gold)">⭐得分 ${battleScore}</span></div>
@@ -4358,6 +6661,7 @@ function renderBattleResult(){
       const tied=sorted.filter(([,v])=>v===topAff);
       G.witch_hero=tied[Math.floor(Math.random()*tied.length)][0];
       G.witch_active=true;G.witch_day=0;G.attr.SPR=0;
+      G.witch_corruption=0;G.witch_shards=[];G.witch_echoes_seen=[];G.witch_countdown=10;
       G.flags['witch_transformation']=true;
       G.flags['witch_karma_at_transform']=currentKarma;
       document.removeEventListener('keydown',battleKeyDown);document.removeEventListener('keyup',battleKeyUp);
