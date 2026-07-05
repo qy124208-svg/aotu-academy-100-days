@@ -7400,35 +7400,45 @@ const AC_ARCHETYPES={
 
 // ✨ v6.13 英雄专属技能组 (安迷修)
 const AC_HERO_KITS={
+  // 安迷修 — 盾卫
   anmixiu:{specialCD:8,specialDmg:1.0,splashDmg:0.5,ultDmg:2.1,
     burnStacks:2,burnHP:0.10,burnATKCap:1.20,burnDur:6,
     shieldOnHit:0.20,shieldDur:6,emergShield:0.40,
     baseBlock:0.25,baseDR:0.20,debuffAmt:0.15,debuffDur:6,tauntDur:3,
     shieldPerHit:0.20,shieldMax:0.80,rageOnHit:50},
+  // 卡米尔 — 刺客
   kamier:{specialCD:7,specialDmg:1.6,specialProb:0.30,specialCritBuff:0.30,critBuffDur:6,
     ultDmg:4.8,stunDur:3,ultDebuff:0.20,debuffDur:3,ultPierce:0.5,ultDmgBonus:0.10,
     trueDmgRatio:0.50,critDmg:1.5},
+  // 格瑞 — 战士
   gerui:{specialCD:7,specialDmg:1.6,specialProb:0.30,specialStun:1.0,
     ultDmg:2.8,ultStun:0.70,ultAtkBuff:0.20,
     comboProb1:0.30,comboProb2:0.15,comboDmg1:1.5,comboDmg2:1.0,
     comboStunProb:0.35,stunDur:3,atkBuff:0.20},
+  // 埃米 — 半坦
   aimi:{specialCD:7,specialDmg:1.5,specialProb:0.30,specialHeal:0.10,
     ultDmg:1.9,ultTauntDur:3,ultShield:0.30,ultReflect:0.25,reflectDur:6,
     passiveDR:0.20,hpThreshold:0.5},
+  // 艾比 — 成长射
   aibi:{specialCD:7,specialDmg:1.05,specialProb:0.30,specialLastBonus:0.30,
     ultArrows:12,ultDmgPer:0.32,
     killAtkBuff:0.05,killPierceBuff:0.05,maxKillStacks:3},
+  // 金 — 收割射
   jin:{specialCD:7,specialDmg:1.6,specialProb:0.30,specialShield:0.30,
     ultDmg:4.2,ultKillRage:300,ultLowHPBonus:0.20,ultLowHPThresh:0.50,
     highHPDmgBuff:0.20,lowHPDRBuff:0.20,hpThreshold:0.60},
+  // 安莉洁 — 辅助
   anlijie:{specialCD:7,specialDmg:1.5,specialProb:0.30,specialFreeze:0.50,freezeDur:3,
     ultDmg:1.95,ultColdProb:0.25,ultColdMax:2,ultColdAtkDebuff:0.10,coldDur:3,
     passiveShieldRatio:0.80,passiveShieldDur:3,passiveTargets:2},
+  // 凯莉 — 暴击射
   kaili:{specialCD:7,specialDmg:1.6,specialProb:0.30,specialCritBuff:0.50,critBuffDur:6,
     ultDmg:2.8,ultCritPerHit:0.17,
     dmgRatePerHit:0.09,baseCritDmgBonus:0.25,normalHits:3},
-  guihu:{specialCD:7,specialRageSteal:100,specialProb:0.30,
-    ultDmg:2.20,ultRageDrain:100,ultStrongDrain:100,rageRateBuff:0.25},
+  // 鬼狐 — 怒气
+  guihu:{specialCD:7,specialRageSteal:300,specialProb:0.30,
+    ultDmg:2.20,ultRageDrain:300,ultStrongDrain:200,rageRateBuff:0.25},
+  // 祖玛 — 治疗
   zuma:{specialCD:7,specialDmg:1.6,specialProb:0.30,specialHeal:1.20,
     ultHeal:2.10,ultDR:0.15,ultDRDur:6,classHealBonus:0.30,dmgAura:0.15,jdBonus:0.05},
   yinjue:{specialCD:7,specialDmg:1.1,specialProb:0.30,specialHeal:0.20,specialDR:0.15,specialDRDur:3,
