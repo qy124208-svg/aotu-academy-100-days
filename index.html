@@ -7668,6 +7668,7 @@ function acPrepRender(app){
     }
     // 阶段切换按钮
     if(curPlaced===5&&!isEnemyPhase){h+='<div style="text-align:center;margin-top:8px"><button class="btn btn-p" onclick="window._acPhase=\'place_enemy\';acPrepRender(document.getElementById(\'app\'));">✅ 我方完成 → 部署敌方 ▸</button></div>';}
+    if(isEnemyPhase){h+='<div style="text-align:center;margin-top:8px"><button class="btn btn-p" onclick="window._acEnemyAutoDeploy()" style="background:var(--accent);">🤖 敌方自动部署最佳阵型</button></div>';}
     h+='</div>';
   }
   // 全放完才能开战
@@ -7687,6 +7688,53 @@ window._acPlaceSelect=function(id){window._acSelected=window._acSelected===id?nu
 window._acPlaceSlot=function(si){var slots=window._acSlots||[];var sel=window._acSelected;if(slots[si]){slots[si]=null;}else if(sel){var oldIdx=slots.indexOf(sel);if(oldIdx>=0)slots[oldIdx]=null;slots[si]=sel;window._acSelected=null;}window._acSlots=slots;acPrepRender(document.getElementById('app'));};
 window._acEnemyPlaceSelect=function(id){window._acEnemySelected=window._acEnemySelected===id?null:id;acPrepRender(document.getElementById('app'));};
 window._acEnemyPlaceSlot=function(si){var slots=window._acEnemySlots||[];var sel=window._acEnemySelected;if(slots[si]){slots[si]=null;}else if(sel){var oldIdx=slots.indexOf(sel);if(oldIdx>=0)slots[oldIdx]=null;slots[si]=sel;window._acEnemySelected=null;}window._acEnemySlots=slots;acPrepRender(document.getElementById('app'));};
+// ✨ 敌方自动部署最佳位置
+window._acEnemyAutoDeploy=function(){
+  var enemy=window._acEnemy||[];
+  if(enemy.length<5){window._acLastMsg='需要选择5名敌方角色';acPrepRender(document.getElementById('app'));return;}
+  // 角色专属最佳位置
+  var ENEMY_POS={
+    anmixiu:{row:0,col:2},yinjue:{row:1,col:2},aimi:{row:0,col:3},
+    gerui:{row:1,col:3},jiadeluosi:{row:0,col:2},peili:{row:1,col:2},
+    kamier:{row:1,col:3},
+    aibi:{row:3,col:2},jin:{row:3,col:3},kaili:{row:2,col:3},leishi:{row:2,col:2},
+    anlijie:{row:3,col:2},zuma:{row:3,col:3},
+    zitanghuan:{row:2,col:2},paluosi:{row:2,col:3},
+    guihu:{row:3,col:2}
+  };
+  var slots=[null,null,null,null,null,null,null,null];
+  var usedSlots={};
+  // 按定位排序: 近战>远程>辅助
+  var roleOrder={melee:0,tank:0,warrior:1,assassin:2,ranged:3,support:4,summon:5};
+  var sorted=enemy.slice().sort(function(a,b){
+    var archA=AC_ARCHETYPES[a]||{range:1,role:'melee'};
+    var archB=AC_ARCHETYPES[b]||{range:1,role:'melee'};
+    return (roleOrder[archA.role]||0)-(roleOrder[archB.role]||0);
+  });
+  sorted.forEach(function(id){
+    var pos=ENEMY_POS[id];
+    if(!pos){
+      var arch=AC_ARCHETYPES[id]||{range:1,role:'melee'};
+      if(arch.role==='melee')pos={row:0,col:2};
+      else if(arch.role==='ranged')pos={row:3,col:2};
+      else pos={row:3,col:3};
+    }
+    var slotKey=pos.row+','+pos.col;
+    if(usedSlots[slotKey]){
+      var adj=[[0,1],[0,-1],[1,0],[-1,0]];
+      for(var i=0;i<adj.length;i++){
+        var nr=pos.row+adj[i][0],nc=pos.col+adj[i][1];
+        if(nr>=0&&nr<4&&nc>=2&&nc<4&&!usedSlots[nr+','+nc]){pos={row:nr,col:nc};slotKey=nr+','+nc;break;}
+      }
+    }
+    usedSlots[slotKey]=true;
+    var si=pos.row*2+(pos.col-2);
+    slots[si]=id;
+  });
+  window._acEnemySlots=slots;
+  window._acLastMsg='✅ 敌方已自动部署最佳阵型';
+  acPrepRender(document.getElementById('app'));
+};
 window._acPickArtifact=function(){
   var karma=loadKarma();if(window._acArtifact){window._acLastMsg='已有道具: '+window._acArtifact.n;acPrepRender(document.getElementById('app'));return;}
   var pool=AC_ARTIFACTS.filter(function(a){return karma>=a.cost;});if(pool.length===0){window._acLastMsg='因果值不足';acPrepRender(document.getElementById('app'));return;}
