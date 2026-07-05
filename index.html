@@ -7700,26 +7700,65 @@ window._acStart=function(){
   var ranked2=Object.keys(CH).filter(function(k){return CH[k]&&CH[k].c!=='教师';}).sort(function(a,b){return(G.aff[b]||0)-(G.aff[a]||0);});
   var top5Avg=ranked2.slice(0,5).reduce(function(s,id){return s+(G.aff[id]||0);},0)/5;
   var enemyAff=Math.floor(Math.max(G.day,top5Avg));
-  // ✨ v6.14 敌方按定位自动部署最佳位置
+  // ✨ v6.14 每角色专属最佳位置 (基于定位+功能+策略)
+  var ENEMY_POS={
+    // 坦克: 前排中央吸引火力
+    anmixiu:{row:0,col:2,tag:'🛡️嘲讽坦'},
+    yinjue:{row:1,col:2,tag:'🛡️光环坦'},
+    aimi:{row:0,col:3,tag:'🛡️反伤坦'},
+    // 战士: 前排输出+控制
+    gerui:{row:1,col:3,tag:'⚔️整列控制'},
+    jiadeluosi:{row:0,col:2,tag:'🔥全体眩晕'},
+    peili:{row:1,col:2,tag:'🌀重力减益'},
+    // 刺客: 前排侧翼快速切入
+    kamier:{row:1,col:3,tag:'🗡️单体爆发'},
+    // 射手: 后排安全输出
+    aibi:{row:3,col:2,tag:'🏹12箭随机'},
+    jin:{row:3,col:3,tag:'⭐单体收割'},
+    kaili:{row:2,col:3,tag:'🌙整列暴击'},
+    leishi:{row:2,col:2,tag:'⚡十字吸怒'},
+    // 辅助: 后排保护队友
+    anlijie:{row:3,col:2,tag:'❄️寒冷护盾'},
+    zuma:{row:3,col:3,tag:'💚全体治疗'},
+    // 召唤/分身: 后排安全铺场
+    zitanghuan:{row:2,col:2,tag:'👾召唤斯巴达'},
+    paluosi:{row:2,col:3,tag:'👥暗影分身'},
+    // 怒气控制: 后排降怒
+    guihu:{row:3,col:2,tag:'🦊降怒镜像'}
+  };
   var enemyChars=[];for(var esi=0;esi<8;esi++){if(enemySlots[esi])enemyChars.push({id:enemySlots[esi],ch:CH[enemySlots[esi]]});}
-  // 按定位排序: 近战(前排) > 远程(后排) > 辅助(后排)
+  // 按优先级排序: 坦克 > 战士 > 刺客 > 射手 > 辅助 > 召唤
+  var roleOrder={melee:0,tank:0,warrior:1,assassin:2,ranged:3,support:4,summon:5};
   enemyChars.sort(function(a,b){
     var archA=AC_ARCHETYPES[a.id]||{range:1,role:'melee'};
     var archB=AC_ARCHETYPES[b.id]||{range:1,role:'melee'};
-    var orderA=archA.role==='melee'?0:archA.role==='ranged'?1:2;
-    var orderB=archB.role==='melee'?0:archB.role==='ranged'?1:2;
-    return orderA-orderB;
+    return (roleOrder[archA.role]||0)-(roleOrder[archB.role]||0);
   });
-  // 最佳位置分配: 近战→前排(row0-1), 远程/辅助→后排(row2-3)
-  var frontSlots=[],backSlots=[];
-  for(var r=0;r<4;r++){for(var c=2;c<4;c++){var slot={row:r,col:c};if(r<2)frontSlots.push(slot);else backSlots.push(slot);}}
-  var posSlots=frontSlots.concat(backSlots);
   var bossIdx=Math.floor(Math.random()*enemyChars.length);
+  var usedSlots={};
   for(var ei=0;ei<enemyChars.length;ei++){
     var ec=enemyChars[ei],ch=ec.ch;
-    var pos=posSlots[ei%posSlots.length];
-    var cx=AC_OFFX+pos.col*AC_CELL_W+AC_CELL_W/2,cy=AC_OFFY+pos.row*AC_CELL_H+AC_CELL_H/2;
-    var p=acMakePiece(ch,enemyAff,'enemy',cx,cy,pos.row);
+    var posInfo=ENEMY_POS[ec.id];
+    // 如果没有预设位置，按定位分配
+    if(!posInfo){
+      var arch=AC_ARCHETYPES[ec.id]||{range:1,role:'melee'};
+      if(arch.role==='melee')posInfo={row:ei%2,col:2+(ei%2)};
+      else if(arch.role==='ranged')posInfo={row:2+ei%2,col:2+(ei%2)};
+      else posInfo={row:3,col:2+(ei%2)};
+    }
+    // 避免位置冲突
+    var slotKey=posInfo.row+','+posInfo.col;
+    if(usedSlots[slotKey]){
+      // 找相邻空位
+      var adj=[[0,1],[0,-1],[1,0],[-1,0]];
+      for(var ai=0;ai<adj.length;ai++){
+        var nr=posInfo.row+adj[ai][0],nc=posInfo.col+adj[ai][1];
+        if(nr>=0&&nr<4&&nc>=2&&nc<4&&!usedSlots[nr+','+nc]){posInfo={row:nr,col:nc};slotKey=nr+','+nc;break;}
+      }
+    }
+    usedSlots[slotKey]=true;
+    var cx=AC_OFFX+posInfo.col*AC_CELL_W+AC_CELL_W/2,cy=AC_OFFY+posInfo.row*AC_CELL_H+AC_CELL_H/2;
+    var p=acMakePiece(ch,enemyAff,'enemy',cx,cy,posInfo.row);
     if(ei===bossIdx){p.hp=Math.floor(p.hp*2);p.maxHp=Math.floor(p.maxHp*2);p.atk=Math.floor(p.atk*2);p.spd*=1.5;p._isBoss=true;p.name='👑'+p.name;}
     enemyPieces.push(p);
   }
