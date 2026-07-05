@@ -7700,9 +7700,29 @@ window._acStart=function(){
   var ranked2=Object.keys(CH).filter(function(k){return CH[k]&&CH[k].c!=='教师';}).sort(function(a,b){return(G.aff[b]||0)-(G.aff[a]||0);});
   var top5Avg=ranked2.slice(0,5).reduce(function(s,id){return s+(G.aff[id]||0);},0)/5;
   var enemyAff=Math.floor(Math.max(G.day,top5Avg));
-  var bossIdx=Math.floor(Math.random()*enemySlots.filter(function(s){return s!==null;}).length);
-  var eCount=0;
-  for(var esi=0;esi<8;esi++){var esid=enemySlots[esi];if(!esid)continue;var ch=CH[esid];var ecol=2+esi%2,erow=Math.floor(esi/2);var cx=AC_OFFX+ecol*AC_CELL_W+AC_CELL_W/2,cy=AC_OFFY+erow*AC_CELL_H+AC_CELL_H/2;var p=acMakePiece(ch,enemyAff,'enemy',cx,cy,erow);if(eCount===bossIdx){p.hp=Math.floor(p.hp*2);p.maxHp=Math.floor(p.maxHp*2);p.atk=Math.floor(p.atk*2);p.spd*=1.5;p._isBoss=true;p.name='👑'+p.name;}enemyPieces.push(p);eCount++;}
+  // ✨ v6.14 敌方按定位自动部署最佳位置
+  var enemyChars=[];for(var esi=0;esi<8;esi++){if(enemySlots[esi])enemyChars.push({id:enemySlots[esi],ch:CH[enemySlots[esi]]});}
+  // 按定位排序: 近战(前排) > 远程(后排) > 辅助(后排)
+  enemyChars.sort(function(a,b){
+    var archA=AC_ARCHETYPES[a.id]||{range:1,role:'melee'};
+    var archB=AC_ARCHETYPES[b.id]||{range:1,role:'melee'};
+    var orderA=archA.role==='melee'?0:archA.role==='ranged'?1:2;
+    var orderB=archB.role==='melee'?0:archB.role==='ranged'?1:2;
+    return orderA-orderB;
+  });
+  // 最佳位置分配: 近战→前排(row0-1), 远程/辅助→后排(row2-3)
+  var frontSlots=[],backSlots=[];
+  for(var r=0;r<4;r++){for(var c=2;c<4;c++){var slot={row:r,col:c};if(r<2)frontSlots.push(slot);else backSlots.push(slot);}}
+  var posSlots=frontSlots.concat(backSlots);
+  var bossIdx=Math.floor(Math.random()*enemyChars.length);
+  for(var ei=0;ei<enemyChars.length;ei++){
+    var ec=enemyChars[ei],ch=ec.ch;
+    var pos=posSlots[ei%posSlots.length];
+    var cx=AC_OFFX+pos.col*AC_CELL_W+AC_CELL_W/2,cy=AC_OFFY+pos.row*AC_CELL_H+AC_CELL_H/2;
+    var p=acMakePiece(ch,enemyAff,'enemy',cx,cy,pos.row);
+    if(ei===bossIdx){p.hp=Math.floor(p.hp*2);p.maxHp=Math.floor(p.maxHp*2);p.atk=Math.floor(p.atk*2);p.spd*=1.5;p._isBoss=true;p.name='👑'+p.name;}
+    enemyPieces.push(p);
+  }
   // ✨ 格位Buff: 前排+ATK 25%, 后排+SPD 25%
   playerPieces.forEach(function(p){if(p._gridRow<2){p.atk=Math.floor(p.atk*1.25);p._gridBuff='🔴ATK+25%';}else{p.spd*=1.25;p._gridBuff='🔵SPD+25%';}});
   acApplyCPBond(playerPieces);acApplyCPBond(enemyPieces);
