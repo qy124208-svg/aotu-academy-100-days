@@ -7667,8 +7667,7 @@ function acPrepRender(app){
       h+='</div>';
     }
     // 阶段切换按钮
-    if(curPlaced===5&&!isEnemyPhase){h+='<div style="text-align:center;margin-top:8px"><button class="btn btn-p" onclick="window._acPhase=\'place_enemy\';acPrepRender(document.getElementById(\'app\'));">✅ 我方完成 → 部署敌方 ▸</button></div>';}
-    if(isEnemyPhase){h+='<div style="text-align:center;margin-top:8px"><button class="btn btn-p" onclick="window._acEnemyAutoDeploy()" style="background:var(--accent);">🤖 敌方自动部署最佳阵型</button></div>';}
+    if(curPlaced===5&&!isEnemyPhase){h+='<div style="text-align:center;margin-top:8px"><button class="btn btn-p" onclick="window._acPhase=\'place_enemy\';window._acEnemyAutoDeploy();">✅ 我方完成 → 敌方自动部署 ▸</button></div>';}
     h+='</div>';
   }
   // 全放完才能开战
