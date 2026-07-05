@@ -7709,9 +7709,9 @@ window._acStart=function(){
   // ✨ v6.13 英雄被动初始化
   [playerPieces,enemyPieces].forEach(function(team){team.forEach(function(p){if(p._kit&&p._kit.baseBlock){p._block=p._kit.baseBlock;p._dmgReduc=p._kit.baseDR;}if(p._kit&&p._kit.atkBuff){p.atk=Math.floor(p.atk*(1+p._kit.atkBuff));}if(p._kit&&p._kit.baseCritDmgBonus){p._critDmg=(p._critDmg||1.5)+p._kit.baseCritDmgBonus;}if(p._kit&&p._kit.defPierce){p._defPierce=p._kit.defPierce;}if(p._kit&&p._kit.rageRateBuff){p._rageRate=(p._rageRate||1.0)+p._kit.rageRateBuff;}});});
   // ✨ 佩利登场: 吸敌方最高怒气 → 平分友方
+  var allTeamPieces=playerPieces.concat(enemyPieces);
   allTeamPieces.forEach(function(p){if(p._kit&&p._kit.gravityATKDebuff){var eTeam=p.side==='player'?enemyPieces:playerPieces;var fTeam=p.side==='player'?playerPieces:enemyPieces;var best=null;eTeam.forEach(function(e){if(e.alive&&(!best||e._rage>best._rage))best=e;});if(best&&best._rage>0){var st=best._rage;best._rage=0;var af=fTeam.filter(function(f){return f.alive;});if(af.length>0){var ea=Math.floor(st/af.length);af.forEach(function(f){f._rage=Math.min(f._rageMax,f._rage+ea);});acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,'🐺吸怒→友+'+ea,'#ff6600'));}}}});
   // ✨ 雷狮登场光环: 友方怒气+20% / 敌方怒气-20%
-  var allTeamPieces=playerPieces.concat(enemyPieces);
   allTeamPieces.forEach(function(p){if(p._kit&&p._kit.allyRageBuff){var friendTeam=p.side==='player'?playerPieces:enemyPieces;var enemyTeam=p.side==='player'?enemyPieces:playerPieces;friendTeam.forEach(function(f){f._rageRate=1.0+p._kit.allyRageBuff;});enemyTeam.forEach(function(e){e._rageRate=Math.max(0.5,1.0-p._kit.enemyRageDebuff);});}});
   // 道具生效
   if(window._acArtifact)window._acArtifact.eff(playerPieces);
