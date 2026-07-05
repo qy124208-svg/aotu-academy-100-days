@@ -7745,9 +7745,214 @@ function acFindTarget(piece,enemies){
   return best;
 }
 
-// ✨ v6.13 技能特效 — 冲击波+爆炸+震屏 三件套
+// ✨ v6.14 角色专属特效系统 — 每个角色独特视觉标识
 function acUltFX(p,color,ringColor,count){acParticles.ring(p.x,p.y,35,16,ringColor||color,{speed:5,life:20,size:3});acParticles.explode(p.x,p.y,count||25,color,{speed:8,life:18,size:6});acShake.trigger(Math.min(6,count/4),0.9);}
 function acSkillFX(p,target,color,count){acParticles.burst(target.x,target.y,Math.atan2(target.y-p.y,target.x-p.x),count||8,color,{speed:4,life:12,spread:30,size:3});acParticles.explode(target.x,target.y,count||10,color,{speed:5,life:12,size:4});acShake.trigger(Math.min(4,count/3),0.85);}
+
+// ═══ v6.14 角色专属终结技特效 — 每角色独特视觉 ═══
+// 安迷修 — 双剑·冷焰: 🔥荧光黄火焰剑+❄️荧光蓝冰霜剑
+function acFX_Anmixiu(p){
+  // 荧光黄火焰剑
+  acParticles.ring(p.x-15,p.y,20,10,'#ffff00',{speed:4,life:25,size:4});
+  acParticles.explode(p.x-15,p.y,15,'#ffcc00',{speed:6,life:20,size:5});
+  // 荧光蓝冰霜剑
+  acParticles.ring(p.x+15,p.y,20,10,'#00ccff',{speed:4,life:25,size:4});
+  acParticles.explode(p.x+15,p.y,15,'#0088ff',{speed:6,life:20,size:5});
+  // 双剑交叉特效
+  acParticles.burst(p.x,p.y,Math.PI/4,8,'#ffdd00',{speed:5,life:18,size:3});
+  acParticles.burst(p.x,p.y,-Math.PI/4,8,'#00aaff',{speed:5,life:18,size:3});
+  // 护盾光环
+  acParticles.ring(p.x,p.y,35,12,'#88ddff',{speed:2,life:30,size:2});
+  acShake.trigger(6,0.95);
+}
+// 卡米尔 — 无重力飞劈: 💚绿色风之波纹+🗡️飞劈轨迹
+function acFX_Kamier(p){
+  // 绿色风之波纹
+  acParticles.ring(p.x,p.y,25,15,'#00ff88',{speed:3,life:22,size:3});
+  acParticles.ring(p.x,p.y,35,12,'#00cc66',{speed:2,life:25,size:2});
+  acParticles.ring(p.x,p.y,45,8,'#009944',{speed:1.5,life:28,size:2});
+  // 飞劈轨迹
+  acParticles.burst(p.x,p.y-20,Math.PI/2,6,'#88ffaa',{speed:8,life:15,size:4});
+  acParticles.explode(p.x,p.y,18,'#ffffff',{speed:6,life:18,size:4});
+  // 驱散碎片
+  for(var i=0;i<8;i++)acParticles.burst(p.x+Math.random()*40-20,p.y+Math.random()*40-20,Math.random()*Math.PI*2,2,'#aaffcc',{speed:3,life:20,size:2});
+  acShake.trigger(5,0.9);
+}
+// 格瑞 — 神镰烈斩: 💚绿色镰刀斩击+💫整列眩晕
+function acFX_Gerui(p){
+  // 镰刀斩击波
+  acParticles.ring(p.x,p.y,40,20,'#00ff00',{speed:6,life:18,size:4});
+  acParticles.explode(p.x,p.y,28,'#00ff00',{speed:10,life:16,size:5});
+  // 八向剑气
+  for(var i=0;i<8;i++)acParticles.burst(p.x,p.y,Math.PI*2*i/8,6,'#88ff88',{speed:8,life:12,size:3});
+  // 镰刀残影
+  for(var i=0;i<3;i++)acParticles.burst(p.x+Math.cos(i*2.1)*20,p.y+Math.sin(i*2.1)*20,i*2.1,4,'#aaffaa',{speed:4,life:15,size:3});
+  acParticles.ring(p.x,p.y,30,15,'#aaffaa',{speed:4,life:20,size:2});
+  acShake.trigger(5,0.9);
+}
+// 埃米 — 恶魔之手: 🖤黑色恶魔手+💙蓝色能量+🔴反伤荆棘
+function acFX_Aimi(p){
+  // 黑色恶魔手臂
+  acParticles.ring(p.x,p.y+15,30,18,'#222222',{speed:5,life:22,size:4});
+  acParticles.explode(p.x,p.y+15,25,'#111111',{speed:7,life:20,size:5});
+  // 蓝色恶魔能量
+  acParticles.ring(p.x,p.y+15,25,12,'#0066cc',{speed:4,life:25,size:3});
+  acParticles.explode(p.x,p.y+15,15,'#0088ff',{speed:5,life:22,size:4});
+  // 反伤荆棘光环
+  for(var i=0;i<10;i++)acParticles.burst(p.x+Math.cos(i*0.628)*25,p.y+Math.sin(i*0.628)*25,i*0.628,2,'#003366',{speed:2,life:28,size:3});
+  acShake.trigger(6,0.95);
+}
+// 艾比 — 天矢流星: 🌟白色流星+💫贯穿光束
+function acFX_Aibi(p){
+  // 白色流星箭雨
+  acParticles.ring(p.x,p.y,28,15,'#ffffff',{speed:5,life:20,size:3});
+  acParticles.explode(p.x,p.y,20,'#ffffff',{speed:6,life:18,size:4});
+  // 金色尾焰
+  for(var i=0;i<12;i++){var a=Math.random()*Math.PI*2;acParticles.burst(p.x,p.y,a,2,'#ffdd88',{speed:10+Math.random()*5,life:15,spread:5,size:3});}
+  // 贯穿光束
+  for(var i=0;i<6;i++)acParticles.burst(p.x+Math.random()*30-15,p.y+Math.random()*30-15,Math.PI/2,3,'#ffffcc',{speed:4,life:18,size:2});
+  acParticles.ring(p.x,p.y,25,12,'#ffeeaa',{speed:3,life:22,size:2});
+  acShake.trigger(4,0.88);
+}
+// 金 — 矢量轰炸: 🟡黄色能量箭头+🛹滑板残影
+function acFX_Jin(p){
+  // 黄色能量箭头
+  acParticles.ring(p.x,p.y,35,20,'#ffd700',{speed:5,life:22,size:3});
+  acParticles.explode(p.x,p.y,24,'#ffff88',{speed:8,life:18,size:5});
+  // 箭头形状粒子(上方2个+中间+下方2个)
+  acParticles.burst(p.x,p.y-20,Math.PI/2,4,'#ffcc00',{speed:6,life:15,size:4});
+  acParticles.burst(p.x-10,p.y-10,Math.PI/4,3,'#ffcc00',{speed:5,life:15,size:3});
+  acParticles.burst(p.x+10,p.y-10,Math.PI*3/4,3,'#ffcc00',{speed:5,life:15,size:3});
+  acParticles.burst(p.x-15,p.y+5,-Math.PI/4,3,'#ffcc00',{speed:4,life:15,size:3});
+  acParticles.burst(p.x+15,p.y+5,-Math.PI*3/4,3,'#ffcc00',{speed:4,life:15,size:3});
+  // 滑板残影
+  acParticles.ring(p.x,p.y,30,8,'#ffee88',{speed:2,life:20,size:2});
+  acShake.trigger(5,0.9);
+}
+// 安莉洁 — 冰界领主: ❄️冰晶+🧊冰冻光环
+function acFX_Anlĳie(p){
+  // 冰晶下落
+  acParticles.ring(p.x,p.y,35,20,'#aaddff',{speed:4,life:25,size:3});
+  acParticles.explode(p.x,p.y,22,'#ddeeff',{speed:6,life:20,size:5});
+  // 六角冰晶
+  for(var i=0;i<15;i++)acParticles.burst(p.x,p.y-20+i*4,Math.PI/2,2,'#88ccff',{speed:2,life:40,spread:30,size:4});
+  // 冰冻光环
+  acParticles.ring(p.x,p.y,30,12,'#cceeff',{speed:2,life:28,size:2});
+  acParticles.ring(p.x,p.y,40,8,'#99ddff',{speed:1.5,life:32,size:2});
+  acShake.trigger(4,0.85);
+}
+// 凯莉 — 星月刃: 🌙月牙+⭐星星爆炸
+function acFX_Kaili(p){
+  // 月牙斩击
+  acParticles.ring(p.x,p.y,35,20,'#ff88cc',{speed:5,life:22,size:3});
+  acParticles.explode(p.x,p.y,22,'#ffccee',{speed:7,life:18,size:5});
+  // 星星环绕
+  for(var i=0;i<10;i++){var a=i*Math.PI*2/10;acParticles.burst(p.x+Math.cos(a)*20,p.y+Math.sin(a)*20,a,3,'#ffaadd',{speed:4,life:20,spread:15,size:3});}
+  // 月牙形状
+  acParticles.burst(p.x-10,p.y,Math.PI/2,5,'#ffaaee',{speed:4,life:18,size:4});
+  acParticles.burst(p.x+10,p.y,-Math.PI/2,5,'#ffaaee',{speed:4,life:18,size:4});
+  acParticles.ring(p.x,p.y,28,10,'#ffccdd',{speed:3,life:22,size:2});
+  acShake.trigger(5,0.9);
+}
+// 紫堂幻 — 斯巴达战阵: 👾紫色召唤阵+🛡️军团光效
+function acFX_Zitanghuan(p,big){
+  // 紫色召唤阵
+  acParticles.ring(p.x,p.y,35,20,'#ff8800',{speed:5,life:22,size:3});
+  acParticles.explode(p.x,p.y,big?22:18,'#ffcc88',{speed:6,life:20,size:big?5:4});
+  // 军团光环
+  for(var i=0;i<12;i++)acParticles.burst(p.x,p.y+15,Math.PI*2*i/12,big?4:2,'#cc66ff',{speed:3,life:25,spread:20,size:big?4:3});
+  // 融合进化效果(大斯巴达)
+  if(big)for(var i=0;i<8;i++)acParticles.burst(p.x+Math.cos(i*0.785)*30,p.y+Math.sin(i*0.785)*30,i*0.785,3,'#ffaa00',{speed:5,life:18,size:4});
+  acParticles.ring(p.x,p.y,big?50:30,8,'#ff6600',{speed:2,life:28,size:2});
+  acShake.trigger(big?6:4,0.9);
+}
+// 雷狮 — 雷神之锤: 💜蓝紫色雷电十字+💫吸怒光环
+function acFX_Leishi(p){
+  // 蓝紫色雷电
+  acParticles.ring(p.x,p.y,40,22,'#cc88ff',{speed:6,life:20,size:4});
+  acParticles.explode(p.x,p.y,28,'#aa66dd',{speed:10,life:16,size:5});
+  // 十字雷电
+  for(var i=0;i<4;i++){var a=i*Math.PI/2;for(var j=0;j<5;j++)acParticles.burst(p.x+Math.cos(a)*j*12,p.y+Math.sin(a)*j*12,a,3,'#bb77ee',{speed:6,life:12,size:3});}
+  // 吸怒光环
+  acParticles.ring(p.x,p.y,35,10,'#8866cc',{speed:3,life:22,size:2});
+  acShake.trigger(6,0.92);
+}
+// 帕洛斯 — 暗黑使者: 👥紫色分裂+💀死亡爆炸
+function acFX_Paluosi(p){
+  // 暗影分裂
+  acParticles.ring(p.x,p.y,35,20,'#9966ff',{speed:5,life:22,size:3});
+  acParticles.explode(p.x,p.y,24,'#ccbbff',{speed:7,life:18,size:5});
+  // 分身影子
+  for(var i=0;i<16;i++){var a=i*Math.PI*2/16;acParticles.burst(p.x+Math.cos(a)*15,p.y+Math.sin(a)*15,a,2,'#aa88ff',{speed:3,life:25,spread:10,size:3});}
+  // 死亡爆炸效果
+  for(var i=0;i<6;i++)acParticles.burst(p.x+Math.random()*30-15,p.y+Math.random()*30-15,Math.random()*Math.PI*2,2,'#6644aa',{speed:4,life:18,size:3});
+  acParticles.ring(p.x,p.y,40,10,'#8866cc',{speed:2,life:28,size:2});
+  acShake.trigger(5,0.88);
+}
+// 佩利 — 重力爆炸: 💜黄紫色漩涡+⬇️重力压制
+function acFX_Peili(p){
+  // 黄紫色漩涡
+  acParticles.ring(p.x,p.y,35,20,'#cc8800',{speed:5,life:22,size:3});
+  acParticles.explode(p.x,p.y,26,'#aa66cc',{speed:8,life:18,size:5});
+  // 旋转漩涡
+  for(var i=0;i<12;i++){var a=i*Math.PI*2/12;acParticles.burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,a+Math.PI,3,'#9955dd',{speed:4,life:20,spread:20,size:4});}
+  // 重力压制效果
+  for(var i=0;i<6;i++)acParticles.burst(p.x+Math.random()*20-10,p.y+20+i*5,Math.PI/2,2,'#bb8800',{speed:3,life:15,size:3});
+  acParticles.ring(p.x,p.y,45,8,'#ddaa44',{speed:2,life:25,size:2});
+  acShake.trigger(5,0.9);
+}
+// 嘉德罗斯 — 大罗神通棍: 🔥金黑色棍击+💫范围眩晕
+function acFX_Jiadeluosi(p){
+  // 金黑色棍击
+  acParticles.ring(p.x,p.y,40,22,'#ffcc00',{speed:6,life:20,size:4});
+  acParticles.explode(p.x,p.y,30,'#222222',{speed:10,life:16,size:5});
+  // 棍击波纹
+  for(var i=0;i<8;i++)acParticles.burst(p.x,p.y,i*Math.PI/4,6,'#ffaa00',{speed:7,life:14,size:4});
+  // 黑色能量
+  for(var i=0;i<6;i++)acParticles.burst(p.x+Math.random()*30-15,p.y+Math.random()*30-15,Math.random()*Math.PI*2,2,'#333333',{speed:4,life:18,size:3});
+  acParticles.ring(p.x,p.y,50,12,'#ddaa00',{speed:3,life:22,size:3});
+  acShake.trigger(6,0.95);
+}
+// 银爵 — 斗魔天刑: ⛓️银色锁链+🛡️群体护盾
+function acFX_Yinjue(p){
+  // 银色锁链
+  acParticles.ring(p.x,p.y,35,20,'#8888aa',{speed:5,life:22,size:3});
+  acParticles.explode(p.x,p.y,20,'#ccccdd',{speed:6,life:18,size:4});
+  // 锁链延伸
+  for(var i=0;i<10;i++){var a=i*Math.PI*2/10;acParticles.burst(p.x+Math.cos(a)*30,p.y+Math.sin(a)*30,a,2,'#aaaacc',{speed:3,life:25,spread:15,size:3});}
+  // 护盾光环
+  acParticles.ring(p.x,p.y,45,8,'#9999bb',{speed:2,life:28,size:2});
+  acParticles.ring(p.x,p.y,55,6,'#bbbbdd',{speed:1.5,life:32,size:2});
+  acShake.trigger(5,0.88);
+}
+// 祖玛 — 风之庇佑: 🍃绿色风旋+💚治疗光雨
+function acFX_Zuma(p){
+  // 绿色风旋
+  acParticles.ring(p.x,p.y,35,20,'#66ccaa',{speed:4,life:25,size:3});
+  acParticles.explode(p.x,p.y,20,'#aaeecc',{speed:5,life:22,size:4});
+  // 治疗光雨
+  for(var i=0;i<15;i++)acParticles.burst(p.x,p.y-30+i*4,Math.PI/2,2,'#44aa88',{speed:2,life:35,spread:40,size:4});
+  // 典范光环
+  acParticles.ring(p.x,p.y,30,10,'#88ddbb',{speed:2,life:28,size:2});
+  acParticles.ring(p.x,p.y,40,8,'#aaffcc',{speed:1.5,life:32,size:2});
+  acShake.trigger(4,0.85);
+}
+// 鬼狐 — 镜像空间: ⚪白色面具+💚绿色能量
+function acFX_Guihu(p){
+  // 白色面具核心
+  acParticles.ring(p.x,p.y,35,20,'#ffffff',{speed:5,life:22,size:3});
+  acParticles.explode(p.x,p.y,22,'#eeeeee',{speed:7,life:18,size:5});
+  // 白色面具环绕(上下左右+四角)
+  var maskPos=[[0,-25],[0,25],[-25,0],[25,0],[-18,-18],[18,-18],[-18,18],[18,18]];
+  maskPos.forEach(function(pos){
+    acParticles.burst(p.x+pos[0],p.y+pos[1],Math.atan2(pos[1],pos[0]),3,'#ffffff',{speed:3,life:25,spread:10,size:4});
+  });
+  // 绿色镜像能量
+  for(var i=0;i<8;i++)acParticles.burst(p.x+Math.random()*40-20,p.y+Math.random()*40-20,Math.atan2(p.y-(p.y+Math.random()*40-20),p.x-(p.x+Math.random()*40-20)),2,'#44aa44',{speed:5,life:15,size:2});
+  // 绿色面具光环
+  acParticles.ring(p.x,p.y,40,8,'#66cc66',{speed:2,life:25,size:2});
+  acShake.trigger(5,0.9);
+}
 
 // ═══ 战斗循环 v6.13 — 护盾/灼烧/嘲讽/格挡/怒气 + 安迷修专属 ═══
 function acBattleLoop(){
@@ -7880,7 +8085,7 @@ function acBattleLoop(){
       if(isAnmic&&p._rage>=p._rageMax&&target2&&target2.alive){
         p._rage=0;var kit=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"🔥双剑·冷焰!",'#ff4400'));
-        acParticles.ring(p.x,p.y,30,20,'#ff6644',{speed:5,life:22,size:3});acParticles.explode(p.x,p.y,30,'#ff4400',{speed:8,life:22,size:6});acShake.trigger(6,0.95);
+        acFX_Anmixiu(p);
         var allEnemies=enemies2.filter(function(e){return e.alive;});
         var hitCount=0;
         allEnemies.forEach(function(e){
@@ -7899,7 +8104,7 @@ function acBattleLoop(){
       else if(isKam&&p._rage>=p._rageMax&&target2&&target2.alive){
         p._rage=0;p._ultCount++;var kit3=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"🗡️无重力·飞劈!",'#ffffff'));
-        acUltFX(p,'#fff','#ccccff',22);
+        acFX_Kamier(p);
         // 驱散1个强化
         var disp=acDispel(target2);if(disp)acFloatTexts.push(FloatingText.spawn(acCtx,target2.x,target2.y-25,'驱散'+disp,'#0ff'));
         var ultDmg=kit3.ultDmg;
@@ -7916,7 +8121,7 @@ function acBattleLoop(){
       else if(isGerui&&p._rage>=p._rageMax&&target2&&target2.alive){
         p._rage=0;var kit5=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"⚔️烈斩·终!",'#00ff00'));
-        acUltFX(p,'#00ff00','#88ff88',28);
+        acFX_Gerui(p);
         var colTgts=acColumnTargets(target2,enemies2);
         colTgts.forEach(function(e){
           acApplyDamage(e,Math.floor(p.atk*kit5.ultDmg),p);
@@ -7930,7 +8135,7 @@ function acBattleLoop(){
       else if(isAimi&&p._rage>=p._rageMax&&target2&&target2.alive){
         p._rage=0;var kit8=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"👿恶魔之爪·狂乱!",'#ff6666'));
-        acUltFX(p,'#ff6666','#ffaaaa',30);
+        acFX_Aimi(p);
         // 多段打击(模拟3段)
         for(var hi=0;hi<3;hi++){acApplyDamage(target2,Math.floor(p.atk*kit8.ultDmg/3),p);}
         // 嘲讽全体
@@ -7947,7 +8152,7 @@ function acBattleLoop(){
       else if(isAibi&&p._rage>=p._rageMax&&target2&&target2.alive){
         p._rage=0;var kitA=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"🏹天使之弓·箭雨!",'#ffaa00'));
-        acUltFX(p,'#ffaa00','#ffdd88',20);
+        acFX_Aibi(p);
         var liveEnemies=enemies2.filter(function(e){return e.alive;});
         for(var ai=0;ai<kitA.ultArrows;ai++){
           if(liveEnemies.length===0)break;
@@ -7959,7 +8164,7 @@ function acBattleLoop(){
       else if(isJin&&p._rage>=p._rageMax&&target2&&target2.alive){
         p._rage=0;var kitC=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"⭐矢量箭头·冲击!",'#ffd700'));
-        acUltFX(p,'#ffd700','#ffff88',24);
+        acFX_Jin(p);
         var jUltDmg=kitC.ultDmg;
         if(target2.hp<target2.maxHp*kitC.ultLowHPThresh)jUltDmg+=kitC.ultLowHPBonus;
         acApplyDamage(target2,Math.floor(p.atk*jUltDmg),p);
@@ -7969,7 +8174,7 @@ function acBattleLoop(){
       else if(isAnlijie&&p._rage>=p._rageMax&&target2&&target2.alive){
         p._rage=0;var kitE=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"❄️冰霜结界·永冻!",'#aaddff'));
-        acUltFX(p,'#aaddff','#ddeeff',22);
+        acFX_Anlĳie(p);
         var allE=enemies2.filter(function(e){return e.alive;});
         var coldCount=0;
         allE.forEach(function(e){
@@ -7985,7 +8190,7 @@ function acBattleLoop(){
       else if(isKaili&&p._rage>=p._rageMax&&target2&&target2.alive){
         p._rage=0;var kitG=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"🌙星月刃·斩!",'#ff88cc'));
-        acUltFX(p,'#ff88cc','#ffccee',22);
+        acFX_Kaili(p);
         var colK=acColumnTargets(target2,enemies2);
         colK.forEach(function(e){acApplyDamage(e,Math.floor(p.atk*kitG.ultDmg),p);p._critRate+=kitG.ultCritPerHit;});
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-35,'💥暴击UP','#ff0'));
@@ -8001,12 +8206,12 @@ function acBattleLoop(){
           bigS._dmgReduc=kitZ.summonDR;bigS._summonDRTimer=kitZ.summonDRDur;
           var bt=acFindTarget(bigS,enemies2);if(bt)acApplyDamage(bt,bigS.atk,bigS);
           acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"👹召唤·大斯巴达!",'#ff6600'));
-          acUltFX(p,'#ff6600','#ffaa66',22);
+          acFX_Zitanghuan(p,true);
           acShake.trigger(5,0.9);
         }else{
           // 召唤3小斯巴达
           acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"👾召唤·小斯巴达!",'#ff8800'));
-          acUltFX(p,'#ff8800','#ffcc88',18);
+          acFX_Zitanghuan(p,false);
           for(var zi=0;zi<kitZ.ultSmallCount;zi++){
             var smallS=acSpawnSummon(p,kitZ.ultSmallHP,kitZ.ultSmallAtk,kitZ.ultSmallDef,p.side,'小斯巴达'+zi,'👾');
             smallS._dmgReduc=kitZ.summonDR;smallS._summonDRTimer=kitZ.summonDRDur;
@@ -8020,7 +8225,7 @@ function acBattleLoop(){
         // ATK+20% 持续2回合
         p.atk=Math.floor(p.atk*(1+kitL.ultAtkBuff));p._atkBuffTimer=kitL.ultBuffDur;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"⚡雷神之锤·放电!",'#ffdd00'));
-        acUltFX(p,'#ffdd00','#ffee88',28);
+        acFX_Leishi(p);
         // 中心十字目标: 自身 + 上下左右
         var crossTgts=[target2];
         var crossOff=[[-1,0],[1,0],[0,-1],[0,1]];
@@ -8040,7 +8245,7 @@ function acBattleLoop(){
       else if(isPaluosi&&p._rage>=p._rageMax){
         p._rage=0;var kitP=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"👥暗影使者·分身!",'#9966ff'));
-        acUltFX(p,'#9966ff','#ccbbff',24);
+        acFX_Paluosi(p);
         var pTeam=p.side==='player'?acState.player:acState.enemy;
         var sideCols=p.side==='player'?[0,1]:[2,3];
         var emptyCells=[];
@@ -8052,7 +8257,7 @@ function acBattleLoop(){
       else if(isPeili&&p._rage>=p._rageMax&&target2&&target2.alive){
         p._rage=0;var kitR=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"🐺重力球·压制!",'#ff6600'));
-        acUltFX(p,'#ff6600','#ff9966',26);
+        acFX_Peili(p);
         var allE2=enemies2.filter(function(e){return e.alive;});
         allE2.forEach(function(e){acApplyDamage(e,Math.floor(p.atk*kitR.ultDmg),p);e._atkDebuff=Math.max(e._atkDebuff||0,kitR.gravityATKDebuff);e._atkDebuffTimer=kitR.gravityDur;e._gravityDebuff=kitR.gravityDmgDebuff;e._gravityTimer=kitR.gravityDur;e._dmgRate=Math.max(0.5,e._dmgRate-kitR.gravityDmgDebuff);acFloatTexts.push(FloatingText.spawn(acCtx,e.x,e.y-20,'🌑重力!','#ff6600'));});
       }
@@ -8060,7 +8265,7 @@ function acBattleLoop(){
       else if(isJD&&p._rage>=p._rageMax&&target2&&target2.alive){
         p._rage=0;var kitT=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"🔥大罗神通棍·碎!",'#ff4444'));
-        acUltFX(p,'#ff4444','#ff8888',30);
+        acFX_Jiadeluosi(p);
         var allE3=enemies2.filter(function(e){return e.alive;});var stunCount=0;
         allE3.forEach(function(e){acApplyDamage(e,Math.floor(p.atk*kitT.ultDmg),p);if(Math.random()<kitT.ultStunProb&&stunCount<kitT.ultStunMax){e._stunTimer=kitT.ultStunDur;stunCount++;acFloatTexts.push(FloatingText.spawn(acCtx,e.x,e.y-20,'💫眩晕!','#ff0'));}});
       }
@@ -8068,7 +8273,7 @@ function acBattleLoop(){
       else if(isYinjue&&p._rage>=p._rageMax&&target2&&target2.alive){
         p._rage=0;var kitV=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"🔗锁链束缚·定身!",'#8888aa'));
-        acUltFX(p,'#8888aa','#ccccdd',20);
+        acFX_Yinjue(p);
         var allE4=enemies2.filter(function(e){return e.alive;});
         allE4.forEach(function(e){acApplyDamage(e,Math.floor(p.atk*kitV.ultDmg),p);if(Math.random()<kitV.ultStunProb){e._stunTimer=kitV.ultStunDur;acFloatTexts.push(FloatingText.spawn(acCtx,e.x,e.y-20,'💫眩晕!','#ff0'));}});
         // 友方全体护盾
@@ -8080,7 +8285,7 @@ function acBattleLoop(){
       else if(isZuma&&p._rage>=p._rageMax){
         p._rage=0;var kitX=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"💨风之巨剑·治愈!",'#66ccaa'));
-        acUltFX(p,'#66ccaa','#aaeecc',20);
+        acFX_Zuma(p);
         var fTeam3=p.side==='player'?acState.player:acState.enemy;
         fTeam3.forEach(function(f){if(f.alive){var heal=Math.floor(p.atk*kitX.ultHeal);var isStriker=f.role==='melee'||f.range===1;if(isStriker)heal=Math.floor(heal*(1+kitX.classHealBonus));f.hp=Math.min(f.maxHp,f.hp+heal);f._dmgReduc=(f._dmgReduc||0)+kitX.ultDR;f._zumaDRTimer=kitX.ultDRDur;acFloatTexts.push(FloatingText.spawn(acCtx,f.x,f.y-25,'💚+'+heal+(isStriker?'⚡':'')+' 🛡️','#66ccaa'));}});
       }
@@ -8088,7 +8293,7 @@ function acBattleLoop(){
       else if(isGuihu&&p._rage>=p._rageMax&&target2&&target2.alive){
         p._rage=0;var kitZ2=p._kit;
         acFloatTexts.push(FloatingText.spawn(acCtx,p.x,p.y-30,"🦊技能复制·镜像!",'#cc88ff'));
-        acUltFX(p,'#cc88ff','#eeccee',22);
+        acFX_Guihu(p);
         var allE5=enemies2.filter(function(e){return e.alive;});
         allE5.forEach(function(e){acApplyDamage(e,Math.floor(p.atk*kitZ2.ultDmg),p);});
         // 随机降1敌怒
