@@ -7889,22 +7889,39 @@ window._acClearIcon=function(chId){delete window._acCustomIcons[chId];acPrepRend
 // ═══════════════════════════════════════
 window._dreamState={page:0,pageSize:10,viewing:null,comments:[]};
 window._dreamUser=null; // Supabase Auth 用户
-// 页面加载时检查登录状态
-(async function(){if(supabase){try{var r=await supabase.auth.getSession();if(r.data.session){window._dreamUser=r.data.session.user;}}catch(e){}}})();
+// 页面加载时检查登录状态（含邮件链接自动登录）
+(async function(){
+  if(!supabase)return;
+  // 处理邮件链接中的token(hash模式)
+  var hash=window.location.hash;
+  if(hash&&hash.includes('access_token')){
+    try{
+      var r=await supabase.auth.getSession();
+      if(r.data.session){window._dreamUser=r.data.session.user;}
+    }catch(e){}
+    // 清除hash
+    if(window.history&&window.history.replaceState)window.history.replaceState(null,'',window.location.pathname);
+  }
+  try{
+    var r=await supabase.auth.getSession();
+    if(r.data.session){window._dreamUser=r.data.session.user;}
+  }catch(e){}
+})();
 
 // 📧 邮箱登录/注册界面
 window._dreamLogin=function(){
   var app=document.getElementById('app');
   var h='<div style="max-width:400px;margin:60px auto;padding:20px;text-align:center">';
   h+='<h2 style="color:var(--gold)">🌙 好梦 · 登录</h2>';
-  h+='<p style="color:var(--dim);font-size:0.8em">输入邮箱，验证码一键登录</p>';
+  h+='<p style="color:var(--dim);font-size:0.8em">输入邮箱，一键登录</p>';
   h+='<div class="panel" style="padding:20px">';
   h+='<input id="dreamEmail" placeholder="你的邮箱（QQ/163/Gmail均可）" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:var(--card);color:var(--text);font-size:0.9em;margin-bottom:10px">';
-  h+='<button class="btn btn-p" onclick="window._dreamSendOTP()" style="width:100%;padding:10px">📧 发送验证码</button>';
-  h+='<div id="dreamOTPSection" style="display:none;margin-top:10px">';
-  h+='<input id="dreamOTP" placeholder="输入6位验证码" maxlength="6" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:var(--card);color:var(--text);font-size:0.9em;margin-bottom:10px;text-align:center;letter-spacing:8px">';
-  h+='<button class="btn btn-p" onclick="window._dreamVerifyOTP()" style="width:100%;padding:10px">✅ 验证登录</button></div>';
-  h+='</div><p style="color:var(--dim);font-size:0.7em;margin-top:10px">首次登录自动注册账号</p>';
+  h+='<button class="btn btn-p" onclick="window._dreamSendOTP()" style="width:100%;padding:10px">📧 发送登录链接</button>';
+  h+='<p style="color:var(--dim);font-size:0.7em;margin-top:8px">或输入验证码</p>';
+  h+='<div style="display:flex;gap:6px">';
+  h+='<input id="dreamOTP" placeholder="输入验证码" maxlength="6" style="flex:1;padding:10px;border:1px solid #333;border-radius:8px;background:var(--card);color:var(--text);font-size:0.9em;text-align:center;letter-spacing:8px">';
+  h+='<button class="btn btn-p" onclick="window._dreamVerifyOTP()" style="padding:10px 14px">验证</button></div>';
+  h+='</div><p style="color:var(--dim);font-size:0.7em;margin-top:10px">首次登录自动注册 · 点邮件链接或输入验证码</p>';
   h+='<button class="btn btn-s" onclick="window._openGoodDream()" style="margin-top:10px">跳过 → 匿名访问</button></div>';
   app.innerHTML=h;
 };
@@ -7913,17 +7930,17 @@ window._dreamSendOTP=async function(){
   var email=document.getElementById('dreamEmail').value.trim();
   if(!email||!email.includes('@')){alert('请输入有效邮箱');return;}
   try{
-    var r=await supabase.auth.signInWithOtp({email:email});
+    var redirectTo=window.location.origin+window.location.pathname;
+    var r=await supabase.auth.signInWithOtp({email:email,options:{emailRedirectTo:redirectTo}});
     if(r.error)throw r.error;
-    document.getElementById('dreamOTPSection').style.display='block';
-    alert('验证码已发送到 '+email+'，请查收（检查垃圾箱）');
+    alert('登录链接已发送到 '+email+'，请查收邮件（检查垃圾箱）\n点击邮件中的链接即可自动登录\n邮件里也有验证码可手动输入');
   }catch(e){alert('发送失败: '+e.message);}
 };
 
 window._dreamVerifyOTP=async function(){
   var email=document.getElementById('dreamEmail').value.trim();
   var token=document.getElementById('dreamOTP').value.trim();
-  if(!token||token.length!==6){alert('请输入6位验证码');return;}
+  if(!token||token.length!==6){alert('请输入验证码');return;}
   try{
     var r=await supabase.auth.verifyOtp({email:email,token:token,type:'email'});
     if(r.error)throw r.error;
