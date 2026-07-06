@@ -7913,40 +7913,41 @@ window._dreamLogin=function(){
   var app=document.getElementById('app');
   var h='<div style="max-width:400px;margin:60px auto;padding:20px;text-align:center">';
   h+='<h2 style="color:var(--gold)">🌙 好梦 · 登录</h2>';
-  h+='<p style="color:var(--dim);font-size:0.8em">输入邮箱，一键登录</p>';
   h+='<div class="panel" style="padding:20px">';
-  h+='<input id="dreamEmail" placeholder="你的邮箱（QQ/163/Gmail均可）" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:var(--card);color:var(--text);font-size:0.9em;margin-bottom:10px">';
-  h+='<button class="btn btn-p" onclick="window._dreamSendOTP()" style="width:100%;padding:10px">📧 发送登录链接</button>';
-  h+='<p style="color:var(--dim);font-size:0.7em;margin-top:8px">或输入验证码</p>';
-  h+='<div style="display:flex;gap:6px">';
-  h+='<input id="dreamOTP" placeholder="输入验证码" maxlength="6" style="flex:1;padding:10px;border:1px solid #333;border-radius:8px;background:var(--card);color:var(--text);font-size:0.9em;text-align:center;letter-spacing:8px">';
-  h+='<button class="btn btn-p" onclick="window._dreamVerifyOTP()" style="padding:10px 14px">验证</button></div>';
-  h+='</div><p style="color:var(--dim);font-size:0.7em;margin-top:10px">首次登录自动注册 · 点邮件链接或输入验证码</p>';
+  h+='<input id="dreamEmail" placeholder="你的邮箱" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:var(--card);color:var(--text);font-size:0.9em;margin-bottom:8px">';
+  h+='<input id="dreamPass" type="password" placeholder="密码（首次自动注册）" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:var(--card);color:var(--text);font-size:0.9em;margin-bottom:10px">';
+  h+='<button class="btn btn-p" onclick="window._dreamPasswordLogin()" style="width:100%;padding:10px">🔐 登录 / 注册</button>';
+  h+='<p style="color:var(--dim);font-size:0.7em;margin-top:8px">或</p>';
+  h+='<button class="btn btn-s" onclick="window._dreamSendOTP()" style="width:100%;padding:8px;font-size:0.8em">📧 发送登录链接（同设备免密）</button>';
+  h+='</div><p style="color:var(--dim);font-size:0.7em;margin-top:10px">输密码即自动注册 · 全设备通用</p>';
   h+='<button class="btn btn-s" onclick="window._openGoodDream()" style="margin-top:10px">跳过 → 匿名访问</button></div>';
   app.innerHTML=h;
 };
 
-window._dreamSendOTP=async function(){
+// 🔐 邮箱+密码登录
+window._dreamPasswordLogin=async function(){
   var email=document.getElementById('dreamEmail').value.trim();
+  var pass=document.getElementById('dreamPass').value.trim();
   if(!email||!email.includes('@')){alert('请输入有效邮箱');return;}
+  if(pass.length<6){alert('密码至少6位');return;}
   try{
-    var redirectTo=window.location.origin+window.location.pathname;
-    var r=await supabase.auth.signInWithOtp({email:email,options:{emailRedirectTo:redirectTo}});
-    if(r.error)throw r.error;
-    alert('登录链接已发送到 '+email+'，请查收邮件（检查垃圾箱）\n点击邮件中的链接即可自动登录\n邮件里也有验证码可手动输入');
-  }catch(e){alert('发送失败: '+e.message);}
-};
-
-window._dreamVerifyOTP=async function(){
-  var email=document.getElementById('dreamEmail').value.trim();
-  var token=document.getElementById('dreamOTP').value.trim();
-  if(!token||token.length!==6){alert('请输入验证码');return;}
-  try{
-    var r=await supabase.auth.verifyOtp({email:email,token:token,type:'email'});
-    if(r.error)throw r.error;
-    window._dreamUser=r.data.user;
-    _dreamLoadPosts(document.getElementById('app'));
-  }catch(e){alert('验证失败: '+e.message);}
+    // 先尝试登录
+    var r=await supabase.auth.signInWithPassword({email:email,password:pass});
+    if(r.error){
+      // 登录失败 → 自动注册
+      var signup=await supabase.auth.signUp({email:email,password:pass});
+      if(signup.error)throw signup.error;
+      // 注册后自动登录
+      var login=await supabase.auth.signInWithPassword({email:email,password:pass});
+      if(login.error)throw login.error;
+      window._dreamUser=login.data.user;
+      _dreamLoadPosts(document.getElementById('app'));
+      alert('🎉 注册成功！现在任何设备都可用邮箱+密码登录');
+    }else{
+      window._dreamUser=r.data.user;
+      _dreamLoadPosts(document.getElementById('app'));
+    }
+  }catch(e){alert('登录失败: '+e.message);}
 };
 
 // 退出登录
