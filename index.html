@@ -8130,18 +8130,18 @@ window._dreamBiliLogin=function(){
             window._dreamUser=data.user;
             window._dreamUser._nickname=pollD.nickname||'';
             window._dreamUser._uid=pollD.bili_uid||'';
-            window._dreamUser._face='';
             if(pollD.bili_uid){
               try{
-                var uir=await fetch('https://api.bilibili.com/x/space/acc/info?mid='+pollD.bili_uid);
-                var uid=await uir.json();
-                if(uid.code===0&&uid.data){
-                  window._dreamUser._face=uid.data.face||'';
-                  if(!window._dreamUser._nickname||window._dreamUser._nickname==='B站用户')window._dreamUser._nickname=uid.data.name||'';
-                }
+                var cardR=await fetch(SUPABASE_URL+'/functions/v1/bilibili-qr',{
+                  method:'POST',headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+                  body:JSON.stringify({action:'card',uid:pollD.bili_uid})
+                });
+                var cardD=await cardR.json();
+                if(cardD.face)window._dreamUser._face=cardD.face;
+                if(cardD.nickname&&(!window._dreamUser._nickname||window._dreamUser._nickname==='B站用户'))window._dreamUser._nickname=cardD.nickname;
               }catch(e){}
             }
-            if(!window._dreamUser._face)window._dreamUser._face=pollD.face||'';
+            if(!window._dreamUser._face)window._dreamUser._face='';
             try{localStorage.setItem('aotu_session',JSON.stringify({access_token:pollD.access_token,refresh_token:pollD.refresh_token,nickname:window._dreamUser._nickname,face:window._dreamUser._face,bili_uid:pollD.bili_uid}));}catch(e){}
             _dreamLoadPosts(document.getElementById('app'));
           }else if(pollD.status==='expired'){
@@ -8194,7 +8194,8 @@ function _dreamGetIdentity(){
     var email=u.email||'';
     var name=u._nickname||email.split('@')[0];
     var face=localStorage.getItem('aotu_custom_face')||u._face||'';
-    return {name:name,emoji:face?'<img src="'+face+'" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" onerror="this.style.display=\'none\'">':'✨',color:'#f0c040',user_id:u.id,email:email};
+    var emojiHtml=face?'<img src="'+face+'" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" onerror="this.style.display=\'none\'">':'';
+    return {name:name,emoji:emojiHtml,color:'#f0c040',user_id:u.id,email:email};
   }
   var ip=_dreamLoadIdentity();
   return {name:ip.name||'',emoji:ip.emoji||_getIdentityEmoji(),color:ip.color||_getIdentityColor(),user_id:null};
@@ -8304,7 +8305,7 @@ function _dreamRender(app){
   if(window._dreamUser){
     var biliFace=localStorage.getItem('aotu_custom_face')||window._dreamUser._face||'';
     var biliName=window._dreamUser._nickname||id.name;
-    h+=(biliFace?'<img src="'+biliFace+'" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:2px" onerror="this.style.display=\'none\'">':'')+'<span style="color:'+id.color+'">✨ '+biliName+'</span> ';
+    h+='<img src="'+(biliFace||'')+'" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:2px" onerror="this.style.display=\'none\'"><span style="color:'+id.color+'"> '+biliName+'</span> ';
     h+='<button class="btn btn-xs" onclick="window._dreamProfile()" style="font-size:0.65em;color:var(--gold)">👤 主页</button> ';
     h+='<button class="btn btn-xs" onclick="window._dreamInbox()" style="font-size:0.65em;color:var(--blue)">💬 私信</button> ';
     h+='<button class="btn btn-xs" onclick="window._dreamNotifications()" id="notifBell" style="font-size:0.65em;color:var(--purple)">🔔</button> ';
