@@ -3460,7 +3460,7 @@ var _charImgCache={};
 (function(){try{Object.keys(CH).forEach(function(id){var d=localStorage.getItem('aotu4_img_'+id);if(d)_charImgCache[id]=d;});}catch(e){}})();
 function saveCharImage(id,b64){try{localStorage.setItem('aotu4_img_'+id,b64);_charImgCache[id]=b64;}catch(e){if(typeof Toast!=='undefined')Toast.show('⚠️ 图片太大，请压缩到200KB以内','error',2000);}}
 function removeCharImage(id){localStorage.removeItem('aotu4_img_'+id);delete _charImgCache[id];}
-function charIcon(id,size){size=size||24;var img=_charImgCache[id];if(img)return'<img src="'+img+'" style="width:'+size+'px;height:'+size+'px;object-fit:cover;border-radius:50%;vertical-align:middle" onerror="this.style.display=\'none\'">';var c=CH[id];return c?c.e:'?';}
+function charIcon(id,size){size=size||24;var img=_charImgCache[id];if(img)return'<img src="'+img+'" style="width:'+size+'px;height:'+size+'px;object-fit:cover;border-radius:50%;vertical-align:middle" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'">';var c=CH[id];return c?c.e:'?';}
 window._uploadCharImg=function(id){var inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=function(e){var f=e.target.files[0];if(!f)return;if(f.size>200*1024){if(typeof Toast!=='undefined')Toast.show('⚠️ 需小于200KB','error',2000);return;}var r=new FileReader();r.onload=function(ev){saveCharImage(id,ev.target.result);render('title');};r.readAsDataURL(f);};inp.click();};
 window._clearAllCharImages=function(){Object.keys(CH).forEach(function(k){removeCharImage(k);});render('title');};
 
@@ -8194,7 +8194,7 @@ function _dreamGetIdentity(){
     var email=u.email||'';
     var name=u._nickname||email.split('@')[0];
     var face=localStorage.getItem('aotu_custom_face')||u._face||'';
-    var emojiHtml=face?'<img src="'+face+'" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" onerror="this.style.display=\'none\'">':'';
+    var emojiHtml=face?'<img src="'+face+'" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'">':'';
     return {name:name,emoji:emojiHtml,color:'#f0c040',user_id:u.id,email:email};
   }
   var ip=_dreamLoadIdentity();
@@ -8305,7 +8305,7 @@ function _dreamRender(app){
   if(window._dreamUser){
     var biliFace=localStorage.getItem('aotu_custom_face')||window._dreamUser._face||'';
     var biliName=window._dreamUser._nickname||id.name;
-    h+='<img src="'+(biliFace||'')+'" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:2px" onerror="this.style.display=\'none\'"><span style="color:'+id.color+'"> '+biliName+'</span> ';
+    h+='<img src="'+(biliFace||'')+'" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:2px" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'"><span style="color:'+id.color+'"> '+biliName+'</span> ';
     h+='<button class="btn btn-xs" onclick="window._dreamProfile()" style="font-size:0.65em;color:var(--gold)">👤 主页</button> ';
     h+='<button class="btn btn-xs" onclick="window._dreamInbox()" style="font-size:0.65em;color:var(--blue)">💬 私信</button> ';
     h+='<button class="btn btn-xs" onclick="window._dreamNotifications()" id="notifBell" style="font-size:0.65em;color:var(--purple)">🔔</button> ';
@@ -8498,7 +8498,7 @@ window._dreamProfile=async function(){
     var biliName=window._dreamUser._nickname||'';
     h+='<div class="panel" style="text-align:center;padding:20px">';
     h+='<div style="position:relative;display:inline-block;cursor:pointer" onclick="window._dreamUploadFace()" title="点击更换头像">';
-    h+=(face?'<img src="'+face+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin-bottom:4px" onerror="this.style.display=\'none\'">':'<div style="font-size:3em">✨</div>');
+    h+=(face?'<img src="'+face+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin-bottom:4px" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'">':'<div style="font-size:3em">✨</div>');
     h+='<div style="position:absolute;bottom:0;right:0;background:var(--card);border-radius:50%;width:22px;height:22px;font-size:12px;line-height:22px;text-align:center;border:2px solid var(--gold)">📷</div></div>';
     var badges=_dreamCalcBadges(posts.data,totalLikes);
     if(badges.length>0){h+='<div style="margin:8px 0">';badges.forEach(function(b){h+='<span title="'+b.d+'" style="font-size:1.3em;margin:0 2px">'+b.e+'</span>';});h+='</div>';}
