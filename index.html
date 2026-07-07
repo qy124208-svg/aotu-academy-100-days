@@ -9124,7 +9124,7 @@ window._acStart=function(){
   if(acState._lucky&&Math.random()<0.1){var ranked=Object.keys(CH).filter(function(k){return CH[k]&&CH[k].c!=='教师';}).sort(function(a,b){return(G.aff[b]||0)-(G.aff[a]||0);});var ep=ranked.slice(0,12);var ex=ep[Math.floor(Math.random()*ep.length)];var ecx=AC_OFFX+0*AC_CELL_W+AC_CELL_W/2,ecy=AC_OFFY+0*AC_CELL_H+AC_CELL_H/2;playerPieces.push(acMakePiece(CH[ex],G.aff[ex]||0,'player',ecx,ecy,0));}
   acState.player=playerPieces;acState.enemy=enemyPieces;
 
-  app.innerHTML='<div id="ultBg" style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:0;opacity:0;transition:opacity 0.2s"></div><canvas id="acCanvas" style="border:2px solid var(--gold);border-radius:12px 12px 0 0;background:rgba(10,10,18,0.85);display:block;margin:10px auto 0;cursor:default;position:relative;z-index:2"></canvas><div style="text-align:center;margin:0 auto 10px;max-width:800px;padding:8px;background:rgba(10,10,18,0.9);border:2px solid var(--gold);border-top:none;border-radius:0 0 12px 12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn btn-s" onclick="acState.speedMul=acState.speedMul===1?4:1;this.textContent=acState.speedMul===4?\'⏩ 4x\':\'▶ 1x\'" style="font-size:0.75em;padding:6px 12px">⏩ 4x</button><button class="btn btn-s" onclick="acState.over=true" style="font-size:0.75em;padding:6px 12px;color:#f0c040">⏭ 跳过</button><button class="btn btn-s" onclick="acState.over=true;acState.winner=\'enemy\'" style="font-size:0.75em;padding:6px 12px;color:#e94560">🏳 认输</button></div>';
+  app.innerHTML='<div id="ultBg" style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:0;opacity:0;transition:opacity 0.2s"></div><canvas id="acCanvas" style="border:2px solid var(--gold);border-radius:12px 12px 0 0;background:rgba(10,10,18,0.85);display:block;margin:10px auto 0;cursor:default;position:relative;z-index:2"></canvas><div style="text-align:center;margin:0 auto 10px;max-width:800px;padding:8px;background:rgba(10,10,18,0.9);border:2px solid var(--gold);border-top:none;border-radius:0 0 12px 12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn btn-s" onclick="acState.speedMul=acState.speedMul===1?4:1;this.textContent=acState.speedMul===4?\'⏩ 4x\':\'▶ 1x\'" style="font-size:0.75em;padding:6px 12px">⏩ 4x</button><button class="btn btn-s" onclick="acForceEnd()" style="font-size:0.75em;padding:6px 12px;color:#f0c040">⏭ 跳过</button><button class="btn btn-s" onclick="acState.over=true;acState.winner=\'enemy\'" style="font-size:0.75em;padding:6px 12px;color:#e94560">🏳 认输</button></div>';
   acCanvas=document.getElementById('acCanvas');acCtx=acCanvas.getContext('2d');
   window._ultBgEl=document.getElementById('ultBg');
   acCanvas.width=Math.floor(800*dpr);acCanvas.height=Math.floor(500*dpr);
@@ -9341,8 +9341,19 @@ Array.from({length:4},function(_,i){var m=[[0,-15],[0,15],[-15,0],[15,0]];return
   acState._screenFlash=1.0;acState._flashColor='#33dd55';acShake.trigger(7,0.9);
 }
 // ═══ 战斗循环 v6.13 — 护盾/灼烧/嘲讽/格挡/怒气 + 安迷修专属 ═══
+function acForceEnd(){
+  if(acState._ended)return;acState._ended=true;acState.over=true;
+  if(acAnim){cancelAnimationFrame(acAnim);acAnim=null;}
+  if(window._acWatchdog){clearInterval(window._acWatchdog);window._acWatchdog=null;}
+  document.removeEventListener('keydown',acKeyDown);
+  try{acParticles.clear();}catch(e){}
+  var ub=document.getElementById('ultBg');if(ub)ub.style.opacity='0';
+  setTimeout(acEnd,0);
+}
+
 function acBattleLoop(){
-  if(acState.over||acState._frameCount>20000||acState.battleTime>240){acState.over=true;acParticles.clear();var ub=document.getElementById('ultBg');if(ub)ub.style.opacity='0';acAnim=null;acRender();setTimeout(acEnd,0);return;}
+  try{
+  if(acState.over||acState._frameCount>20000||acState.battleTime>240){acForceEnd();return;}
   var now=performance.now(),dt=(now-acLastTime)/1000;acLastTime=now;
   acState._frameCount=(acState._frameCount||0)+1;
   if(dt>0.5)dt=0.5;dt*=acState.speedMul;acState.battleTime+=dt;
@@ -9929,7 +9940,8 @@ function acBattleLoop(){
   if(pAlive===0||eAlive===0||acState.battleTime>480){acState.over=true;acState.winner=pAlive>0?'player':(eAlive>0?'enemy':'draw');}
   acRender();
   if(!acState.over)acAnim=requestAnimationFrame(acBattleLoop);
-  else{acParticles.clear();var ub2=document.getElementById('ultBg');if(ub2)ub2.style.opacity='0';acAnim=null;acRender();setTimeout(acEnd,0);}
+  else acForceEnd();
+  }catch(e){console.error('Battle crashed:',e);acForceEnd();}
 }
 
 function acRender(){
