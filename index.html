@@ -8193,7 +8193,7 @@ function _dreamGetIdentity(){
     var u=window._dreamUser;
     var email=u.email||'';
     var name=u._nickname||email.split('@')[0];
-    var face=u._face||'';
+    var face=localStorage.getItem('aotu_custom_face')||u._face||'';
     return {name:name,emoji:face?'<img src="'+face+'" style="width:16px;height:16px;border-radius:50%;vertical-align:middle" onerror="this.style.display=\'none\'">':'✨',color:'#f0c040',user_id:u.id,email:email};
   }
   var ip=_dreamLoadIdentity();
@@ -8302,7 +8302,7 @@ function _dreamRender(app){
   if(window._isAdmin()){h+='<button class="btn btn-xs" onclick="window._dreamAdminPanel()" style="font-size:0.65em;color:#e94560">🛡️ 管理</button> ';}
   else{h+='<button class="btn btn-xs" onclick="window._dreamAdminLogin()" style="font-size:0.65em;color:var(--dim)">🔑</button> ';}
   if(window._dreamUser){
-    var biliFace=window._dreamUser._face||'';
+    var biliFace=localStorage.getItem('aotu_custom_face')||window._dreamUser._face||'';
     var biliName=window._dreamUser._nickname||id.name;
     h+=(biliFace?'<img src="'+biliFace+'" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:2px" onerror="this.style.display=\'none\'">':'')+'<span style="color:'+id.color+'">✨ '+biliName+'</span> ';
     h+='<button class="btn btn-xs" onclick="window._dreamProfile()" style="font-size:0.65em;color:var(--gold)">👤 主页</button> ';
@@ -8492,10 +8492,13 @@ window._dreamProfile=async function(){
     // 渲染
     var h='<div style="max-width:700px;margin:0 auto;padding:10px">';
     h+='<button class="btn btn-s" onclick="_dreamLoadPosts(document.getElementById(\'app\'))" style="margin-bottom:10px">← 返回论坛</button>';
-    var biliFace=window._dreamUser._face||'';
+    var customFace=localStorage.getItem('aotu_custom_face')||'';
+    var face=customFace||window._dreamUser._face||'';
     var biliName=window._dreamUser._nickname||'';
     h+='<div class="panel" style="text-align:center;padding:20px">';
-    h+=(biliFace?'<img src="'+biliFace+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin-bottom:8px" onerror="this.style.display=\'none\'">':'<div style="font-size:3em">✨</div>');
+    h+='<div style="position:relative;display:inline-block;cursor:pointer" onclick="window._dreamUploadFace()" title="点击更换头像">';
+    h+=(face?'<img src="'+face+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin-bottom:4px" onerror="this.style.display=\'none\'">':'<div style="font-size:3em">✨</div>');
+    h+='<div style="position:absolute;bottom:0;right:0;background:var(--card);border-radius:50%;width:22px;height:22px;font-size:12px;line-height:22px;text-align:center;border:2px solid var(--gold)">📷</div></div>';
     var badges=_dreamCalcBadges(posts.data,totalLikes);
     if(badges.length>0){h+='<div style="margin:8px 0">';badges.forEach(function(b){h+='<span title="'+b.d+'" style="font-size:1.3em;margin:0 2px">'+b.e+'</span>';});h+='</div>';}
     h+='<h2 style="color:var(--gold)">'+_escapeHtml(biliName||email.split('@')[0])+'</h2>';
@@ -8556,6 +8559,21 @@ window._dreamProfile=async function(){
 };
 
 // 删除自己的帖子
+window._dreamUploadFace=function(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+  inp.onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    if(f.size>200*1024){alert('图片需小于200KB');return;}
+    var r=new FileReader();
+    r.onload=function(ev){
+      try{localStorage.setItem('aotu_custom_face',ev.target.result);}catch(e){alert('图片太大，请压缩到200KB以内');return;}
+      window._dreamProfile();
+    };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+};
+
 window._dreamDeletePost=async function(postId){
   if(!confirm('确定删除这条帖子？'))return;
   try{await supabase.from('dreams').update({is_deleted:true}).eq('id',postId).eq('user_id',window._dreamUser.id);
