@@ -8519,25 +8519,8 @@ window._dreamProfile=async function(){
       });
       h+='</div>';
     }
-    // 🔗 内容订阅
-    h+='<div class="panel" style="padding:12px;margin:8px 0">';
-    h+='<h3 style="color:var(--blue);font-size:0.9em">🔗 内容订阅</h3>';
-    h+='<p style="font-size:0.7em;color:var(--dim)">绑定社交账号后，自动抓取关注的凹凸世界创作者最新作品</p>';
-    var platforms=[
-      {id:'bilibili',n:'B站',e:'📺',color:'#fb7299'},
-      {id:'weibo',n:'微博',e:'📢',color:'#e6162d'},
-      {id:'douyin',n:'抖音',e:'🎵',color:'#111'},
-      {id:'xiaohongshu',n:'小红书',e:'📕',color:'#ff2442'},
-      {id:'lofter',n:'Lofter',e:'🎨',color:'#333'}
-    ];
-    platforms.forEach(function(pl){
-      h+='<div style="display:inline-block;margin:4px 8px 4px 0;cursor:pointer" onclick="window._dreamConnectPlatform(\''+pl.id+'\')" title="绑定'+pl.n+'">';
-      h+='<span style="font-size:1.2em">'+pl.e+'</span> ';
-      h+='<span style="font-size:0.7em;color:var(--dim)">'+pl.n+'</span>';
-      h+=' <span id="conn_'+pl.id+'" style="font-size:0.6em;color:var(--dim)">⚪</span></div>';
-    });
-    h+='</div>';
-    // 检查已连接的平台
+    // B站已自动连接
+    h+='<div style="padding:8px 12px;margin:4px 0">📺 B站 <span id="conn_bilibili" style="font-size:0.7em">⚪</span></div>';
     _dreamCheckConnections(u.id);
     // 📡 凹凸世界动态
     h+='<h3 style="color:var(--accent);font-size:0.9em;margin:10px 0">📡 凹凸世界动态</h3>';
@@ -8579,21 +8562,6 @@ window._dreamDeletePost=async function(postId){
   if(!confirm('确定删除这条帖子？'))return;
   try{await supabase.from('dreams').update({is_deleted:true}).eq('id',postId).eq('user_id',window._dreamUser.id);
     window._dreamProfile();}catch(e){alert('删除失败');}
-};
-
-// 🔗 平台连接管理
-window._dreamConnectPlatform=async function(platform){
-  if(!window._dreamUser||!supabase){alert('请先登录');return;}
-  var labels={bilibili:'B站',weibo:'微博',douyin:'抖音',xiaohongshu:'小红书',lofter:'Lofter'};
-  var cookie=prompt(labels[platform]+' Cookie：\n登录'+labels[platform]+'后，在浏览器按F12→Application→Cookies→复制所有cookie值','');
-  if(!cookie||!cookie.trim())return;
-  try{
-    var existing=await supabase.from('platform_accounts').select('id').eq('user_id',window._dreamUser.id).eq('platform',platform).maybeSingle();
-    if(existing.data)await supabase.from('platform_accounts').update({cookie:cookie.trim(),is_active:true,updated_at:new Date().toISOString()}).eq('id',existing.data.id);
-    else await supabase.from('platform_accounts').insert({user_id:window._dreamUser.id,platform:platform,cookie:cookie.trim(),updated_at:new Date().toISOString()});
-    alert('✅ '+labels[platform]+' 已连接！');
-    _dreamCheckConnections(window._dreamUser.id);
-  }catch(e){alert('连接失败: '+e.message);}
 };
 
 async function _dreamCheckConnections(uid){
