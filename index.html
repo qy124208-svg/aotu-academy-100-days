@@ -8545,7 +8545,7 @@ window._dreamProfile=async function(){
       h+=' <span id="conn_'+pl.id+'" style="font-size:0.6em;color:var(--dim)">'+(pl.auto?'🟢':'⚪')+'</span></div>';
     });
     h+='<div style="margin:6px 0"><span style="font-size:0.7em;color:var(--dim)">抓取时间：</span>';
-    var timeOpts=[{v:'day',t:'近24小时'},{v:'week',t:'近一周'},{v:'month',t:'近一月'}];
+    var timeOpts=[{v:'day',t:'近24小时'},{v:'day2',t:'近48小时'},{v:'week',t:'近一周'},{v:'month',t:'近一月'}];
     timeOpts.forEach(function(o){
       var sel=(localStorage.getItem('aotu_time_filter')||'week')===o.v;
       h+='<button class="btn btn-xs" onclick="localStorage.setItem(\'aotu_time_filter\',\''+o.v+'\');window._dreamProfile()" style="font-size:0.65em;padding:2px 8px;margin:2px;'+(sel?'background:var(--gold);color:#000':'')+'">'+o.t+'</button>';
