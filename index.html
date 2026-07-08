@@ -9042,7 +9042,10 @@ function acPrepRender(app){
   h+='<button class="btn btn-s" onclick="window._acReroll()" style="background:#1a1a2e;border:1px solid #58a6ff">🔄 重选棋子 (-10)</button>';
   h+='<button class="btn btn-s" onclick="window._acBoost()" style="background:#1a1a2e;border:1px solid #bc8cff">💪 强化棋子 (-20)</button>';
   h+='<button class="btn btn-p pulse" onclick="window._acStart()" style="font-size:1.1em;'+(allPlaced?'':'opacity:0.5')+'">⚔️ 开战 ('+placed+'+'+enemyPlaced+'/10)</button>';
-  h+='</div></div>';
+  h+='</div>';
+  // ⏭ 跳过整个事件
+  h+='<div style="text-align:center;margin:6px 0"><button class="btn btn-s" onclick="window._adv()" style="background:transparent;border:1px solid #555;color:var(--dim);font-size:0.75em;padding:6px 18px">⏭ 跳过此事件</button></div>';
+  h+='</div>';
   if(window._acLastMsg)h+='<div style="text-align:center;color:var(--dim);font-size:0.7em;margin:4px 0">'+window._acLastMsg+'</div>';
   app.innerHTML=h;
 }
