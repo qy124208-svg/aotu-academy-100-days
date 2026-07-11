@@ -4949,7 +4949,7 @@ function _showAnnouncement(ann){
   document.body.appendChild(overlay);
   var btns=overlay.querySelectorAll('button');
   btns[0].onclick=function(){_closeAnn(overlay,ann.id);};
-  btns[1].onclick=function(){try{localStorage.setItem('aotu_ann_skip','all');}catch(e){}_closeAnn(overlay,ann.id);};
+  btns[1].onclick=function(){overlay.remove();};
 }
 function _closeAnn(overlay,annId){
   try{var readIds=JSON.parse(localStorage.getItem('aotu_ann_read')||'[]');if(readIds.indexOf(annId)===-1){readIds.push(annId);localStorage.setItem('aotu_ann_read',JSON.stringify(readIds));}}catch(e){}
