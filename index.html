@@ -8103,7 +8103,7 @@ function _isMobileDevice(){return /Android|iPhone|iPad|iPod|webOS|BlackBerry/i.t
 // 📱 移动端安全唤起B站App — 统一用B站真实URL + App Link
 function _openBiliAppUrl(qr_url,qrcode_key,type){
   try{sessionStorage.setItem('_biliPending',JSON.stringify({k:qrcode_key,t:Date.now(),type:type||'login'}));}catch(e){}
-  window.location.href=qr_url;
+  window.location.assign(qr_url);
 }
 // 页面从bfcache恢复时检查待处理的B站登录
 window.addEventListener('pageshow',function(e){
