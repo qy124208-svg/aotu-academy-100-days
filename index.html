@@ -9194,7 +9194,6 @@ loop:function(){var now=performance.now();var dt=Math.min((now-_petManager.lastT
 clear:function(){if(_petManager.animId)cancelAnimationFrame(_petManager.animId);if(_petManager.canvas){_petManager.canvas.remove();_petManager.canvas=null;}_petManager.pets=[];}};
 window._addPet=function(config,imgPath){var cfg=JSON.parse(JSON.stringify(PET_DEFAULT_CONFIG));if(config)Object.assign(cfg,config);if(config&&config.animations){cfg.animations=JSON.parse(JSON.stringify(PET_DEFAULT_CONFIG.animations));for(var k in config.animations)cfg.animations[k]=config.animations[k];}if(config&&config.markov)cfg.markov=config.markov;if(config&&config.cpBond)cfg.cpBond=config.cpBond;return _petManager.add(cfg,imgPath);};
 window._clearPets=function(){_petManager.clear();};window._getPets=function(){return _petManager.pets;};
-window._addPet({name:'安迷修',anchorX:100,anchorY:200,scale:1.0},'img/anmicius');
 
 var _scriptEngine={story:null,chapter:null,eventIdx:0,vars:{},characters:{},bgImage:null,bgm:null,isRunning:false,waitForChoice:false,choiceCallback:null,_overlay:null,_dialogBox:null,
 load:function(s){_scriptEngine.story=s;_scriptEngine.vars=s.variables||{};_scriptEngine.characters=s.characters||{};_scriptEngine.eventIdx=0;_scriptEngine.isRunning=true;_scriptEngine.waitForChoice=false;},
