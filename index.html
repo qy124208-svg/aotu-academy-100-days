@@ -92,7 +92,7 @@ var SUPABASE_URL = 'https://ircabforurlovrpbvbas.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_qdMz_emErZvhUvLAT1hv-w_R2JL6jIY';
 var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
-<!-- 引擎模块 (Babylon.js GUI 架构移植 + game-master Java 引擎移植) -->
+<!-- 引擎模块 (内联) -->
 <!-- 主游戏逻辑 -->
 <script>
 /**
@@ -2216,250 +2216,6 @@ class FloatingText {
 }
 
 console.log('[engine/widgets] Control | Container | StackPanel | TextBlock | ImageButton | Toast | Dialog | TextEntry | FloatingText — 就绪');
-
-/**
- * engine/bridge.js — 引擎增强层
- * 核心渲染不依赖引擎（100%不出错）
- * 引擎类在渲染完成后增强界面（增量、可失败）
- * v3.0
- */
-
-(function(){
-if(typeof window==='undefined')return;
-var _poll=setInterval(function(){
-  if(typeof G!=='undefined'&&typeof render==='function'){
-    clearInterval(_poll);_initBridge();
-  }
-},100);
-
-function _initBridge(){
-  console.log('🔗 [bridge] 引擎增强层启动');
-
-  // ═══ 1. Timer: 自动存档 ═══
-  if(typeof Timer!=='undefined'){
-    new Timer(300000,function(){
-      if(G.phase==='play'&&G.day>0){
-        try{window._save();if(typeof Toast!=='undefined')Toast.show('💾 自动存档','info',1500);}catch(e){}
-      }
-    });
-  }
-
-  // ═══ 2. GameClock: 游戏时间 ═══
-  if(typeof GameClock!=='undefined'){
-    window._sessionClock=new GameClock();window._sessionClock.reset();
-  }
-
-  // ═══ 3. Countdown: 限时选择 ═══
-  if(typeof Countdown!=='undefined'){
-    var observer=new MutationObserver(function(){
-      if(!curEv||!curEv.choices||curEv.choices.length<2||window._timedChoice)return;
-      if(Math.random()>0.2)return;
-      setTimeout(function(){
-        var div=document.querySelector('#app .eventbox+div');
-        if(!div||window._timedChoice)return;
-        var bar=document.createElement('div');bar.id='timedBar';
-        bar.style.cssText='height:5px;background:#333;border-radius:3px;margin:4px 0;overflow:hidden';
-        var fill=document.createElement('div');
-        fill.style.cssText='height:100%;width:100%;background:linear-gradient(90deg,var(--accent),var(--gold));transition:width 0.3s linear';
-        bar.appendChild(fill);
-        var timer=document.createElement('div');timer.id='timedTimer';
-        timer.style.cssText='color:var(--gold);font-size:0.8em;text-align:center;font-weight:bold';
-        timer.textContent='⏰ 限时选择: 10s';
-        div.insertBefore(timer,div.firstChild);div.insertBefore(bar,div.firstChild);
-        window._timedChoice={active:true};
-        window._timedChoice.cd=new Countdown(10000,
-          function(s){var t=document.getElementById('timedTimer');if(t)t.textContent='⏰ 限时选择: '+s+'s';var f=document.querySelector('#timedBar div');if(f)f.style.width=(s*10)+'%';},
-          function(){var t=document.getElementById('timedTimer');if(t)t.textContent='⏰ 时间到！';if(window._timedChoice)window._timedChoice.active=false;
-            if(typeof Toast!=='undefined')Toast.show('⏰ 时间到！','warning',2000);}
-        );
-        // 重写_ch以清理倒计时
-        var _origCh=window._ch;
-        if(!window._chPatched){window._ch=function(i){if(window._timedChoice&&window._timedChoice.cd)window._timedChoice.cd.stop();window._timedChoice=null;var bar=document.getElementById('timedBar');if(bar)bar.remove();var t=document.getElementById('timedTimer');if(t)t.remove();if(_origCh)_origCh(i);};window._chPatched=true;}
-      },200);
-    });
-    observer.observe(document.getElementById('app'),{childList:true,subtree:true});
-  }
-
-  // ═══ 4. Easing: CSS动画注入 ═══
-  if(typeof Easing!=='undefined'){
-    var s=document.createElement('style');
-    s.textContent='.bounce-in{animation:bounceIn 0.5s ease-out forwards}@keyframes bounceIn{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}';
-    document.head.appendChild(s);
-  }
-
-  // ═══ 5. SpriteAnimation: 丘比精灵 ═══
-  if(typeof SpriteAnimation!=='undefined'){
-    var qb=new Image();qb.src='assets/qb.jpg';
-    qb.onload=function(){window._qbSprite=new SpriteAnimation([qb],1000,-1,true);};
-  }
-
-  // ═══ 6. Keyboard: 全局快捷键 ═══
-  document.addEventListener('keydown',function(e){
-    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.ctrlKey||e.metaKey)return;
-    if(G.phase!=='play')return;
-    if(!e.key)return;
-    var k=e.key.toLowerCase();
-    if(k==='a'){e.preventDefault();window._nav('aff');}
-    else if(k==='c'){e.preventDefault();window._nav('cpview');}
-    else if(k==='m'){e.preventDefault();window._nav('mem');}
-    else if(k==='q'){e.preventDefault();window._nav('quest');}
-    else if(k==='j'){e.preventDefault();window._nav('journal');}
-    else if(k==='s'&&!e.shiftKey){e.preventDefault();window._save();}
-    else if(k==='l'&&!e.shiftKey){e.preventDefault();window._nav('load');}
-    else if(k==='escape'){e.preventDefault();window._goBack();}
-    else if(k===' '&&curEv){e.preventDefault();window._adv();}
-  });
-
-  // ═══ 7. Mouse: 右键菜单 ═══
-  document.addEventListener('contextmenu',function(e){
-    if(G.phase!=='play')return;e.preventDefault();
-    var m=document.createElement('div');
-    m.style.cssText='position:fixed;left:'+e.clientX+'px;top:'+e.clientY+'px;background:var(--panel);border:2px solid var(--gold);border-radius:10px;padding:6px;z-index:9999;min-width:130px';
-    [{t:'📊 统计',f:function(){if(window._showStats)window._showStats();}},{t:'💾 存档',f:function(){window._save();if(typeof Toast!=='undefined')Toast.show('💾 已存档','success',1500);}},{t:'🏠 回标题',f:function(){if(confirm('确定返回标题？'))render('title');}}].forEach(function(item){
-      var b=document.createElement('button');b.style.cssText='display:block;width:100%;text-align:left;padding:6px 10px;background:none;border:none;color:var(--text);cursor:pointer;font-size:0.85em;border-radius:6px;font-family:inherit';
-      b.textContent=item.t;b.onmouseenter=function(){b.style.background='var(--hover)';};b.onmouseleave=function(){b.style.background='none';};
-      b.onclick=function(){m.remove();item.f();};m.appendChild(b);
-    });
-    document.body.appendChild(m);
-    setTimeout(function(){document.addEventListener('click',function rm(){m.remove();document.removeEventListener('click',rm);});},10);
-  });
-
-  // ═══ 8. TextEntry: 改名功能 ═══
-  if(typeof TextEntry!=='undefined'){
-    window._renamePlayer=function(){TextEntry.prompt({title:'修改名字',placeholder:'新名字',defaultValue:G.name||'见习天使',maxLength:20,onSubmit:function(v){G.name=v;if(typeof Toast!=='undefined')Toast.show('✅ 已改名: '+v,'success',2000);}});};
-  }
-
-  // ═══ 9. 统计面板 (使用全部 Widget 类) ═══
-  if(typeof StackPanel!=='undefined'&&typeof Container!=='undefined'&&typeof TextBlock!=='undefined'&&typeof ImageButton!=='undefined'&&typeof ProgressBar!=='undefined'){
-    window._showStats=function(){
-      if(window._sessionClock)window._sessionClock.tick();
-      var total=window._sessionClock?Math.floor(window._sessionClock.totalTime/1000):0;
-      var mins=Math.floor(total/60),secs=total%60;
-      var affCt=Object.values(G.aff||{}).filter(function(v){return v>=30;}).length;
-      var cpCt=Object.keys(CP||{}).filter(function(k){return(G.aff[CP[k].c1]||0)>=30&&(G.aff[CP[k].c2]||0)>=30;}).length;
-
-      var root=new Container('root');
-      root._el.style.cssText='max-width:420px;margin:20px auto';
-      var sp=new StackPanel('sp');sp.isVertical=true;sp.spacing=10;
-      sp._el.style.cssText='background:var(--panel);border:2px solid var(--gold);border-radius:14px;padding:20px';
-      root.addControl(sp);
-
-      var title=new TextBlock('📊 游戏统计');
-      title._el.style.cssText='text-align:center;font-size:1.3em;font-weight:bold;color:var(--gold)';
-      sp.addControl(title);
-
-      [{l:'⏱ 游戏时间',v:mins+'分'+secs+'秒'},{l:'📅 天数',v:'Day '+G.day+'/100'},{l:'💕 好友',v:affCt+'人'},{l:'💑 活跃CP',v:cpCt+'对'},{l:'📸 回忆',v:G.memories.length+'个'},{l:'🏆 成就',v:G.achievements.length+'个'},{l:'🪙 因果值',v:String(G.karma||0)},{l:'🎨 主题',v:G._theme||'dark'}].forEach(function(item){
-        var row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #333;font-size:0.9em';
-        row.innerHTML='<span style="color:var(--dim)">'+item.l+'</span><span style="font-weight:bold">'+item.v+'</span>';
-        sp._el.appendChild(row);
-      });
-
-      var cpTitle=new TextBlock('💑 CP进度');
-      cpTitle._el.style.cssText='font-weight:bold;color:var(--accent);margin-top:8px;font-size:0.9em';
-      sp.addControl(cpTitle);
-
-      Object.entries(CP).forEach(function(e){
-        var k=e[0],cp=e[1];var a=cpAvg(k);
-        var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:8px';
-        row.innerHTML='<span style="font-size:0.75em;min-width:65px">'+cp.e+' '+cp.n+'</span>';
-        var pb=ProgressBar.create({value:a,max:100,height:4,bgColor:'#333',fillColor:a>=60?'var(--accent)':a>=30?'var(--gold)':'#666',borderRadius:2,animate:true});
-        pb.style.flex='1';row.appendChild(pb);
-        row.appendChild(Object.assign(document.createElement('span'),{style:'font-size:0.65em;color:var(--dim)',textContent:String(a)}));
-        sp._el.appendChild(row);
-      });
-
-      // 使用 Style + ValueAndUnit
-      if(typeof Style!=='undefined'){
-        var footerStyle=new Style();footerStyle.color='var(--dim)';footerStyle.fontSize='0.7em';
-      }
-      if(typeof ValueAndUnit!=='undefined'){
-        var footerVU=new ValueAndUnit(100,'%');
-      }
-
-      var back=new ImageButton('🔙 返回');
-      back._el.style.cssText='font-size:0.9em;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;margin-top:8px;font-family:inherit';
-      back.onPointerClick.add(function(){window._goBack();});
-      sp.addControl(back);
-
-      var app=document.getElementById('app');app.innerHTML='';app.appendChild(root._el);
-    };
-    console.log('📊 [bridge] 统计面板就绪 — Container+StackPanel+TextBlock+ImageButton+ProgressBar+Style+ValueAndUnit');
-  }
-
-  // ═══ 10. rCreate DOM增强 (渲染后增强，不破坏核心渲染) ═══
-  var _origRender=render;
-  render=function(phase,data){
-    _origRender(phase,data);
-    if(phase==='create'){
-      setTimeout(function(){
-        try{
-          // 用 ProgressBar 替换能力值条
-          if(typeof ProgressBar!=='undefined'){
-            document.querySelectorAll('#app [id^=\"pb_\"]').forEach(function(el){
-              if(el._enhanced)return;el._enhanced=true;
-              var k=el.id.replace('pb_','');
-              var v=parseInt(el.nextElementSibling?.textContent)||5;
-              var pb=ProgressBar.create({value:v,max:10,height:10,bgColor:'#333',fillColor:k==='SPR'?'#bc8cff':'var(--accent)',borderRadius:5,animate:true});
-              el.parentNode.replaceChild(pb,el);
-            });
-          }
-          // 给面板加入场动画
-          if(typeof Easing!=='undefined'){
-            document.querySelectorAll('#app .panel').forEach(function(p,i){
-              p.style.animation='bounceIn 0.5s ease-out '+(i*0.08)+'s both';
-            });
-          }
-          // 统计按钮hover效果
-          if(typeof ImageButton!=='undefined'){
-            var sb=document.getElementById('startBtn');
-            if(sb&&!sb._enhanced){sb._enhanced=true;sb.style.transition='all 0.2s';
-              sb.onmouseenter=function(){sb.style.transform='scale(1.05)';};
-              sb.onmouseleave=function(){sb.style.transform='scale(1)';};
-            }
-          }
-          console.log('🎨 [bridge] rCreate 增强完成');
-        }catch(e){console.warn('rCreate增强失败(不影响核心功能):',e.message);}
-      },100);
-    }
-    if(window._sessionClock)window._sessionClock.tick();
-  };
-
-  // ═══ 11. Theme (4主题 + Observable) ═══
-  if(typeof Theme!=='undefined'){
-    window._switchTheme=function(id){if(_applyTheme)_applyTheme(id);};
-    if(typeof Observable!=='undefined'){
-      window._themeObs=new Observable();
-      window._themeObs.add(function(id){console.log('主题切换:',id);});
-    }
-  }
-
-  // ═══ 12. Vec2 战斗增强 ═══
-  if(typeof Vec2!=='undefined'){
-    // hermite + catmullRom: 战斗画面偏移
-    // Vec2 战斗路径已在 game.js spawnEnemy + battleLoop 中直接使用
-    // barycentric: 伤害颜色
-    if(Vec2.barycentric&&typeof FloatingText!=='undefined'){
-      var _origFT=FloatingText.spawn;
-      FloatingText.spawn=function(ctx,x,y,text,color){
-        var dmg=parseInt(text)||0;
-        if(dmg!==0){
-          var lo=new Vec2(100,200),mi=new Vec2(240,192),hi=new Vec2(240,60);
-          var t=Math.min(1,Math.abs(dmg)/15),bc;
-          if(t<0.5)bc=Vec2.barycentric(lo,mi,hi,t*2,0);
-          else bc=Vec2.barycentric(lo,mi,hi,1-(t-0.5)*2,t*2-1);
-          var r=Math.floor(bc.x),g=Math.floor(bc.y);
-          var b=Math.floor(255-t*200);
-          color='rgb('+r+','+g+','+b+')';
-        }
-        return _origFT(ctx,x,y,text,color);
-      };
-    }
-    console.log('🧭 [bridge] Vec2战斗增强已注入');
-  }
-
-  console.log('✅ [bridge] 全部引擎类已增强 — 核心渲染不受影响');
-}
-})();
 
 
 // ╔══════════════════════════════════════════════════════════════╗
@@ -4929,13 +4685,20 @@ function rTitle(app){
   if(_titleParticles)_titleParticles.length=0;
   _titleCanvas=null;
   try{_startTitleParticles();}catch(e){console.warn('星空背景启动失败:',e);}
+
   // 📢 公告弹窗检测
   setTimeout(async function(){
     try{
-      var skip=localStorage.getItem('aotu_ann_skip');if(skip==='all')return;
+      var skip=localStorage.getItem('aotu_ann_skip');
+      if(skip==='all')return;
       var readIds=JSON.parse(localStorage.getItem('aotu_ann_read')||'[]');
       var r=await supabase.from('announcements').select('*').eq('is_active',true).order('created_at',{ascending:false}).limit(1);
-      if(r.data&&r.data.length>0){var ann=r.data[0];if(readIds.indexOf(ann.id)===-1)_showAnnouncement(ann);}
+      if(r.data&&r.data.length>0){
+        var ann=r.data[0];
+        if(readIds.indexOf(ann.id)===-1){
+          _showAnnouncement(ann);
+        }
+      }
     }catch(e){}
   },500);
 }
@@ -4945,14 +4708,24 @@ function _showAnnouncement(ann){
   var overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:10000;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.3s';
   overlay.onclick=function(e){if(e.target===overlay)_closeAnn(overlay,ann.id);};
-  overlay.innerHTML='<div class="panel" style="max-width:500px;width:90%;max-height:70vh;overflow-y:auto;border:2px solid var(--gold);border-radius:14px;padding:24px;text-align:center;animation:fadeIn 0.3s"><div style="font-size:1.1em;color:var(--gold);font-weight:bold;margin-bottom:4px">📢 '+_escapeHtml(ann.title||'')+'</div><div style="font-size:0.65em;color:var(--dim);margin-bottom:14px">'+_timeAgo(ann.created_at)+'</div><div style="text-align:left;white-space:pre-wrap;color:var(--text);line-height:1.9;font-size:0.9em;max-height:40vh;overflow-y:auto">'+_escapeHtml(ann.content||'')+'</div><div style="margin-top:18px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn btn-p" style="font-size:0.85em;padding:8px 24px">✕ 关闭</button><button class="btn btn-xs" style="color:var(--dim);font-size:0.7em">📢 不再显示公告</button></div></div>';
+  overlay.innerHTML='<div class="panel" style="max-width:500px;width:90%;max-height:70vh;overflow-y:auto;border:2px solid var(--gold);border-radius:14px;padding:24px;text-align:center;animation:fadeIn 0.3s">'+
+    '<div style="font-size:1.1em;color:var(--gold);font-weight:bold;margin-bottom:4px">📢 '+_escapeHtml(ann.title||'')+'</div>'+
+    '<div style="font-size:0.65em;color:var(--dim);margin-bottom:14px">'+_timeAgo(ann.created_at)+'</div>'+
+    '<div style="text-align:left;white-space:pre-wrap;color:var(--text);line-height:1.9;font-size:0.9em;max-height:40vh;overflow-y:auto">'+_escapeHtml(ann.content||'')+'</div>'+
+    '<div style="margin-top:18px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'+
+      '<button class="btn btn-p" style="font-size:0.85em;padding:8px 24px">✕ 关闭</button>'+
+      '<button class="btn btn-xs" style="color:var(--dim);font-size:0.7em">📢 不再显示公告</button>'+
+    '</div></div>';
   document.body.appendChild(overlay);
   var btns=overlay.querySelectorAll('button');
-  btns[0].onclick=function(){_closeAnn(overlay,ann.id);};
-  btns[1].onclick=function(){overlay.remove();};
+  btns[0].onclick=function(){_closeAnn(overlay,ann.id);};            // ✕ 关闭 → 标记已读
+  btns[1].onclick=function(){overlay.remove();};                      // 不再显示 → 仅关闭，不记录
 }
 function _closeAnn(overlay,annId){
-  try{var readIds=JSON.parse(localStorage.getItem('aotu_ann_read')||'[]');if(readIds.indexOf(annId)===-1){readIds.push(annId);localStorage.setItem('aotu_ann_read',JSON.stringify(readIds));}}catch(e){}
+  try{
+    var readIds=JSON.parse(localStorage.getItem('aotu_ann_read')||'[]');
+    if(readIds.indexOf(annId)===-1){readIds.push(annId);localStorage.setItem('aotu_ann_read',JSON.stringify(readIds));}
+  }catch(e){}
   overlay.remove();
 }
 
@@ -7952,6 +7725,7 @@ window._dreamUser=null; // Supabase Auth 用户
       window._dreamUser=r.data.session.user;
     }
   }catch(e){}
+  // 如果Supabase session丢失，从localStorage恢复
   if(!window._dreamUser){
     try{
       var saved=JSON.parse(localStorage.getItem('aotu_session')||'');
@@ -7961,6 +7735,7 @@ window._dreamUser=null; // Supabase Auth 用户
       }
     }catch(e){}
   }
+  // 恢复B站头像昵称UID
   if(window._dreamUser){
     try{
       var saved=JSON.parse(localStorage.getItem('aotu_session')||'{}');
@@ -7973,9 +7748,11 @@ window._dreamUser=null; // Supabase Auth 用户
   var params=new URLSearchParams(window.location.search);
   var qrToken=params.get('qr_login');
   if(qrToken){
+    // 清除URL参数
     if(window.history&&window.history.replaceState)window.history.replaceState(null,'',window.location.pathname);
     var session=null;try{var sr=await supabase.auth.getSession();session=sr.data.session;}catch(e){}
     if(session&&session.user){
+      // 已登录 — 显示确认按钮
       var app=document.getElementById('app');
       app.innerHTML='<div style="max-width:400px;margin:80px auto;text-align:center;padding:20px">'
         +'<h2 style="color:var(--gold)">📱 扫码登录确认</h2>'
@@ -7986,20 +7763,23 @@ window._dreamUser=null; // Supabase Auth 用户
         +'<br><button class="btn btn-s" onclick="window._dreamLogout()" style="margin-top:8px">切换账号</button>'
         +'</div></div>';
     }else{
-      var app2=document.getElementById('app');
-      app2.innerHTML='<div style="max-width:400px;margin:80px auto;text-align:center;padding:20px">'
+      // 未登录 — 引导先登录
+      var app=document.getElementById('app');
+      app.innerHTML='<div style="max-width:400px;margin:80px auto;text-align:center;padding:20px">'
         +'<h2 style="color:var(--gold)">📱 扫码登录</h2>'
         +'<p style="color:var(--dim);margin:10px 0">请先登录，再确认授权</p>'
         +'<button class="btn btn-p" onclick="window._dreamLogin()" style="margin:10px 0;font-size:1em;padding:12px 30px">📧 登录</button>'
         +'<p style="color:var(--dim);font-size:0.75em;margin-top:15px">登录后将自动返回确认页面</p></div>';
+      // 登录后自动跳回：在URL加回qr_login参数
       var origDreamLogin=window._dreamLogin;
       window._dreamLogin=function(){
         origDreamLogin.call(this);
         var hint=document.createElement('p');
         hint.style.cssText='color:var(--gold);font-size:0.75em;text-align:center;margin-top:8px';
         hint.textContent='⬆ 登录后将自动跳回扫码确认';
-        var app3=document.getElementById('app');
-        if(app3)app3.appendChild(hint);
+        var app2=document.getElementById('app');
+        if(app2)app2.appendChild(hint);
+        // 登录后自动重载确认页
         var _origPasswordLogin=window._dreamPasswordLogin;
         window._dreamPasswordLogin=async function(){
           await _origPasswordLogin.call(this);
@@ -8015,7 +7795,7 @@ window._dreamUser=null; // Supabase Auth 用户
   }
 })();
 
-// 📧 登录界面（精简版：仅B站扫码）
+// 📧 邮箱登录/注册界面（精简版：仅B站扫码）
 window._dreamLogin=function(){
   var app=document.getElementById('app');
   var h='<div style="max-width:400px;margin:60px auto;padding:20px;text-align:center">';
@@ -8082,9 +7862,14 @@ window._dreamVerifyCode=async function(){
 window._dreamQRLogin=function(){
   var emailEl=document.getElementById('dreamEmail');
   var email=emailEl?emailEl.value.trim():'';
+  // 生成随机token
   var token='';for(var i=0;i<32;i++)token+='abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random()*36)];
   var qrUrl='https://qy124208-svg.github.io/aotu-academy-100-days?qr_login='+token;
+
+  // 插一条pending记录
   supabase.from('qr_sessions').insert({token:token,status:'pending'}).then(function(){});
+
+  // 显示二维码弹窗
   var app=document.getElementById('app');
   app.innerHTML='<div style="max-width:400px;margin:40px auto;text-align:center;padding:20px">'
     +'<h3 style="color:var(--gold)">📱 扫码登录</h3>'
@@ -8094,6 +7879,8 @@ window._dreamQRLogin=function(){
     +'<div id="qrSpinner" style="margin:10px"><div style="border:3px solid var(--card);border-top:3px solid var(--gold);border-radius:50%;width:30px;height:30px;margin:0 auto;animation:spin 1s linear infinite"></div></div>'
     +'<button class="btn btn-s" onclick="window._dreamLogin()" style="margin-top:10px">← 返回其他登录方式</button></div>'
     +'<style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+
+  // 5分钟倒计时
   var remain=300;
   var timerEl=document.getElementById('qrTimer');
   var countdown=setInterval(function(){
@@ -8102,6 +7889,8 @@ window._dreamQRLogin=function(){
     var m=Math.floor(remain/60);var s=remain%60;
     timerEl.textContent='⏳ 等待扫描…（'+m+':'+(s<10?'0':'')+s+'）';
   },1000);
+
+  // 监听Realtime — 等手机确认
   var qrChannel=supabase.channel('qr-'+token)
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'qr_sessions',filter:'token=eq.'+token},function(payload){
       if(payload.new&&payload.new.status==='confirmed'&&payload.new.access_token){
@@ -8110,6 +7899,7 @@ window._dreamQRLogin=function(){
         supabase.auth.setSession({access_token:payload.new.access_token,refresh_token:payload.new.refresh_token}).then(function(r){
           if(r.data&&r.data.user){
             window._dreamUser=r.data.user;
+            // 清理已用token
             supabase.from('qr_sessions').delete().eq('token',token).then(function(){});
             _dreamLoadPosts(document.getElementById('app'));
           }
@@ -8117,57 +7907,105 @@ window._dreamQRLogin=function(){
           alert('登录失败: '+e.message);
           window._dreamLogin();
         });
+        // 清理过期session
         supabase.from('qr_sessions').delete().lt('expires_at',new Date().toISOString()).then(function(){});
       }
     }).subscribe();
 };
 
-// 📱 移动端检测
-function _isMobileDevice(){return /Android|iPhone|iPad|iPod|webOS|BlackBerry/i.test(navigator.userAgent)||('ontouchstart' in window&&window.innerWidth<1024);}
+// 📱 移动端检测 — 手机/平板优先跳转B站App授权而非扫码
+function _isMobileDevice(){
+  return /Android|iPhone|iPad|iPod|webOS|BlackBerry/i.test(navigator.userAgent) ||
+    ('ontouchstart' in window && window.innerWidth < 1024);
+}
 
-// 📱 移动端安全唤起B站App — 统一用B站真实URL + App Link
-function _openBiliAppUrl(qr_url,qrcode_key,type){
-  try{sessionStorage.setItem('_biliPending',JSON.stringify({k:qrcode_key,t:Date.now(),type:type||'login'}));}catch(e){}
+// 📱 移动端安全唤起B站App
+// 统一使用 window.location.href = qr_url（真实的B站URL）
+// Android: App Link → App已安装则OS拦截唤起，浏览器不跳转
+// iOS: Universal Link → 同样OS拦截
+// App未安装 → 跳转B站H5确认页，用户确认后返回，pageshow恢复轮询
+function _openBiliAppUrl(qr_url, qrcode_key, type){
+  // 保存QR信息到sessionStorage — 页面跳转后返回时恢复轮询
+  try { sessionStorage.setItem('_biliPending', JSON.stringify({k: qrcode_key, t: Date.now(), type: type||'login'})); } catch(e) {}
+  // 直接用B站返回的真实URL — 不自己拼intent://，避免域名/路径过时
+  // 用 assign() 而非 href= 赋值，部分浏览器对 onclick 中的 href 赋值有限制
   window.location.assign(qr_url);
 }
-// 页面从bfcache恢复时检查待处理的B站登录
-window.addEventListener('pageshow',function(e){
-  if(!e.persisted)return;
-  try{var raw=sessionStorage.getItem('_biliPending');if(!raw)return;
-  var d=JSON.parse(raw);if(Date.now()-d.t>180000){sessionStorage.removeItem('_biliPending');return;}
-  sessionStorage.removeItem('_biliPending');_resumeBiliPoll(d.k,d.type);}catch(ex){}
+
+// 页面从bfcache恢复时检查是否有待处理的B站登录
+window.addEventListener('pageshow', function(e){
+  if(!e.persisted) return; // 不是从bfcache恢复，跳过
+  try {
+    var raw = sessionStorage.getItem('_biliPending');
+    if(!raw) return;
+    var d = JSON.parse(raw);
+    if(Date.now() - d.t > 180000){ sessionStorage.removeItem('_biliPending'); return; } // 超过3分钟过期
+    sessionStorage.removeItem('_biliPending');
+    _resumeBiliPoll(d.k, d.type);
+  } catch(ex) {}
 });
-function _resumeBiliPoll(qrcode_key,type){
-  var app=document.getElementById('app');if(!app)return;
-  app.innerHTML='<div style="max-width:400px;margin:40px auto;text-align:center;padding:20px"><h3 style="color:#fb7299">📺 B站扫码登录</h3><p style="color:var(--dim);font-size:0.85em">检测到你已返回，正在检查登录状态…</p><div id="biliQR" style="margin:10px 0">⏳</div><p id="biliStatus" style="color:var(--dim);font-size:0.8em;margin:8px 0">重新连接中…</p><button class="btn btn-s" onclick="window._dreamLogin()" style="margin-top:10px">← 返回</button></div>';
-  var statusEl=document.getElementById('biliStatus');var pollCount=0;
-  var pollTimer=setInterval(async function(){
-    pollCount++;if(pollCount>60){clearInterval(pollTimer);if(statusEl)statusEl.textContent='⏰ 登录检查超时，请重试';return;}
-    try{
-      if(type==='crawl'){
-        var r=await fetch(SUPABASE_URL+'/functions/v1/bilibili-feed',{method:'POST',headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({action:'poll_qr',qrcode_key:qrcode_key,user_id:(window._dreamUser||{}).id||'',time_range:localStorage.getItem('aotu_bili_time')||'week'})}).then(function(res){return res.json();});
-        if(r.users){clearInterval(pollTimer);window._biliFeedCache=r;window._dreamBiliShowUsers(r.users);return;}
-        if(r.qr_status==='expired'){clearInterval(pollTimer);if(statusEl)statusEl.textContent='⏰ 二维码已过期，请刷新重试';return;}
-        if(r.qr_status==='scanned'){if(statusEl)statusEl.textContent='📱 已扫码，请在B站App确认…';}
-        if(r.qr_status==='error'){clearInterval(pollTimer);if(statusEl)statusEl.textContent='❌ 登录失败，请重试';return;}
-      }else{
-        var pollR=await fetch(SUPABASE_URL+'/functions/v1/bilibili-qr',{method:'POST',headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({action:'poll',qrcode_key:qrcode_key})});
-        var pollD=await pollR.json();
-        if(pollD.status==='scanned'){if(statusEl)statusEl.textContent='📱 已扫码，请在B站App确认…';}
-        else if(pollD.status==='confirmed'){
-          clearInterval(pollTimer);if(statusEl)statusEl.textContent='✅ 登录成功！';
-          var sess=await supabase.auth.setSession({access_token:pollD.access_token,refresh_token:pollD.refresh_token});
-          if(sess.error)throw sess.error;
-          window._dreamUser=sess.data.user;window._dreamUser._nickname=pollD.nickname||'';window._dreamUser._uid=pollD.bili_uid||'';
-          if(pollD.bili_uid){try{var cardR=await fetch(SUPABASE_URL+'/functions/v1/bilibili-qr',{method:'POST',headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({action:'card',uid:pollD.bili_uid})});var cardD=await cardR.json();if(cardD.face)window._dreamUser._face=cardD.face;if(cardD.nickname&&(!window._dreamUser._nickname||window._dreamUser._nickname==='B站用户'))window._dreamUser._nickname=cardD.nickname;}catch(e){}}
-          if(!window._dreamUser._face)window._dreamUser._face='';
-          try{localStorage.setItem('aotu_session',JSON.stringify({access_token:pollD.access_token,refresh_token:pollD.refresh_token,nickname:window._dreamUser._nickname,face:window._dreamUser._face,bili_uid:pollD.bili_uid}));}catch(e){}
+
+// 页面恢复后重新轮询QR状态
+function _resumeBiliPoll(qrcode_key, type){
+  var app = document.getElementById('app');
+  if(!app) return;
+  // 简化UI：恢复登录界面骨架
+  app.innerHTML = '<div style="max-width:400px;margin:40px auto;text-align:center;padding:20px">'
+    + '<h3 style="color:#fb7299">📺 B站扫码登录</h3>'
+    + '<p style="color:var(--dim);font-size:0.85em">检测到你已返回，正在检查登录状态…</p>'
+    + '<div id="biliQR" style="margin:10px 0">⏳</div>'
+    + '<p id="biliStatus" style="color:var(--dim);font-size:0.8em;margin:8px 0">重新连接中…</p>'
+    + '<button class="btn btn-s" onclick="window._dreamLogin()" style="margin-top:10px">← 返回</button></div>';
+  var statusEl = document.getElementById('biliStatus');
+  var pollCount = 0;
+  var pollTimer = setInterval(async function(){
+    pollCount++;
+    if(pollCount > 60){ clearInterval(pollTimer); if(statusEl) statusEl.textContent = '⏰ 登录检查超时，请重试'; return; }
+    try {
+      if(type === 'crawl'){
+        // 爬取流程：调 bilibili-feed poll_qr
+        var r = await fetch(SUPABASE_URL+'/functions/v1/bilibili-feed', {
+          method:'POST', headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+          body:JSON.stringify({action:'poll_qr', qrcode_key: qrcode_key, user_id: (window._dreamUser||{}).id||'', time_range: localStorage.getItem('aotu_bili_time')||'week'})
+        }).then(function(res){return res.json();});
+        if(r.users){ clearInterval(pollTimer); window._biliFeedCache = r; window._dreamBiliShowUsers(r.users); return; }
+        if(r.qr_status === 'expired'){ clearInterval(pollTimer); if(statusEl) statusEl.textContent = '⏰ 二维码已过期，请刷新重试'; return; }
+        if(r.qr_status === 'scanned'){ if(statusEl) statusEl.textContent = '📱 已扫码，请在B站App确认…'; }
+        if(r.qr_status === 'error'){ clearInterval(pollTimer); if(statusEl) statusEl.textContent = '❌ 登录失败，请重试'; return; }
+      } else {
+        // 论坛登录流程：调 bilibili-qr poll
+        var pollR = await fetch(SUPABASE_URL+'/functions/v1/bilibili-qr', {
+          method:'POST', headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+          body:JSON.stringify({action:'poll', qrcode_key: qrcode_key})
+        });
+        var pollD = await pollR.json();
+        if(pollD.status === 'scanned'){ if(statusEl) statusEl.textContent = '📱 已扫码，请在B站App确认…'; }
+        else if(pollD.status === 'confirmed'){
+          clearInterval(pollTimer); if(statusEl) statusEl.textContent = '✅ 登录成功！';
+          var sess = await supabase.auth.setSession({ access_token: pollD.access_token, refresh_token: pollD.refresh_token });
+          if(sess.error) throw sess.error;
+          window._dreamUser = sess.data.user;
+          window._dreamUser._nickname = pollD.nickname || '';
+          window._dreamUser._uid = pollD.bili_uid || '';
+          if(pollD.bili_uid){
+            try {
+              var cardR = await fetch(SUPABASE_URL+'/functions/v1/bilibili-qr', {
+                method:'POST', headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+                body:JSON.stringify({action:'card', uid: pollD.bili_uid})
+              });
+              var cardD = await cardR.json();
+              if(cardD.face) window._dreamUser._face = cardD.face;
+              if(cardD.nickname && (!window._dreamUser._nickname || window._dreamUser._nickname === 'B站用户')) window._dreamUser._nickname = cardD.nickname;
+            } catch(e) {}
+          }
+          if(!window._dreamUser._face) window._dreamUser._face = '';
+          try { localStorage.setItem('aotu_session', JSON.stringify({ access_token: pollD.access_token, refresh_token: pollD.refresh_token, nickname: window._dreamUser._nickname, face: window._dreamUser._face, bili_uid: pollD.bili_uid })); } catch(e) {}
           _dreamLoadPosts(app);
-        }else if(pollD.status==='expired'){clearInterval(pollTimer);if(statusEl)statusEl.textContent='⏰ 二维码已过期，请刷新重试';}
-        else if(pollD.status==='error'){clearInterval(pollTimer);if(statusEl)statusEl.textContent='❌ 登录失败: '+(pollD.message||'未知错误');}
+        } else if(pollD.status === 'expired'){ clearInterval(pollTimer); if(statusEl) statusEl.textContent = '⏰ 二维码已过期，请刷新重试'; }
+        else if(pollD.status === 'error'){ clearInterval(pollTimer); if(statusEl) statusEl.textContent = '❌ 登录失败: ' + (pollD.message || '未知错误'); }
       }
-    }catch(e2){}
-  },2000);
+    } catch(e2) {}
+  }, 2000);
 }
 
 // 📺 B站扫码登录 — 调用Edge Function代理B站API
@@ -8181,6 +8019,7 @@ window._dreamBiliLogin=function(){
     +'<button class="btn btn-s" onclick="window._dreamLogin()" style="margin-top:10px">← 返回</button></div>';
   (async function(){
     try{
+      // 1. 生成B站二维码
       var genR=await fetch(SUPABASE_URL+'/functions/v1/bilibili-qr',{
         method:'POST',headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
         body:JSON.stringify({action:'generate'})
@@ -8189,12 +8028,25 @@ window._dreamBiliLogin=function(){
       if(!genR.ok||genD.error)throw new Error(genD.error||'二维码生成失败');
       var qrcodeKey=genD.qrcode_key;
       var qrImgSrc='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(genD.qr_url);
-      window._biliLoginQR={qr_url:genD.qr_url,key:qrcodeKey};
+      // 存到 window 让 onclick 内联代码能访问（内联onclick在全局作用域执行）
+      window._biliLoginQR = { qr_url: genD.qr_url, key: qrcodeKey };
+      // 📱 移动端 → 显示二维码+跳转B站App按钮（不自动跳转，避免浏览器误下载）
       if(_isMobileDevice()){
-        document.getElementById('biliQR').innerHTML='<div style="padding:15px;background:#222;border-radius:12px;margin:8px 0"><div style="font-size:2em;margin-bottom:8px">📱</div><p style="color:var(--blue);font-size:0.9em;margin:4px 0">检测到移动设备</p><p style="color:var(--dim);font-size:0.7em;margin:4px 0">点击下方按钮跳转B站App授权</p><button class="btn btn-p" onclick="if(window._biliLoginQR)_openBiliAppUrl(window._biliLoginQR.qr_url,window._biliLoginQR.key,\'login\')" style="margin:10px 4px;font-size:0.85em">📱 打开B站App登录</button><details style="margin-top:10px"><summary style="font-size:0.65em;color:var(--dim);cursor:pointer">📷 扫码备用</summary><img src="'+qrImgSrc+'" style="width:160px;background:#fff;padding:6px;border-radius:8px;margin-top:6px"></details></div>';
-      }else{
+        document.getElementById('biliQR').innerHTML=
+          '<div style="padding:15px;background:#222;border-radius:12px;margin:8px 0">'+
+          '<div style="font-size:2em;margin-bottom:8px">📱</div>'+
+          '<p style="color:var(--blue);font-size:0.9em;margin:4px 0">检测到移动设备</p>'+
+          '<p style="color:var(--dim);font-size:0.7em;margin:4px 0">点击下方按钮跳转B站App授权</p>'+
+          '<button class="btn btn-p" onclick="if(window._biliLoginQR)_openBiliAppUrl(window._biliLoginQR.qr_url,window._biliLoginQR.key,\'login\')" style="margin:10px 4px;font-size:0.85em">📱 打开B站App登录</button>'+
+          '<details style="margin-top:10px"><summary style="font-size:0.65em;color:var(--dim);cursor:pointer">📷 扫码备用</summary>'+
+          '<img src="'+qrImgSrc+'" style="width:160px;background:#fff;padding:6px;border-radius:8px;margin-top:6px"></details>'+
+          '</div>';
+      } else {
+        // 🖥 桌面端 → 显示二维码
         document.getElementById('biliQR').innerHTML='<img src="'+qrImgSrc+'" style="background:#fff;padding:8px;border-radius:12px">';
       }
+
+      // 2. 轮询状态
       var statusEl=document.getElementById('biliStatus');
       var pollCount=0;
       var pollTimer=setInterval(async function(){
@@ -8211,6 +8063,7 @@ window._dreamBiliLogin=function(){
           }else if(pollD.status==='confirmed'){
             clearInterval(pollTimer);
             statusEl.textContent='✅ 登录成功！';
+            // Edge Function 已创建账号并返回session，直接用
             var {data,error}=await supabase.auth.setSession({
               access_token:pollD.access_token,
               refresh_token:pollD.refresh_token
@@ -8219,6 +8072,7 @@ window._dreamBiliLogin=function(){
             window._dreamUser=data.user;
             window._dreamUser._nickname=pollD.nickname||'';
             window._dreamUser._uid=pollD.bili_uid||'';
+            // 用Edge Function代理拿B站头像（绕过CORS）
             if(pollD.bili_uid){
               try{
                 var cardR=await fetch(SUPABASE_URL+'/functions/v1/bilibili-qr',{
@@ -8231,6 +8085,7 @@ window._dreamBiliLogin=function(){
               }catch(e){}
             }
             if(!window._dreamUser._face)window._dreamUser._face='';
+            // 持久化
             try{localStorage.setItem('aotu_session',JSON.stringify({access_token:pollD.access_token,refresh_token:pollD.refresh_token,nickname:window._dreamUser._nickname,face:window._dreamUser._face,bili_uid:pollD.bili_uid}));}catch(e){}
             _dreamLoadPosts(document.getElementById('app'));
           }else if(pollD.status==='expired'){
@@ -8387,18 +8242,24 @@ function _dreamRender(app){
   var h='<div style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;background:radial-gradient(2px 2px at 20% 30%,rgba(255,255,255,0.4),transparent),radial-gradient(2px 2px at 40% 70%,rgba(255,255,255,0.3),transparent),radial-gradient(1px 1px at 60% 20%,rgba(255,255,255,0.5),transparent),radial-gradient(2px 2px at 80% 50%,rgba(255,255,255,0.3),transparent),radial-gradient(1px 1px at 10% 60%,rgba(255,255,255,0.4),transparent),radial-gradient(2px 2px at 70% 80%,rgba(255,255,255,0.3),transparent),radial-gradient(1px 1px at 30% 40%,rgba(255,255,255,0.5),transparent),radial-gradient(2px 2px at 50% 10%,rgba(255,255,255,0.2),transparent)"></div>';
   h+='<div style="max-width:700px;margin:0 auto;padding:10px;position:relative;z-index:1">';
   h+='<h2 style="text-align:center;color:var(--gold);margin-bottom:4px">🌙 好梦 · 每晚休息</h2>';
+  // 搜索框
   h+='<div style="text-align:center;margin:4px 0 8px"><input id="dreamSearchInput" placeholder="🔍 搜索帖子..." style="width:60%;max-width:300px;padding:6px 10px;border:1px solid #333;border-radius:20px;background:var(--card);color:var(--text);font-size:0.8em;font-family:inherit" onkeydown="if(event.key===\'Enter\')window._dreamSearch()" value="'+(state.search||'')+'"><button class="btn btn-xs" onclick="window._dreamSearch()" style="margin-left:4px;border-radius:20px">搜索</button></div>';
+  // 分类标签
   var curCat=state.category||'all';
   h+='<div style="text-align:center;margin:6px 0 10px">';
-  DREAM_CATS.forEach(function(c){h+='<button class="btn btn-xs" onclick="window._dreamSetCat(\''+c.v+'\')" style="margin:2px;font-size:0.7em;padding:3px 10px;border-radius:14px;'+(curCat===c.v?'background:var(--gold);color:#0d1117;font-weight:bold':'')+'">'+c.e+' '+c.t+'</button>';});
+  DREAM_CATS.forEach(function(c){
+    h+='<button class="btn btn-xs" onclick="window._dreamSetCat(\''+c.v+'\')" style="margin:2px;font-size:0.7em;padding:3px 10px;border-radius:14px;'+(curCat===c.v?'background:var(--gold);color:#0d1117;font-weight:bold':'')+'">'+c.e+' '+c.t+'</button>';
+  });
   h+='</div>';
   var id=_dreamGetIdentity();
   h+='<p style="text-align:center;color:var(--dim);font-size:0.75em">'+state.total+' 条'+(curCat!=='all'?' '+DREAM_CATS.find(function(c){return c.v===curCat;}).t:'')+' · 第'+(state.page+1)+'页 · ';
+  if(window._isAdmin()){h+='<button class="btn btn-xs" onclick="window._dreamAdminPanel()" style="font-size:0.65em;color:#e94560">🛡️ 管理</button> ';h+='<button class="btn btn-xs" onclick="window._dreamAnnounceEditor()" style="font-size:0.65em;color:var(--gold)">📢 公告</button> ';}
+  else{h+='<button class="btn btn-xs" onclick="window._dreamAdminLogin()" style="font-size:0.65em;color:var(--dim)">🔑</button> ';}
+  // 🔢 管理员显示总用户数
   if(window._isAdmin()){
     h+='<span id="dreamUserCount" style="color:var(--gold);font-size:0.65em">👥 ...</span> ';
     _dreamLoadUserCount();
-    h+='<button class="btn btn-xs" onclick="window._dreamAdminPanel()" style="font-size:0.65em;color:#e94560">🛡️ 管理</button> ';h+='<button class="btn btn-xs" onclick="window._dreamAnnounceEditor()" style="font-size:0.65em;color:var(--gold)">📢 公告</button> ';
-  }else{h+='<button class="btn btn-xs" onclick="window._dreamAdminLogin()" style="font-size:0.65em;color:var(--dim)">🔑</button> ';}
+  }
   if(window._dreamUser){
     var biliFace=localStorage.getItem('aotu_custom_face')||window._dreamUser._face||'';
     var biliName=window._dreamUser._nickname||id.name;
@@ -8497,7 +8358,7 @@ function _dreamFormatContent(text){
   text=_escapeHtml(text);
   // B站链接 → 嵌入播放器
   text=text.replace(/(https?:\/\/)?(www\.)?bilibili\.com\/video\/(BV[a-zA-Z0-9]+)\/?/g,'<div style="margin:6px 0"><iframe src="https://player.bilibili.com/player.html?bvid=$3&autoplay=0" style="width:100%;height:200px;border:none;border-radius:8px" allowfullscreen></iframe></div>');
-  // 抖音链接 → 嵌入/卡片
+  // 抖音链接 → 嵌入播放器
   text=text.replace(/(https?:\/\/)?(www\.)?douyin\.com\/video\/(\d+)\S*/g,'<div style="margin:6px 0"><iframe src="https://open.douyin.com/platform/oauth/embed?vid=$3" style="width:100%;height:300px;border:none;border-radius:8px" allowfullscreen></iframe></div>');
   text=text.replace(/(https?:\/\/)?v\.douyin\.com\/(\S+)/g,'<div style="margin:6px 0;padding:10px;background:var(--card);border-radius:8px;text-align:center"><a href="$0" target="_blank" style="color:#ff2442;font-size:0.9em">🎵 打开抖音视频</a></div>');
   // 换行转<br>
@@ -8505,7 +8366,7 @@ function _dreamFormatContent(text){
   return text;
 }
 
-// 点赞/取消
+// 点赞/取消 — 所有人可用
 window._dreamLike=async function(dreamId){
   if(!supabase)return;
   var fp=window._dreamFp;
@@ -8553,9 +8414,17 @@ function _dreamRenderComments(app){
     var parents=state.comments.filter(function(c){return !c.parent_id||c.parent_id===0;});
     var children=state.comments.filter(function(c){return c.parent_id&&c.parent_id!==0;});
     parents.forEach(function(c){
-      h+='<div style="background:var(--card);border-radius:8px;padding:8px 10px;margin:4px 0"><span style="font-size:0.75em;color:'+(c.author_color||'#888')+'">'+(c.author_emoji||'')+' '+(c.author_name||'匿名')+'</span> <span style="font-size:0.6em;color:var(--dim)">'+_timeAgo(c.created_at)+'</span><div style="font-size:0.8em;margin-top:3px">'+_escapeHtml(c.content)+'</div><span onclick="window._dreamReplyTo('+p.id+','+c.id+',\''+(c.author_name||'匿名')+'\')" style="font-size:0.6em;color:var(--blue);cursor:pointer">💬 回复</span>';
+      h+='<div style="background:var(--card);border-radius:8px;padding:8px 10px;margin:4px 0">';
+      h+='<span style="font-size:0.75em;color:'+(c.author_color||'#888')+'">'+(c.author_emoji||'')+' '+(c.author_name||'匿名')+'</span> <span style="font-size:0.6em;color:var(--dim)">'+_timeAgo(c.created_at)+'</span>';
+      h+='<div style="font-size:0.8em;margin-top:3px">'+_escapeHtml(c.content)+'</div>';
+      h+='<span onclick="window._dreamReplyTo('+p.id+','+c.id+',\''+(c.author_name||'匿名')+'\')" style="font-size:0.6em;color:var(--blue);cursor:pointer">💬 回复</span>';
+      // 子评论
       children.filter(function(ch){return ch.parent_id===c.id;}).forEach(function(ch){
-        h+='<div style="margin-left:20px;margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.03);border-left:2px solid var(--blue);border-radius:0 6px 6px 0;font-size:0.75em"><span style="color:'+(ch.author_color||'#888')+'">'+(ch.author_emoji||'')+' '+_escapeHtml(ch.author_name||'匿名')+'</span> <span style="font-size:0.65em;color:var(--dim)">'+_timeAgo(ch.created_at)+'</span><div style="margin-top:2px">'+_escapeHtml(ch.content)+'</div><span onclick="window._dreamReplyTo('+p.id+','+c.id+',\''+(ch.author_name||'匿名')+'\')" style="font-size:0.6em;color:var(--blue);cursor:pointer">💬 回复</span></div>';
+        h+='<div style="margin-left:20px;margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.03);border-left:2px solid var(--blue);border-radius:0 6px 6px 0;font-size:0.75em">';
+        h+='<span style="color:'+(ch.author_color||'#888')+'">'+(ch.author_emoji||'')+' '+_escapeHtml(ch.author_name||'匿名')+'</span> <span style="font-size:0.65em;color:var(--dim)">'+_timeAgo(ch.created_at)+'</span>';
+        h+='<div style="margin-top:2px">'+_escapeHtml(ch.content)+'</div>';
+        h+='<span onclick="window._dreamReplyTo('+p.id+','+c.id+',\''+(ch.author_name||'匿名')+'\')" style="font-size:0.6em;color:var(--blue);cursor:pointer">💬 回复</span>';
+        h+='</div>';
       });
       h+='</div>';
     });
@@ -8567,7 +8436,15 @@ function _dreamRenderComments(app){
   app.innerHTML=h;
 }
 
-// 发布评论
+// 发布评论 — 所有人可用
+// 💬 回复评论（设置回复目标）
+window._dreamReplyTo=function(dreamId,parentId,authorName){
+  window._dreamState._replyTo={dreamId:dreamId,parentId:parentId};
+  document.getElementById('commentInput').placeholder='回复 @'+authorName+'...';
+  document.getElementById('commentInput').focus();
+  document.getElementById('replyHint').textContent='↳ 正在回复 @'+authorName+'  ';
+};
+
 window._dreamPostComment=async function(dreamId){
   if(!supabase)return;
   var content=document.getElementById('commentInput').value.trim();
@@ -8618,7 +8495,7 @@ window._dreamProfile=async function(){
     var biliName=window._dreamUser._nickname||'';
     h+='<div class="panel" style="text-align:center;padding:20px">';
     h+='<div style="position:relative;display:inline-block;cursor:pointer" onclick="window._dreamUploadFace()" title="点击更换头像">';
-    h+=(face?'<img src="'+face+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin-bottom:4px" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'">':'<div style="font-size:3em">✨</div>');
+    h+='<img src="'+(face||'')+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin-bottom:4px" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'">';
     h+='<div style="position:absolute;bottom:0;right:0;background:var(--card);border-radius:50%;width:22px;height:22px;font-size:12px;line-height:22px;text-align:center;border:2px solid var(--gold)">📷</div></div>';
     var badges=_dreamCalcBadges(posts.data,totalLikes);
     if(badges.length>0){h+='<div style="margin:8px 0">';badges.forEach(function(b){h+='<span title="'+b.d+'" style="font-size:1.3em;margin:0 2px">'+b.e+'</span>';});h+='</div>';}
@@ -8639,6 +8516,7 @@ window._dreamProfile=async function(){
       });
       h+='</div>';
     }
+    // 🔗 平台连接 + 时间筛选
     h+='<div class="panel" style="padding:12px;margin:8px 0">';
     h+='<h3 style="color:var(--blue);font-size:0.9em">🔗 内容订阅</h3>';
     h+='<p style="font-size:0.7em;color:var(--dim);margin:4px 0">B站扫码自动连接 · 其他平台手动绑定Cookie</p>';
@@ -8694,6 +8572,7 @@ window._dreamProfile=async function(){
 };
 
 // 删除自己的帖子
+// 📷 上传自定义头像
 window._dreamUploadFace=function(){
   var inp=document.createElement('input');inp.type='file';inp.accept='image/*';
   inp.onchange=function(e){
@@ -8715,6 +8594,7 @@ window._dreamDeletePost=async function(postId){
     window._dreamProfile();}catch(e){alert('删除失败');}
 };
 
+// 🔗 平台连接管理 - 收费功能静默，aotu_pay_enabled='true'时开启
 window._dreamConnectPlatform=async function(platform){
   if(!window._dreamUser||!supabase){alert('请先登录');return;}
   var labels={bilibili:'B站',weibo:'微博',douyin:'抖音',xiaohongshu:'小红书',lofter:'Lofter'};
@@ -8722,6 +8602,8 @@ window._dreamConnectPlatform=async function(platform){
   var priceMap={day:'0.1',day2:'0.5',week:'1',month:'3'};
   var timeLabel=localStorage.getItem('aotu_time_filter')||'week';
   var price=priceMap[timeLabel]||'1';
+
+  // 收费开关打开 + 非B站 + 非管理员 → 先弹登录码再弹收款
   if(payEnabled&&platform!=='bilibili'&&!window._isAdmin()){
     var qr=localStorage.getItem('aotu_pay_qr')||'';
     if(!qr){alert('管理员暂未设置收款码');return;}
@@ -8729,14 +8611,21 @@ window._dreamConnectPlatform=async function(platform){
     app.innerHTML='<div style="max-width:420px;margin:40px auto;text-align:center;padding:20px">'
       +'<h3 style="color:var(--gold)">📱 '+labels[platform]+' 登录</h3>'
       +'<p style="color:var(--dim);font-size:0.85em">请先在 '+labels[platform]+' App/网页 扫码登录</p>'
+      +'<p style="color:var(--dim);font-size:0.75em">登录后点击下方按钮获取Cookie</p>'
+      +'<div style="margin:15px 0;padding:10px;background:var(--card);border-radius:8px">'
+      +'<p style="color:var(--dim);font-size:0.8em">📋 获取Cookie方法：</p>'
+      +'<p style="color:var(--dim);font-size:0.7em">F12 → Application → Cookies → 全选复制</p></div>'
       +'<button class="btn btn-p" onclick="window._dreamConnectPlatformCookie(\''+platform+'\')" style="padding:10px 24px">🔑 我已登录，输入Cookie</button>'
       +'<div style="margin-top:20px;border-top:1px solid #333;padding-top:15px">'
       +'<h4 style="color:#e94560">💰 付费解锁 · ¥'+price+'</h4>'
+      +'<p style="color:var(--dim);font-size:0.75em">当前时间档：'+timeLabel+' · 支付后永久有效</p>'
       +'<img src="'+qr+'" style="max-width:250px;border-radius:12px;margin:8px auto;display:block">'
       +'<p style="color:var(--dim);font-size:0.65em">扫码支付 → 截图发管理员 → 等待激活</p></div>'
       +'<button class="btn btn-s" onclick="window._dreamProfile()" style="margin-top:10px">← 返回</button></div>';
     return;
   }
+
+  // 直接输入Cookie（免费模式 或 管理员 或 B站）
   var cookie=prompt(labels[platform]+' Cookie：\n登录'+labels[platform]+'后，在浏览器按F12→Application→Cookies→复制所有cookie值','');
   if(!cookie||!cookie.trim())return;
   try{
@@ -8747,6 +8636,8 @@ window._dreamConnectPlatform=async function(platform){
     _dreamCheckConnections(window._dreamUser.id);
   }catch(e){alert('连接失败: '+e.message);}
 };
+
+// 单独提取Cookie输入
 window._dreamConnectPlatformCookie=async function(platform){
   var labels={bilibili:'B站',weibo:'微博',douyin:'抖音',xiaohongshu:'小红书',lofter:'Lofter'};
   var cookie=prompt(labels[platform]+' Cookie：\n登录后F12→Application→Cookies→全选复制','');
@@ -8759,6 +8650,8 @@ window._dreamConnectPlatformCookie=async function(platform){
     _dreamCheckConnections(window._dreamUser.id);
   }catch(e){alert('连接失败: '+e.message);}
 };
+
+// 💰 管理员功能 — 上传收款码 + 开关收费
 window._dreamUploadPayQR=function(){
   var inp=document.createElement('input');inp.type='file';inp.accept='image/*';
   inp.onchange=function(e){
@@ -8788,6 +8681,7 @@ async function _dreamCheckConnections(uid){
   }catch(e){}
 }
 
+// 🔄 请求抓取动态
 window._dreamRequestCrawl=async function(){
   if(!window._dreamUser){alert('请先登录');window._dreamLogin();return;}
   try{
@@ -8799,95 +8693,153 @@ window._dreamRequestCrawl=async function(){
 
 // ═══ 📺 B站关注动态 — 按需获取+用户分组+下钻查看 ═══
 
+// 主入口：调 Edge Function → 无Cookie弹QR → 有Cookie直接获取
 window._dreamBiliStartCrawl=async function(){
   if(!window._dreamUser){alert('请先登录');window._dreamLogin();return;}
   var area=document.getElementById('biliFeedArea');
   if(!area)return;
-  area.innerHTML='<div style="text-align:center;padding:20px;color:var(--blue)"><div style="font-size:2em;animation:pulse 1s infinite">📡</div><div style="margin-top:8px">正在获取B站关注动态...</div><div style="font-size:0.65em;color:var(--dim);margin-top:4px">可能需要10-30秒，请耐心等待</div></div>';
   var timeRange=localStorage.getItem('aotu_bili_time')||'week';
+  area.innerHTML='<div style="text-align:center;padding:20px;color:var(--blue)"><div style="font-size:2em;animation:pulse 1s infinite">📡</div><div style="margin-top:8px">正在获取B站关注动态...</div></div>';
+
   try{
-    var r=await fetch(SUPABASE_URL+'/functions/v1/bilibili-feed',{method:'POST',headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({action:'follow_feed',user_id:window._dreamUser.id,time_range:timeRange})}).then(function(res){return res.json();});
+    var r=await fetch(SUPABASE_URL+'/functions/v1/bilibili-feed',{
+      method:'POST',headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({action:'follow_feed',user_id:window._dreamUser.id,time_range:timeRange})
+    }).then(function(res){return res.json();});
+
+    // 需要扫码登录
     if(r.need_login){
-	      var qrImgSrc2='https://api.qrserver.com/v1/create-qr-code/?size=180x180&data='+encodeURIComponent(r.qr_url);
-      window._biliCrawlQR={qr_url:r.qr_url,key:r.qrcode_key};
+      var qrImgSrc2='https://api.qrserver.com/v1/create-qr-code/?size=180x180&data='+encodeURIComponent(r.qr_url);
+      // 存到 window 让 onclick 内联代码能访问（内联onclick在全局作用域执行）
+      window._biliCrawlQR = { qr_url: r.qr_url, key: r.qrcode_key };
       if(_isMobileDevice()){
-        area.innerHTML='<div style="text-align:center;padding:10px"><div style="padding:12px;background:#222;border-radius:10px"><div style="font-size:2em">📱</div><p style="color:var(--blue);margin:6px 0">检测到移动设备</p><p style="font-size:0.7em;color:var(--dim)">点击下方按钮跳转B站App授权</p><button class="btn btn-p" onclick="if(window._biliCrawlQR)_openBiliAppUrl(window._biliCrawlQR.qr_url,window._biliCrawlQR.key,\'crawl\')" style="margin-top:8px;font-size:0.8em">📱 打开B站App登录</button><details style="margin-top:8px"><summary style="font-size:0.65em;color:var(--dim);cursor:pointer">📷 扫码备用</summary><img src="'+qrImgSrc2+'" style="width:140px;background:#fff;padding:4px;border-radius:6px;margin-top:4px"></details></div></div>';
-      }else{
+        // 📱 移动端 → 显示按钮唤起B站App（不自动跳转，避免浏览器误下载文件）
+        area.innerHTML='<div style="text-align:center;padding:10px">'+
+          '<div style="padding:12px;background:#222;border-radius:10px">'+
+          '<div style="font-size:2em">📱</div>'+
+          '<p style="color:var(--blue);margin:6px 0">检测到移动设备</p>'+
+          '<p style="font-size:0.7em;color:var(--dim)">点击下方按钮跳转B站App授权</p>'+
+          '<button class="btn btn-p" onclick="if(window._biliCrawlQR)_openBiliAppUrl(window._biliCrawlQR.qr_url,window._biliCrawlQR.key,\'crawl\')" style="margin-top:8px;font-size:0.8em">📱 打开B站App登录</button>'+
+          '<details style="margin-top:8px"><summary style="font-size:0.65em;color:var(--dim);cursor:pointer">📷 扫码备用</summary>'+
+          '<img src="'+qrImgSrc2+'" style="width:140px;background:#fff;padding:4px;border-radius:6px;margin-top:4px"></details>'+
+          '</div></div>';
+      } else {
         area.innerHTML='<div style="text-align:center;padding:10px"><p style="color:var(--blue);margin:4px 0">📱 请用B站App扫码</p><img src="'+qrImgSrc2+'" style="width:180px;height:180px;border-radius:8px"><p style="font-size:0.65em;color:var(--dim);margin:4px 0">扫描后在手机上确认登录</p></div>';
       }
-	      var qrKey=r.qrcode_key;
-	      for(var i=0;i<60;i++){
-	        await new Promise(function(resolve){setTimeout(resolve,2000);});
-	        var pollR=await fetch(SUPABASE_URL+'/functions/v1/bilibili-feed',{method:'POST',headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({action:'poll_qr',qrcode_key:qrKey,user_id:window._dreamUser.id,time_range:timeRange})}).then(function(res){return res.json();});
-	        if(pollR.users){window._biliFeedCache=pollR;window._dreamBiliShowUsers(pollR.users);return;}
-	        if(pollR.qr_status==='expired'){area.innerHTML='<div style="text-align:center;padding:15px;color:#f0c040">⏰ 二维码已过期，正在刷新...</div>';window._dreamBiliStartCrawl();return;}
-	        if(pollR.qr_status==='scanned'){area.innerHTML='<div style="text-align:center;padding:15px;color:var(--blue)">📱 已扫码！<br><span style="font-size:0.75em;color:var(--dim)">请在手机上确认登录...</span></div>';}
-	        if(pollR.qr_status==='error'){area.innerHTML='<div style="text-align:center;padding:15px;color:#e94560">❌ 登录失败: '+_escapeHtml(pollR.message||'')+'<br><span style="font-size:0.6em;color:var(--dim)">'+_escapeHtml(pollR.debug||'')+'</span><br><button class="btn btn-xs" onclick="window._dreamBiliStartCrawl()" style="margin-top:8px">🔄 重试</button></div>';return;}
-	      }
-	      area.innerHTML='<div style="text-align:center;padding:15px;color:#e94560">⏰ 扫码超时<br><button class="btn btn-s" onclick="window._dreamBiliStartCrawl()" style="margin-top:8px">🔄 重试</button></div>';return;
-	    }
-	    if(r.error){area.innerHTML='<div style="text-align:center;padding:15px;color:#e94560">❌ '+_escapeHtml(r.message||r.error)+'</div>';return;}
+      // 轮询扫码状态
+      var qrKey=r.qrcode_key;
+      for(var i=0;i<60;i++){
+        await new Promise(function(resolve){setTimeout(resolve,2000);});
+        var pollR=await fetch(SUPABASE_URL+'/functions/v1/bilibili-feed',{
+          method:'POST',headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+          body:JSON.stringify({action:'poll_qr',qrcode_key:qrKey,user_id:window._dreamUser.id,time_range:timeRange})
+        }).then(function(res){return res.json();});
+        if(pollR.users){window._biliFeedCache=pollR;window._dreamBiliShowUsers(pollR.users);return;}
+        if(pollR.qr_status==='expired'){area.innerHTML='<div style="text-align:center;padding:15px;color:#f0c040">⏰ 二维码已过期，正在刷新...</div>';window._dreamBiliStartCrawl();return;}
+        if(pollR.qr_status==='scanned'){area.innerHTML='<div style="text-align:center;padding:15px;color:var(--blue)">📱 已扫码！<br><span style="font-size:0.75em;color:var(--dim)">请在手机上确认登录...</span></div>';}
+        if(pollR.qr_status==='error'){area.innerHTML='<div style="text-align:center;padding:15px;color:#e94560">❌ 登录失败: '+_escapeHtml(pollR.message||'')+'<br><span style="font-size:0.6em;color:var(--dim)">'+_escapeHtml(pollR.debug||'')+'</span><br><button class="btn btn-xs" onclick="window._dreamBiliStartCrawl()" style="margin-top:8px">🔄 重试</button></div>';return;}
+      }
+      area.innerHTML='<div style="text-align:center;padding:15px;color:#e94560">⏰ 扫码超时<br><button class="btn btn-s" onclick="window._dreamBiliStartCrawl()" style="margin-top:8px">🔄 重试</button></div>';
+      return;
+    }
+
+    if(r.error){area.innerHTML='<div style="text-align:center;padding:15px;color:#e94560">❌ '+_escapeHtml(r.message||r.error)+'</div>';return;}
     if(!r.users||r.users.length===0){area.innerHTML='<div style="text-align:center;padding:15px;color:var(--dim)">📭 该时间范围内关注列表暂无更新</div>';return;}
     window._biliFeedCache=r;
     window._dreamBiliShowUsers(r.users);
-  }catch(e){area.innerHTML='<div style="text-align:center;padding:15px;color:#e94560">⚠️ 获取失败：'+_escapeHtml(e.message)+'<br><span style="font-size:0.65em;color:var(--dim)">请确认B站已扫码连接且Edge Function已部署</span></div>';}
+  }catch(e){
+    area.innerHTML='<div style="text-align:center;padding:15px;color:#e94560">⚠️ 获取失败：'+_escapeHtml(e.message)+'</div>';
+  }
 };
 
+// 用户卡片列表 — 头像+名称+更新条数，点击下钻
 window._dreamBiliShowUsers=function(users){
   var area=document.getElementById('biliFeedArea');
   if(!area)return;
   var total=users.reduce(function(s,u){return s+u.posts.length;},0);
-  var cache=window._biliFeedCache;var timeLabel=cache&&cache.time_range?{day:'近24h',day2:'近48h',week:'近一周',month:'近一月'}[cache.time_range]||'':'';var h='<div style="font-size:0.7em;color:var(--dim);margin-bottom:8px">📺 '+users.length+' 位用户 · '+total+' 条更新'+(timeLabel?' · <span style="color:var(--blue)">'+timeLabel+'</span>':'')+'</div>';
+  var cache=window._biliFeedCache;var timeLabel=cache&&cache.time_range?{day:'近24h',day2:'近48h',week:'近一周',month:'近一月'}[cache.time_range]||'':'';
+  var h='<div style="font-size:0.7em;color:var(--dim);margin-bottom:8px">📺 '+users.length+' 位用户 · '+total+' 条更新'+(timeLabel?' · <span style="color:var(--blue)">'+timeLabel+'</span>':'')+'</div>';
   h+='<div style="display:flex;flex-wrap:wrap;gap:8px">';
   users.forEach(function(u){
     var faceHTML=u.face?'<img src="'+u.face.replace(/^http:/,'https:')+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover" referrerpolicy="no-referrer">':'<div style="width:40px;height:40px;border-radius:50%;background:#333;text-align:center;line-height:40px;font-size:1.2em">👤</div>';
     h+='<div onclick="window._dreamBiliShowUserPosts(\''+u.uid+'\')" style="cursor:pointer;background:var(--card);border:1px solid #444;border-radius:10px;padding:10px;text-align:center;min-width:80px;transition:all 0.15s;flex:1" onmouseover="this.style.borderColor=\'var(--blue)\'" onmouseout="this.style.borderColor=\'#444\'">';
-    h+=faceHTML+'<div style="font-size:0.7em;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px">'+_escapeHtml(u.name)+'</div>';
-    h+='<div style="font-size:0.6em;color:var(--blue)">'+u.posts.length+' 条</div></div>';
+    h+=faceHTML;
+    h+='<div style="font-size:0.7em;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px">'+_escapeHtml(u.name)+'</div>';
+    h+='<div style="font-size:0.6em;color:var(--blue)">'+u.posts.length+' 条</div>';
+    h+='</div>';
   });
   h+='</div>';
   area.innerHTML=h;
 };
 
+// 单用户详情页 — 该时间段内所有内容
 window._dreamBiliShowUserPosts=function(uid){
-  var cache=window._biliFeedCache;if(!cache)return;
-  var user=cache.users.find(function(u){return u.uid===uid;});if(!user)return;
+  var cache=window._biliFeedCache;
+  if(!cache){return;}
+  var user=cache.users.find(function(u){return u.uid===uid;});
+  if(!user)return;
   var app=document.getElementById('app');
   var h='<div style="max-width:700px;margin:0 auto;padding:15px">';
   h+='<button class="btn btn-s" onclick="window._dreamBiliBackToList()" style="margin-bottom:12px">← 返回列表</button>';
+  // 用户信息头部
   var faceHTML=user.face?'<img src="'+user.face.replace(/^http:/,'https:')+'" style="width:60px;height:60px;border-radius:50%;object-fit:cover" referrerpolicy="no-referrer">':'';
-  h+='<div style="text-align:center;margin:10px 0">'+faceHTML+'<h2 style="color:var(--text);margin:8px 0">'+_escapeHtml(user.name)+'</h2><div style="color:var(--dim);font-size:0.8em">'+user.posts.length+' 条更新</div></div>';
+  h+='<div style="text-align:center;margin:10px 0">'+faceHTML+'<h2 style="color:var(--text);margin:8px 0">'+_escapeHtml(user.name)+'</h2>';
+  h+='<div style="color:var(--dim);font-size:0.8em">'+user.posts.length+' 条更新</div></div>';
+  // 内容列表
   user.posts.forEach(function(p){
-    h+='<a href="'+p.link+'" target="_blank" style="text-decoration:none;color:inherit"><div class="panel" style="padding:10px;margin:6px 0;display:flex;gap:10px;align-items:flex-start">';
-    if(p.cover)h+='<img src="'+p.cover.replace(/^http:/,'https:')+'" style="width:80px;height:50px;border-radius:6px;object-fit:cover;flex-shrink:0" referrerpolicy="no-referrer">';
-    h+='<div style="flex:1;min-width:0"><span style="font-size:0.6em;color:var(--blue)">'+p.type+'</span> <span style="font-size:0.6em;color:var(--dim)">'+_timeAgo(p.pub_time)+'</span><div style="font-size:0.8em;margin-top:2px">'+(p.title||'(无标题)')+'</div></div></div></a>';
+    h+='<a href="'+p.link+'" target="_blank" style="text-decoration:none;color:inherit">';
+    h+='<div class="panel" style="padding:10px;margin:6px 0;display:flex;gap:10px;align-items:flex-start;transition:all 0.15s" onmouseover="this.style.borderColor=\'var(--blue)\'" onmouseout="this.style.borderColor=\'#444\'">';
+    if(p.cover){
+      h+='<img src="'+p.cover.replace(/^http:/,'https:')+'" style="width:80px;height:50px;border-radius:6px;object-fit:cover;flex-shrink:0" referrerpolicy="no-referrer">';
+    }
+    h+='<div style="flex:1;min-width:0">';
+    h+='<span style="font-size:0.6em;color:var(--blue)">'+p.type+'</span> ';
+    h+='<span style="font-size:0.6em;color:var(--dim)">'+_timeAgo(p.pub_time)+'</span>';
+    h+='<div style="font-size:0.8em;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(p.title||'(无标题)')+'</div>';
+    h+='</div></div></a>';
   });
-  h+='<button class="btn btn-s" onclick="window._dreamBiliBackToList()" style="margin-top:10px">← 返回列表</button></div>';
+  h+='<button class="btn btn-s" onclick="window._dreamBiliBackToList()" style="margin-top:10px">← 返回列表</button>';
+  h+='</div>';
   app.innerHTML=h;
 };
 
+// 从用户详情返回用户列表
 window._dreamBiliBackToList=function(){
-  var cache=window._biliFeedCache;if(!cache||!cache.users){window._dreamProfile();return;}
+  var cache=window._biliFeedCache;
+  if(!cache||!cache.users){window._dreamProfile();return;}
+  // 直接渲染列表 — 不走_dreamProfile()避免异步时序问题
   var app=document.getElementById('app');
-  var h='<div style="max-width:700px;margin:0 auto;padding:15px"><h2 style="color:var(--blue);text-align:center;margin:10px 0">📺 B站关注动态</h2>';
+  var total=cache.users.reduce(function(s,u){return s+u.posts.length;},0);
+  var h='<div style="max-width:700px;margin:0 auto;padding:15px">';
+  h+='<h2 style="color:var(--blue);text-align:center;margin:10px 0">📺 B站关注动态</h2>';
   h+='<div style="text-align:center;color:var(--dim);font-size:0.8em;margin-bottom:12px">'+cache.users.length+' 位用户 · '+cache.total_posts+' 条更新</div>';
   h+='<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">';
   cache.users.forEach(function(u){
     var faceHTML=u.face?'<img src="'+u.face.replace(/^http:/,'https:')+'" style="width:48px;height:48px;border-radius:50%;object-fit:cover" referrerpolicy="no-referrer">':'<div style="width:48px;height:48px;border-radius:50%;background:#333;text-align:center;line-height:48px;font-size:1.4em">👤</div>';
     h+='<div onclick="window._dreamBiliShowUserPosts(\''+u.uid+'\')" style="cursor:pointer;background:var(--card);border:1px solid #444;border-radius:12px;padding:12px;text-align:center;min-width:90px;transition:all 0.15s;flex:0 0 auto" onmouseover="this.style.borderColor=\'var(--blue)\'" onmouseout="this.style.borderColor=\'#444\'">';
-    h+=faceHTML+'<div style="font-size:0.75em;margin-top:6px;max-width:95px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escapeHtml(u.name)+'</div><div style="font-size:0.65em;color:var(--blue)">'+u.posts.length+' 条</div></div>';
+    h+=faceHTML+'<div style="font-size:0.75em;margin-top:6px;max-width:95px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escapeHtml(u.name)+'</div>';
+    h+='<div style="font-size:0.65em;color:var(--blue)">'+u.posts.length+' 条</div></div>';
   });
-  h+='</div><div style="text-align:center;margin-top:15px"><button class="btn btn-s" onclick="window._dreamProfile()">← 返回主页</button></div></div>';
+  h+='</div>';
+  h+='<div style="text-align:center;margin-top:15px"><button class="btn btn-s" onclick="window._dreamProfile()">← 返回主页</button></div>';
+  h+='</div>';
   app.innerHTML=h;
 };
 
 // ═══ 🔍 B站深度爬取 — 获取所有关注用户的全部动态 ═══
-window._dreamBiliDeepCrawl=async function(){
+
+// 深度爬取入口
+window._dreamBiliDeepCrawl = async function(){
   if(!window._dreamUser){alert('请先登录');window._dreamLogin();return;}
-  var area=document.getElementById('biliFeedArea');if(!area)return;
-  var timeRange=localStorage.getItem('aotu_bili_time')||'week';
-  window._biliDeepAcc={users:[],total_posts:0,userMap:{}};window._biliDeepStop=false;
-  area.innerHTML='<div style="text-align:center;padding:15px">'+
+  var area = document.getElementById('biliFeedArea');
+  if(!area)return;
+  var timeRange = localStorage.getItem('aotu_bili_time')||'week';
+
+  // 初始化累积容器 + 取消标志
+  window._biliDeepAcc = {users:[],total_posts:0, userMap:{}};
+  window._biliDeepStop = false;
+
+  area.innerHTML = '<div style="text-align:center;padding:15px">'+
     '<div id="biliDeepStatus" style="color:var(--blue);font-size:1em;margin:8px 0">🔍 准备深度爬取...</div>'+
     '<div id="biliDeepProgress" style="font-size:0.7em;color:var(--dim);margin:4px 0">正在获取关注列表...</div>'+
     '<div id="biliDeepBar" style="width:100%;height:6px;background:#333;border-radius:3px;margin:10px 0;overflow:hidden">'+
@@ -8895,50 +8847,101 @@ window._dreamBiliDeepCrawl=async function(){
     '</div>'+
     '<button class="btn btn-xs" onclick="window._biliDeepStop=true;window._dreamProfile()" style="margin-top:8px;color:#e94560">⏹ 取消</button>'+
     '</div>';
-  await _dreamBiliDeepIterate(timeRange,null,Date.now());
+
+  await _dreamBiliDeepIterate(timeRange, null, Date.now());
 };
-async function _dreamBiliDeepIterate(timeRange,cursor,startTime){
+
+// 递归延续调用Edge Function
+async function _dreamBiliDeepIterate(timeRange, cursor, startTime){
   if(window._biliDeepStop)return;
-  var statusEl=document.getElementById('biliDeepStatus'),progressEl=document.getElementById('biliDeepProgress'),barFill=document.getElementById('biliDeepBarFill');
+
+  var statusEl = document.getElementById('biliDeepStatus');
+  var progressEl = document.getElementById('biliDeepProgress');
+  var barFill = document.getElementById('biliDeepBarFill');
+
   try{
-    var body={action:'deep_crawl',user_id:window._dreamUser.id,time_range:timeRange};
-    if(cursor)body.cursor=cursor;
-    var r=await fetch(SUPABASE_URL+'/functions/v1/bilibili-feed',{method:'POST',headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(res){return res.json();});
-    if(r.need_login){var area=document.getElementById('biliFeedArea');if(area)area.innerHTML='<div style="text-align:center;padding:10px"><p style="color:var(--blue)">📱 深度爬取需要登录B站，请先扫码</p></div>';window._dreamBiliStartCrawl();return;}
-    if(r.error){if(statusEl)statusEl.innerHTML='<span style="color:#e94560">❌ '+_escapeHtml(r.message||r.error)+'</span>';return;}
-    var accum=window._biliDeepAcc;
-    if(r.users&&r.users.length>0){r.users.forEach(function(u){if(accum.userMap[u.uid]){accum.userMap[u.uid].posts=accum.userMap[u.uid].posts.concat(u.posts);}else{accum.userMap[u.uid]=u;accum.users.push(u);}});accum.total_posts+=r.total_posts||0;}
-    var pct=r.progress&&r.progress.total>0?Math.round(r.progress.processed/r.progress.total*100):0;
-    if(progressEl)progressEl.textContent='已处理 '+(r.progress?r.progress.processed:'?')+' / '+(r.progress?r.progress.total:'?')+' 位用户 | '+accum.users.length+' 位有更新 · '+accum.total_posts+' 条动态';
-    if(barFill)barFill.style.width=pct+'%';
-    if(r.done){
-      var timeLabel={day:'近24h',day2:'近48h',week:'近一周',month:'近一月'}[timeRange]||timeRange;if(statusEl)statusEl.innerHTML='✅ 深度爬取完成！('+timeLabel+') 共 '+accum.users.length+' 位用户 · '+accum.total_posts+' 条动态';
-      if(barFill)barFill.style.width='100%';
-      accum.users.sort(function(a,b){return b.posts.length-a.posts.length;});
-      window._biliFeedCache={users:accum.users,total_posts:accum.total_posts,time_range:timeRange,deep_crawl:true};
-      await new Promise(function(resolve){setTimeout(resolve,800);});
-      if(!window._biliDeepStop)window._dreamBiliShowUsers(accum.users);
-    }else{
-      var elapsed=Math.round((Date.now()-startTime)/1000);
-      if(statusEl)statusEl.innerHTML='🔍 深度爬取中... '+pct+'%';
-      if(progressEl)progressEl.textContent+=' | ⏱ 已用 '+elapsed+'s';
-      await new Promise(function(resolve){setTimeout(resolve,300);});
-      await _dreamBiliDeepIterate(timeRange,r.next_cursor,startTime);
+    var body = {action:'deep_crawl', user_id:window._dreamUser.id, time_range:timeRange};
+    if(cursor) body.cursor = cursor;
+
+    var r = await fetch(SUPABASE_URL+'/functions/v1/bilibili-feed',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    }).then(function(res){return res.json();});
+
+    // 需要登录
+    if(r.need_login){
+      var area = document.getElementById('biliFeedArea');
+      if(area) area.innerHTML = '<div style="text-align:center;padding:10px"><p style="color:var(--blue);margin:4px 0">📱 深度爬取需要登录B站，请先扫码</p></div>';
+      window._dreamBiliStartCrawl(); // 复用好现有的QR流程
+      return;
     }
-  }catch(e){
-    if(statusEl)statusEl.innerHTML='<span style="color:#e94560">⚠️ 爬取出错：'+_escapeHtml(e.message)+
+
+    if(r.error){
+      if(statusEl) statusEl.innerHTML = '<span style="color:#e94560">❌ '+_escapeHtml(r.message||r.error)+'</span>';
+      return;
+    }
+
+    // 合并结果：按uid去重合并posts
+    var accum = window._biliDeepAcc;
+    if(r.users && r.users.length > 0){
+      r.users.forEach(function(u){
+        if(accum.userMap[u.uid]){
+          accum.userMap[u.uid].posts = accum.userMap[u.uid].posts.concat(u.posts);
+        } else {
+          accum.userMap[u.uid] = u;
+          accum.users.push(u);
+        }
+      });
+      accum.total_posts += r.total_posts || 0;
+    }
+
+    // 更新进度
+    var pct = r.progress && r.progress.total > 0 ? Math.round(r.progress.processed / r.progress.total * 100) : 0;
+    if(progressEl){
+      progressEl.textContent = '已处理 ' + (r.progress?r.progress.processed:'?') +
+        ' / ' + (r.progress?r.progress.total:'?') + ' 位用户 | ' +
+        accum.users.length + ' 位有更新 · ' + accum.total_posts + ' 条动态';
+    }
+    if(barFill) barFill.style.width = pct + '%';
+
+    if(r.done){
+      // 完成！
+      var timeLabel = {day:'近24h', day2:'近48h', week:'近一周', month:'近一月'}[timeRange] || timeRange;
+      if(statusEl) statusEl.innerHTML = '✅ 深度爬取完成！('+timeLabel+') 共 ' + accum.users.length + ' 位用户 · ' + accum.total_posts + ' 条动态';
+      if(barFill) barFill.style.width = '100%';
+      // 按发帖数排序 + 写入缓存
+      accum.users.sort(function(a,b){return b.posts.length - a.posts.length;});
+      window._biliFeedCache = {users:accum.users, total_posts:accum.total_posts, time_range:timeRange, deep_crawl:true};
+      // 短暂延迟后显示结果
+      await new Promise(function(resolve){setTimeout(resolve, 800);});
+      if(!window._biliDeepStop) window._dreamBiliShowUsers(accum.users);
+    } else {
+      // 继续下一批
+      var elapsed = Math.round((Date.now() - startTime) / 1000);
+      if(statusEl) statusEl.innerHTML = '🔍 深度爬取中... ' + pct + '%';
+      if(progressEl) progressEl.textContent += ' | ⏱ 已用 '+elapsed+'s';
+      // 短暂延迟让前端有机会取消
+      await new Promise(function(resolve){setTimeout(resolve, 300);});
+      await _dreamBiliDeepIterate(timeRange, r.next_cursor, startTime);
+    }
+  } catch(e){
+    if(statusEl) statusEl.innerHTML = '<span style="color:#e94560">⚠️ 爬取出错：'+_escapeHtml(e.message)+
       '</span><br><button class="btn btn-xs" onclick="window._dreamBiliDeepCrawl()" style="margin-top:8px">🔄 重试</button>';
   }
 }
 
 // 📡 加载凹凸世界动态
+// 👥 管理员查看总用户数
 async function _dreamLoadUserCount(){
   try{
     var r=await supabase.from('platform_accounts').select('user_id',{count:'exact',head:true}).eq('is_active',true);
-    if(r.data){var seen={};r.data.forEach(function(r){seen[r.user_id]=1;});var cnt=Object.keys(seen).length;}
-    else{var cnt=r.count||0;}
+    var uniqueUsers=r.count||0;
+    // 去重
+    var r2=await supabase.from('platform_accounts').select('user_id').eq('is_active',true);
+    if(r2.data){var seen={};r2.data.forEach(function(r){seen[r.user_id]=1;});uniqueUsers=Object.keys(seen).length;}
     var el=document.getElementById('dreamUserCount');
-    if(el)el.textContent='👥 '+cnt+' 用户';
+    if(el)el.textContent='👥 '+uniqueUsers+' 用户';
   }catch(e){}
 }
 
@@ -8946,10 +8949,17 @@ async function _dreamLoadFeeds(){
   if(!supabase)return;
   var el=document.getElementById('aotuFeeds');if(!el)return;
   try{
-    var r=await supabase.from('aotu_feeds').select('*').order('publish_time',{ascending:false}).limit(50);
+    // 应用时间筛选
+    var timeFilter=localStorage.getItem('aotu_time_filter')||'week';
+    var cutoff=new Date();
+    if(timeFilter==='day')cutoff.setDate(cutoff.getDate()-1);
+    else if(timeFilter==='week')cutoff.setDate(cutoff.getDate()-7);
+    else cutoff.setDate(cutoff.getDate()-30);
+    var cutoffStr=cutoff.toISOString();
+    var r=await supabase.from('aotu_feeds').select('*').gte('publish_time',cutoffStr).order('publish_time',{ascending:false}).limit(50);
     var feeds=r.data||[];
-    if(feeds.length===0){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:15px">暂无动态<br><span style="font-size:0.7em">连接平台后点击下方按钮</span><br><button class="btn btn-p" onclick="_dreamRequestCrawl()" style="margin:8px 4px;font-size:0.85em">🔄 抓取动态</button><button class="btn btn-xs" onclick="_dreamLoadFeeds()" style="margin:8px 4px">🔃 刷新</button></div>';return;}
-    var cats={'day1':'📅 一天内','day2':'📆 两天内','week':'📋 一周内','month':'🗓️ 一月内'};
+    if(feeds.length===0){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:15px">暂无动态<br><span style="font-size:0.7em">连接平台后点击下方按钮抓取</span><br><button class="btn btn-p" onclick="_dreamRequestCrawl()" style="margin:8px 4px;font-size:0.85em">🔄 抓取动态</button><button class="btn btn-xs" onclick="_dreamLoadFeeds()" style="margin:8px 4px">🔃 刷新</button></div>';return;}
+    var cats={'day':'📅 24h','day1':'📅 一天内','day2':'📆 48h','week':'📋 一周内','month':'🗓️ 一月内'};
     var catCounts={};
     feeds.forEach(function(f){catCounts[f.time_category]=(catCounts[f.time_category]||0)+1;});
     var h='';
@@ -9069,7 +9079,7 @@ window._dreamStartChat=function(userId){
   window._dreamChat(userId);
 };
 
-// 🚩 举报
+// 🚩 举报 — 所有人可用
 window._dreamReport=async function(postId){
   var reason=prompt('举报原因：','违规内容');
   if(!reason)return;
@@ -9078,6 +9088,7 @@ window._dreamReport=async function(postId){
 
 // 🛡️ 管理后台
 window._isAdmin=function(){
+  // 管理员：B站UID 1179634903 或 手动密码开启
   return (window._dreamUser&&window._dreamUser._uid==='1179634903')||localStorage._dreamAdmin==='ok';
 };
 window._dreamAdminLogin=function(){
@@ -9135,95 +9146,862 @@ window._dreamAnnounceEditor=async function(){
     var h='<div style="max-width:700px;margin:0 auto;padding:10px">';
     h+='<button class="btn btn-s" onclick="_dreamLoadPosts(document.getElementById(\'app\'))">← 返回论坛</button>';
     h+='<h3 style="color:var(--gold);margin:10px 0">📢 公告管理</h3>';
-    h+='<div class="panel" style="padding:14px;margin:10px 0;border:2px solid var(--gold)"><h4 style="color:var(--accent);margin:0 0 10px">✏️ 新建公告</h4>';
+
+    // 新建表单
+    h+='<div class="panel" style="padding:14px;margin:10px 0;border:2px solid var(--gold)">';
+    h+='<h4 style="color:var(--accent);margin:0 0 10px">✏️ 新建公告</h4>';
     h+='<input id="annTitle" placeholder="公告标题" maxlength="60" style="width:100%;padding:8px;border:1px solid #333;border-radius:6px;background:var(--card);color:var(--text);font-size:0.85em;margin-bottom:6px;font-family:inherit">';
     h+='<textarea id="annContent" placeholder="公告内容（支持换行）" maxlength="2000" style="width:100%;padding:8px;border:1px solid #333;border-radius:6px;background:var(--card);color:var(--text);resize:vertical;height:80px;font-family:inherit;font-size:0.85em"></textarea>';
-    h+='<div style="display:flex;gap:8px;align-items:center;margin-top:8px"><label style="font-size:0.75em;color:var(--dim)"><input type="checkbox" id="annActive" checked> 发布后立即显示</label>';
-    h+='<button class="btn btn-p" onclick="window._adminAnnCreate()" style="margin-left:auto;font-size:0.8em;padding:6px 16px">✨ 发布</button></div></div>';
-    if(data.length===0){h+='<p style="text-align:center;color:var(--dim);padding:20px">暂无公告</p>';}
-    else{data.forEach(function(a){
-      h+='<div class="panel" style="padding:12px;margin:8px 0;'+(a.is_active?'border-left:4px solid var(--gold)':'opacity:0.5')+'">';
-      h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><b style="font-size:0.9em;color:'+(a.is_active?'var(--gold)':'var(--dim)')+'">📢 '+_escapeHtml(a.title)+'</b><span style="font-size:0.65em;color:var(--dim)">'+_timeAgo(a.created_at)+'</span></div>';
-      h+='<div style="font-size:0.8em;color:var(--dim);margin:6px 0;max-height:50px;overflow:hidden">'+_escapeHtml(a.content).slice(0,120)+'</div>';
-      h+='<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap"><button class="btn btn-xs" onclick="window._adminAnnToggle('+a.id+','+!a.is_active+')">'+(a.is_active?'👁️ 隐藏':'👁️ 显示')+'</button> <button class="btn btn-xs" onclick="window._adminAnnEdit('+a.id+')">✏️ 编辑</button> <button class="btn btn-xs" onclick="window._adminAnnDelete('+a.id+')" style="background:#e94560;color:#fff">🗑️ 删除</button></div></div>';
-    });}
-    h+='</div>';app.innerHTML=h;
+    h+='<div style="display:flex;gap:8px;align-items:center;margin-top:8px">';
+    h+='<label style="font-size:0.75em;color:var(--dim)"><input type="checkbox" id="annActive" checked> 发布后立即显示</label>';
+    h+='<button class="btn btn-p" onclick="window._adminAnnCreate()" style="margin-left:auto;font-size:0.8em;padding:6px 16px">✨ 发布</button>';
+    h+='</div></div>';
+
+    // 已有公告列表
+    if(data.length===0){
+      h+='<p style="text-align:center;color:var(--dim);padding:20px">暂无公告</p>';
+    }else{
+      data.forEach(function(a){
+        h+='<div class="panel" style="padding:12px;margin:8px 0;'+(a.is_active?'border-left:4px solid var(--gold)':'opacity:0.5')+'">';
+        h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">';
+        h+='<b style="font-size:0.9em;color:'+(a.is_active?'var(--gold)':'var(--dim)')+'">📢 '+_escapeHtml(a.title)+'</b>';
+        h+='<span style="font-size:0.65em;color:var(--dim)">'+_timeAgo(a.created_at)+'</span>';
+        h+='</div>';
+        h+='<div style="font-size:0.8em;color:var(--dim);margin:6px 0;max-height:50px;overflow:hidden">'+_escapeHtml(a.content).slice(0,120)+'</div>';
+        h+='<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">';
+        h+='<button class="btn btn-xs" onclick="window._adminAnnToggle('+a.id+','+!a.is_active+')">'+(a.is_active?'👁️ 隐藏':'👁️ 显示')+'</button> ';
+        h+='<button class="btn btn-xs" onclick="window._adminAnnEdit('+a.id+')">✏️ 编辑</button> ';
+        h+='<button class="btn btn-xs" onclick="window._adminAnnDelete('+a.id+')" style="background:#e94560;color:#fff">🗑️ 删除</button>';
+        h+='</div></div>';
+      });
+    }
+    h+='</div>';
+    app.innerHTML=h;
   }catch(e){app.innerHTML='<p style="color:#e94560;text-align:center;padding:40px">加载失败: '+_escapeHtml(e.message)+'</p>';}
 };
+
+// 公告CRUD辅助
 window._adminAnnCreate=async function(){
-  var title=document.getElementById('annTitle').value.trim();var content=document.getElementById('annContent').value.trim();
+  var title=document.getElementById('annTitle').value.trim();
+  var content=document.getElementById('annContent').value.trim();
   var isActive=document.getElementById('annActive').checked;
   if(!title||!content){alert('标题和内容不能为空');return;}
-  try{await supabase.from('announcements').insert({title:title,content:content,is_active:isActive});window._dreamAnnounceEditor();}catch(e){alert('发布失败: '+e.message);}
+  try{
+    await supabase.from('announcements').insert({title:title,content:content,is_active:isActive});
+    window._dreamAnnounceEditor();
+  }catch(e){alert('发布失败: '+e.message);}
 };
-window._adminAnnToggle=async function(id,newState){try{await supabase.from('announcements').update({is_active:newState}).eq('id',id);window._dreamAnnounceEditor();}catch(e){alert('操作失败');}};
-window._adminAnnDelete=async function(id){if(!confirm('确定永久删除这条公告？'))return;try{await supabase.from('announcements').delete().eq('id',id);window._dreamAnnounceEditor();}catch(e){alert('删除失败');}};
-window._adminAnnEdit=async function(id){var newTitle=prompt('修改标题：');if(newTitle===null)return;var newContent=prompt('修改内容：');if(newContent===null)return;try{await supabase.from('announcements').update({title:newTitle.trim(),content:newContent.trim(),updated_at:new Date().toISOString()}).eq('id',id);window._dreamAnnounceEditor();}catch(e){alert('更新失败');}};
+window._adminAnnToggle=async function(id,newState){
+  try{await supabase.from('announcements').update({is_active:newState}).eq('id',id);window._dreamAnnounceEditor();}catch(e){alert('操作失败');}
+};
+window._adminAnnDelete=async function(id){
+  if(!confirm('确定永久删除这条公告？'))return;
+  try{await supabase.from('announcements').delete().eq('id',id);window._dreamAnnounceEditor();}catch(e){alert('删除失败');}
+};
+window._adminAnnEdit=async function(id){
+  var newTitle=prompt('修改标题：');if(newTitle===null)return;
+  var newContent=prompt('修改内容：');if(newContent===null)return;
+  try{await supabase.from('announcements').update({title:newTitle.trim(),content:newContent.trim(),updated_at:new Date().toISOString()}).eq('id',id);window._dreamAnnounceEditor();}catch(e){alert('更新失败');}
+};
 
 // ═══ v6.21 论坛增强 ═══
-var DREAM_CATS=[{v:'all',t:'全部',e:'🌙'},{v:'闲聊',t:'闲聊',e:'💬'},{v:'提问',t:'提问',e:'❓'},{v:'分享',t:'分享',e:'📺'},{v:'创作',t:'创作',e:'🎨'}];
-window._dreamSetCat=function(cat){window._dreamState.category=cat==='all'?null:cat;window._dreamState.page=0;_dreamLoadPosts(document.getElementById('app'));};
-window._dreamSearch=function(){var kw=document.getElementById('dreamSearchInput').value.trim();if(!kw){_dreamLoadPosts(document.getElementById('app'));return;}window._dreamState.search=kw;window._dreamState.page=0;_dreamLoadPosts(document.getElementById('app'));};
-window._dreamFavorite=async function(dreamId){var uid=(window._dreamUser||{}).id||_dreamGetIdentity().fingerprint||'anon';try{var exist=await supabase.from('dream_favorites').select('id').eq('user_id',uid).eq('dream_id',dreamId).maybeSingle();if(exist.data){await supabase.from('dream_favorites').delete().eq('id',exist.data.id);}else{await supabase.from('dream_favorites').insert({user_id:uid,dream_id:dreamId});}_dreamLoadPosts(document.getElementById('app'));}catch(e){}};
-window._dreamIsFav=async function(dreamId,cb){var uid=(window._dreamUser||{}).id||_dreamGetIdentity().fingerprint||'anon';try{var r=await supabase.from('dream_favorites').select('id').eq('user_id',uid).eq('dream_id',dreamId).maybeSingle();cb(!!r.data);}catch(e){cb(false);}};
-window._dreamFollow=async function(targetUid){var uid=(window._dreamUser||{}).id;if(!uid){alert('请先登录');return;}try{var exist=await supabase.from('user_follows').select('id').eq('follower_id',uid).eq('followee_id',targetUid).maybeSingle();if(exist.data){await supabase.from('user_follows').delete().eq('id',exist.data.id);}else{await supabase.from('user_follows').insert({follower_id:uid,followee_id:targetUid});}_dreamLoadPosts(document.getElementById('app'));}catch(e){}};
-window._dreamIsFollowing=async function(targetUid,cb){var uid=(window._dreamUser||{}).id;if(!uid||!targetUid){cb(false);return;}try{var r=await supabase.from('user_follows').select('id').eq('follower_id',uid).eq('followee_id',targetUid).maybeSingle();cb(!!r.data);}catch(e){cb(false);}};
-window._dreamLoadHot=async function(){var cutoff=new Date(Date.now()-7*86400000).toISOString();try{var r=await supabase.from('dreams').select('*').eq('is_deleted',false).gte('created_at',cutoff).order('comments_count',{ascending:false}).limit(10);return r.data||[];}catch(e){return[];}};
-window._dreamReplyTo=function(dreamId,parentId,authorName){window._dreamState._replyTo={dreamId:dreamId,parentId:parentId};document.getElementById('commentInput').placeholder='回复 @'+authorName+'...';document.getElementById('commentInput').focus();document.getElementById('replyHint').textContent='↳ 正在回复 @'+authorName+'  ';};
+
+// 帖子分类
+var DREAM_CATS = [{v:'all',t:'全部',e:'🌙'},{v:'闲聊',t:'闲聊',e:'💬'},{v:'提问',t:'提问',e:'❓'},{v:'分享',t:'分享',e:'📺'},{v:'创作',t:'创作',e:'🎨'}];
+window._dreamSetCat=function(cat){
+  window._dreamState.category=cat==='all'?null:cat;
+  window._dreamState.page=0;
+  _dreamLoadPosts(document.getElementById('app'));
+};
+
+// 🔍 搜索
+window._dreamSearch=function(){
+  var kw=document.getElementById('dreamSearchInput').value.trim();
+  if(!kw){_dreamLoadPosts(document.getElementById('app'));return;}
+  window._dreamState.search=kw;
+  window._dreamState.page=0;
+  _dreamLoadPosts(document.getElementById('app'));
+};
+
+// ⭐ 收藏
+window._dreamFavorite=async function(dreamId){
+  var uid=(window._dreamUser||{}).id||_dreamGetIdentity().fingerprint||'anon';
+  try{
+    var exist=await supabase.from('dream_favorites').select('id').eq('user_id',uid).eq('dream_id',dreamId).maybeSingle();
+    if(exist.data){await supabase.from('dream_favorites').delete().eq('id',exist.data.id);}
+    else{await supabase.from('dream_favorites').insert({user_id:uid,dream_id:dreamId});}
+    _dreamLoadPosts(document.getElementById('app'));
+  }catch(e){}
+};
+window._dreamIsFav=async function(dreamId,cb){
+  var uid=(window._dreamUser||{}).id||_dreamGetIdentity().fingerprint||'anon';
+  try{var r=await supabase.from('dream_favorites').select('id').eq('user_id',uid).eq('dream_id',dreamId).maybeSingle();cb(!!r.data);}catch(e){cb(false);}
+};
+
+// 👤 关注
+window._dreamFollow=async function(targetUid){
+  var uid=(window._dreamUser||{}).id;if(!uid){alert('请先登录');return;}
+  try{
+    var exist=await supabase.from('user_follows').select('id').eq('follower_id',uid).eq('followee_id',targetUid).maybeSingle();
+    if(exist.data){await supabase.from('user_follows').delete().eq('id',exist.data.id);}
+    else{await supabase.from('user_follows').insert({follower_id:uid,followee_id:targetUid});}
+    _dreamLoadPosts(document.getElementById('app'));
+  }catch(e){}
+};
+window._dreamIsFollowing=async function(targetUid,cb){
+  var uid=(window._dreamUser||{}).id;if(!uid||!targetUid){cb(false);return;}
+  try{var r=await supabase.from('user_follows').select('id').eq('follower_id',uid).eq('followee_id',targetUid).maybeSingle();cb(!!r.data);}catch(e){cb(false);}
+};
+
+// 🔥 本周热议（按评论数+点赞数排序）
+window._dreamLoadHot=async function(){
+  var cutoff=new Date(Date.now()-7*86400000).toISOString();
+  try{
+    var r=await supabase.from('dreams').select('*').eq('is_deleted',false).gte('created_at',cutoff).order('comments_count',{ascending:false}).limit(10);
+    return r.data||[];
+  }catch(e){return[];}
+};
+
+// 📝 加载带分类和搜索的帖子
 var _origDreamLoadPosts=_dreamLoadPosts;
-_dreamLoadPosts=async function(app){if(!supabase){app.innerHTML='<div style="text-align:center;padding:40px"><h3>🌙 好梦论坛</h3><p style="color:var(--dim)">论坛功能需要配置 Supabase</p><button class="btn btn-s" onclick="window._goBack()">返回</button></div>';return;}app.innerHTML='<div style="text-align:center;padding:20px"><h3>🌙 正在加载好梦...</h3></div>';var state=window._dreamState;try{var q=supabase.from('dreams').select('*',{count:'exact'}).eq('is_deleted',false);if(state.category)q=q.eq('category',state.category);if(state.search)q=q.or('content.ilike.%'+state.search+'%,title.ilike.%'+state.search+'%');var r=await q.order('created_at',{ascending:false}).range(state.page*state.pageSize,(state.page+1)*state.pageSize-1);if(r.error)throw r.error;state.posts=r.data||[];state.total=r.count||0;_dreamRender(app);}catch(e){app.innerHTML='<div style="text-align:center;padding:40px"><h3>🌙 好梦论坛</h3><p style="color:#e94560">加载失败: '+e.message+'</p><button class="btn btn-s" onclick="window._openGoodDream()">重试</button></div>';}};
+_dreamLoadPosts=async function(app){
+  if(!supabase){app.innerHTML='<div style="text-align:center;padding:40px"><h3>🌙 好梦论坛</h3><p style="color:var(--dim)">论坛功能需要配置 Supabase</p><button class="btn btn-s" onclick="window._goBack()">返回</button></div>';return;}
+  app.innerHTML='<div style="text-align:center;padding:20px"><h3>🌙 正在加载好梦...</h3></div>';
+  var state=window._dreamState;
+  try{
+    var q=supabase.from('dreams').select('*',{count:'exact'}).eq('is_deleted',false);
+    if(state.category)q=q.eq('category',state.category);
+    if(state.search)q=q.or('content.ilike.%'+state.search+'%,title.ilike.%'+state.search+'%');
+    var r=await q.order('created_at',{ascending:false}).range(state.page*state.pageSize,(state.page+1)*state.pageSize-1);
+    if(r.error)throw r.error;
+    state.posts=r.data||[];state.total=r.count||0;
+    _dreamRender(app);
+  }catch(e){app.innerHTML='<div style="text-align:center;padding:40px"><h3>🌙 好梦论坛</h3><p style="color:#e94560">加载失败: '+e.message+'</p><button class="btn btn-s" onclick="window._openGoodDream()">重试</button></div>';}
+};
 
-// ═══ 🐾 桌宠引擎 + 📜 Galgame剧本 + 🤖 AI增强 ═══
-var PET_DEFAULT_CONFIG={name:'默认桌宠',scale:1,anchorX:64,anchorY:128,gravity:0.5,friction:0.9,speed:2,bounce:0.4,markov:[[40,20,10,10,10,10],[30,40,20,10,10,10],[20,20,60,0,0,0],[40,10,0,20,20,10],[40,10,0,20,20,10],[50,20,10,10,10,0]],animations:{Idle:{type:'stay',frames:['shime1.png','shime1b.png'],durations:[200,2,48]},Walk:{type:'move',frames:['shime1.png','shime2.png','shime1.png','shime3.png'],durations:[6,6,6,6],velocity:-2},Run:{type:'move',frames:['shime1.png','shime2.png','shime1.png','shime3.png'],durations:[2,2,2,2],velocity:-4},Sit:{type:'stay',frames:['shime11.png','shime11b.png'],durations:[200,2,48]},Sleep:{type:'stay',frames:['shime18.png','shime21.png'],durations:[200,2,48]},Falling:{type:'fall',frames:['shime4.png','shime4b.png'],durations:[2,2]},Dragged:{type:'drag',frames:['shime5.png'],durations:[5]},Special:{type:'animate',frames:['shime38.png','shime39.png','shime40.png','shime41.png'],durations:[40,40,40,2]}},cpBond:{partner:'',range:150,anim:{type:'animate',frames:['shime15.png','shime27.png','shime16.png','shime28.png','shime17.png','shime29.png'],durations:[5,5,5,5,5,5]}}};
-function PetSprite(config,imgBasePath){var pet=this;this.config=JSON.parse(JSON.stringify(config));this.imgBase=imgBasePath||'';this.x=Math.random()*(window.innerWidth-200)+100;this.y=window.innerHeight-300;this.vx=0;this.vy=0;this.scale=config.scale||1;this.facingRight=true;this.anchorX=config.anchorX||64;this.anchorY=config.anchorY||128;this.state='Idle';this.stateTimer=0;this.stateDuration=300+Math.random()*500;this.animFrame=0;this.animTimer=0;this.isDragging=false;this.dragOffX=0;this.dragOffY=0;this.onFloor=false;this.cpPartner=null;this.cpActive=false;this.cpAnimFrame=0;this.cpAnimTimer=0;this.images={};
-this.loadImage=function(name){if(pet.images[name]!==undefined)return;var img=new Image();img.src=pet.imgBase+'/'+name;pet.images[name]=img;};
-this.preload=function(){var anims=pet.config.animations;for(var k in anims){var frames=anims[k].frames;for(var i=0;i<frames.length;i++)pet.loadImage(frames[i]);}if(pet.config.cpBond&&pet.config.cpBond.anim){var cpf=pet.config.cpBond.anim.frames;for(var j=0;j<cpf.length;j++)pet.loadImage(cpf[j]);}};
-this.markovNext=function(){var row=pet.config.markov;var states=['Idle','Sit','Sleep','MoveL','MoveR','Special'];var idx=states.indexOf(pet.state);if(idx<0)idx=0;var weights=row[idx];var total=0;for(var i=0;i<weights.length;i++)total+=weights[i];var r=Math.random()*total;var acc=0;for(var j=0;j<weights.length;j++){acc+=weights[j];if(r<=acc)return states[j];}return'Idle';};
-this.getAnim=function(){var s=pet.state;if(s==='MoveL'||s==='MoveR')s=(Math.abs(pet.vx)>3?'Run':'Walk');if(s==='Falling')s='Falling';if(s==='Dragged')s='Dragged';return pet.config.animations[s]||pet.config.animations['Idle'];};
-this.update=function(dt){if(pet.isDragging)return;pet.vy+=pet.config.gravity*dt*60;pet.vx*=pet.config.friction;if(pet.state==='MoveL')pet.vx=-pet.config.speed;if(pet.state==='MoveR')pet.vx=pet.config.speed;pet.x+=pet.vx*dt*60;pet.y+=pet.vy*dt*60;var groundY=window.innerHeight-50;if(pet.y>=groundY){pet.y=groundY;if(pet.vy>2)pet.vy=-pet.vy*pet.config.bounce;else{pet.vy=0;pet.onFloor=true;}if(pet.state==='Falling')pet.state='Idle';}else pet.onFloor=false;if(pet.x<50){pet.x=50;pet.vx=Math.abs(pet.vx)*0.5;pet.facingRight=true;}if(pet.x>window.innerWidth-50){pet.x=window.innerWidth-50;pet.vx=-Math.abs(pet.vx)*0.5;pet.facingRight=false;}if(pet.onFloor&&Math.abs(pet.vx)<0.5){pet.vx=0;pet.stateTimer+=dt;if(pet.stateTimer>=pet.stateDuration){pet.stateTimer=0;pet.stateDuration=300+Math.random()*700;pet.state=pet.markovNext();}}};
-this.render=function(ctx,scale){var s=scale||pet.scale;var anim=pet.getAnim();if(!anim)return;var frames=anim.frames;pet.animTimer++;var totalDur=0;for(var i=0;i<=pet.animFrame;i++)totalDur+=(anim.durations[i]||5);if(pet.animTimer>=totalDur){pet.animFrame=(pet.animFrame+1)%frames.length;if(pet.animFrame===0)pet.animTimer=0;}var img=pet.images[frames[pet.animFrame]];if(!img||!img.complete)return;var ax=pet.anchorX,ay=pet.anchorY;ctx.save();ctx.translate(pet.x,pet.y);if(!pet.facingRight){ctx.scale(-1,1);ctx.translate(-ax*2*s,0);}ctx.drawImage(img,-ax*s,-ay*s,ax*2*s,ay*2*s);ctx.restore();};
-this.hitTest=function(mx,my){var s=pet.scale;return mx>=pet.x-pet.anchorX*s&&mx<=pet.x+pet.anchorX*s&&my>=pet.y-pet.anchorY*s&&my<=pet.y;};this.preload();}
-var _petManager={pets:[],canvas:null,ctx:null,animId:null,lastTime:0,dragTarget:null,
-init:function(){if(_petManager.canvas)return;var cv=document.createElement('canvas');cv.id='petCanvas';cv.style.cssText='position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;pointer-events:none';document.body.appendChild(cv);_petManager.canvas=cv;_petManager.ctx=cv.getContext('2d');cv.width=window.innerWidth;cv.height=window.innerHeight;window.addEventListener('resize',function(){cv.width=window.innerWidth;cv.height=window.innerHeight;});cv.style.pointerEvents='auto';cv.addEventListener('mousedown',_petManager.onMouseDown);window.addEventListener('mousemove',_petManager.onMouseMove);window.addEventListener('mouseup',_petManager.onMouseUp);cv.addEventListener('touchstart',function(e){var t=e.touches[0];_petManager.onMouseDown({clientX:t.clientX,clientY:t.clientY});});window.addEventListener('touchmove',function(e){var t=e.touches[0];_petManager.onMouseMove({clientX:t.clientX,clientY:t.clientY});});window.addEventListener('touchend',_petManager.onMouseUp);_petManager.lastTime=performance.now();_petManager.loop();},
-add:function(config,imgBasePath){var pet=new PetSprite(config,imgBasePath);_petManager.pets.push(pet);if(!_petManager.canvas)_petManager.init();_petManager.checkCPBond(pet);return pet;},
-checkCPBond:function(newPet){if(!newPet.config.cpBond||!newPet.config.cpBond.partner)return;for(var i=0;i<_petManager.pets.length;i++){var other=_petManager.pets[i];if(other===newPet)continue;if(other.config.name===newPet.config.cpBond.partner){newPet.cpPartner=other;other.cpPartner=newPet;}}},
-onMouseDown:function(e){var mx=e.clientX,my=e.clientY;for(var i=_petManager.pets.length-1;i>=0;i--){var pet=_petManager.pets[i];if(pet.hitTest(mx,my)){_petManager.dragTarget=pet;pet.isDragging=true;pet.dragOffX=pet.x-mx;pet.dragOffY=pet.y-my;pet.state='Dragged';break;}}},
-onMouseMove:function(e){if(!_petManager.dragTarget)return;var pet=_petManager.dragTarget;pet.x=e.clientX+pet.dragOffX;pet.y=e.clientY+pet.dragOffY;pet.vy=0;},
-onMouseUp:function(){if(_petManager.dragTarget){_petManager.dragTarget.isDragging=false;_petManager.dragTarget.state='Falling';_petManager.dragTarget.vy=2;}_petManager.dragTarget=null;},
-loop:function(){var now=performance.now();var dt=Math.min((now-_petManager.lastTime)/1000,0.1);_petManager.lastTime=now;var ctx=_petManager.ctx,cv=_petManager.canvas;ctx.clearRect(0,0,cv.width,cv.height);for(var i=0;i<_petManager.pets.length;i++){var pet=_petManager.pets[i];pet.update(dt);if(pet.cpPartner&&!pet.isDragging&&!pet.cpPartner.isDragging){var dx=pet.x-pet.cpPartner.x,dy=pet.y-pet.cpPartner.y,dist=Math.sqrt(dx*dx+dy*dy);var range=pet.config.cpBond.range||150;if(dist<range&&pet.onFloor&&pet.cpPartner.onFloor){if(!pet.cpActive){pet.cpActive=true;pet.cpPartner.cpActive=true;pet.cpAnimFrame=0;pet.cpPartner.cpAnimFrame=0;pet.state='Idle';pet.cpPartner.state='Idle';pet.vx=0;pet.cpPartner.vx=0;}pet.cpAnimTimer++;pet.cpPartner.cpAnimTimer++;if(pet.cpAnimTimer>300){pet.cpActive=false;pet.cpPartner.cpActive=false;pet.cpAnimTimer=0;pet.cpPartner.cpAnimTimer=0;}}else{pet.cpActive=false;pet.cpPartner.cpActive=false;}}if(pet.cpActive&&pet.config.cpBond&&pet.config.cpBond.anim){var cpa=pet.config.cpBond.anim;var cpIdx=Math.floor(pet.cpAnimTimer/40)%cpa.frames.length;var cpImg=pet.images[cpa.frames[cpIdx]];if(cpImg&&cpImg.complete){ctx.save();ctx.globalAlpha=0.6;var midX=(pet.x+pet.cpPartner.x)/2,midY=Math.min(pet.y,pet.cpPartner.y)-80;ctx.drawImage(cpImg,midX-pet.anchorX*pet.scale,midY-pet.anchorY*pet.scale,pet.anchorX*2*pet.scale,pet.anchorY*2*pet.scale);ctx.restore();}}pet.render(ctx);}_petManager.animId=requestAnimationFrame(_petManager.loop);},
-clear:function(){if(_petManager.animId)cancelAnimationFrame(_petManager.animId);if(_petManager.canvas){_petManager.canvas.remove();_petManager.canvas=null;}_petManager.pets=[];}};
-window._addPet=function(config,imgPath){var cfg=JSON.parse(JSON.stringify(PET_DEFAULT_CONFIG));if(config)Object.assign(cfg,config);if(config&&config.animations){cfg.animations=JSON.parse(JSON.stringify(PET_DEFAULT_CONFIG.animations));for(var k in config.animations)cfg.animations[k]=config.animations[k];}if(config&&config.markov)cfg.markov=config.markov;if(config&&config.cpBond)cfg.cpBond=config.cpBond;return _petManager.add(cfg,imgPath);};
-window._clearPets=function(){_petManager.clear();};window._getPets=function(){return _petManager.pets;};
+// ═══ 🐾 桌宠引擎 v1.0 ═══
+// 基于 auto-shimeji(动画) + Ark-Pets(行为AI) + VPet(养成) 融合设计
+// 图片可自定义导入，JSON配置驱动
 
-var _scriptEngine={story:null,chapter:null,eventIdx:0,vars:{},characters:{},bgImage:null,bgm:null,isRunning:false,waitForChoice:false,choiceCallback:null,_overlay:null,_dialogBox:null,
-load:function(s){_scriptEngine.story=s;_scriptEngine.vars=s.variables||{};_scriptEngine.characters=s.characters||{};_scriptEngine.eventIdx=0;_scriptEngine.isRunning=true;_scriptEngine.waitForChoice=false;},
-startChapter:function(cn){var ch=_scriptEngine.story.chapters[cn];if(!ch)return;_scriptEngine.chapter=ch;_scriptEngine.eventIdx=0;_scriptEngine._next();},
-_next:function(){if(!_scriptEngine.chapter||!_scriptEngine.isRunning||_scriptEngine.waitForChoice)return;var events=_scriptEngine.chapter.events;if(_scriptEngine.eventIdx>=events.length){_scriptEngine._endChapter();return;}var ev=events[_scriptEngine.eventIdx];_scriptEngine.eventIdx++;_scriptEngine._execEvent(ev);},
-_execEvent:function(ev){if(!ev)return;if(ev.condition&&!_scriptEngine._evalCond(ev.condition)){_scriptEngine._next();return;}var t=ev.type;if(t==='dialog')_scriptEngine._doDialog(ev);else if(t==='narration')_scriptEngine._doNarration(ev);else if(t==='choice')_scriptEngine._doChoice(ev);else if(t==='background'){_scriptEngine.bgImage=ev.image||'';_scriptEngine._renderUI();_scriptEngine._next();}else if(t==='music'){_scriptEngine.bgm=ev.file||'';_scriptEngine._next();}else if(t==='sound')_scriptEngine._next();else if(t==='sprite'){var n=ev.character,e2=ev.emotion||'normal';if(n&&_scriptEngine.characters[n])_scriptEngine.characters[n].currentEmotion=e2;_scriptEngine._renderUI();_scriptEngine._next();}else if(t==='present')_scriptEngine._showCG(ev.image||'',ev.duration||3000,function(){_scriptEngine._next();});else if(t==='wait')setTimeout(function(){_scriptEngine._next();},ev.duration||1000);else if(t==='jump'&&ev.chapter)_scriptEngine.startChapter(ev.chapter);else if(t==='set'){var vs=ev.variables||{};for(var k in vs)_scriptEngine.vars[k]=vs[k];_scriptEngine._next();}else if(t==='input'){var val=prompt(ev.prompt||'请输入...');if(ev.variable) _scriptEngine.vars[ev.variable]=val||'';_scriptEngine._next();}else _scriptEngine._next();},
-_doDialog:function(ev){var name=ev.character||'',emotion=ev.emotion||'normal',text=ev.text||'';if(name&&emotion)_scriptEngine._updateSprite(name,emotion);_scriptEngine._showDialog(name,text,function(){_scriptEngine._next();});},
-_doNarration:function(ev){_scriptEngine._showDialog('',ev.text||'',function(){_scriptEngine._next();},true);},
-_doChoice:function(ev){_scriptEngine.waitForChoice=true;var opts=ev.options||[];_scriptEngine._showChoices(opts,ev.text||'',function(idx){_scriptEngine.waitForChoice=false;var opt=opts[idx];if(opt&&opt.jump)_scriptEngine.startChapter(opt.jump);else if(opt&&opt.set)_scriptEngine._doSet({variables:opt.set});else _scriptEngine._next();});},
-_showDialog:function(name,text,cb,isN){var dn=name?name:'';var ft=dn?'【'+dn+'】\n'+text:text;if(typeof Dialog!=='undefined')Dialog.show('',ft,[{text:'继续',type:'primary',callback:cb}],true);else if(confirm(ft))cb();},
-_showChoices:function(opts,pt,cb){var btns=opts.map(function(o,i){return{text:o.text,type:'primary',callback:function(){cb(i);}};});if(typeof Dialog!=='undefined')Dialog.show('',pt||'请选择',btns,true);else{var c=prompt(pt+'\n'+opts.map(function(o,i){return(i+1)+'. '+o.text;}).join('\n'));var idx=parseInt(c)-1;if(idx>=0&&idx<opts.length)cb(idx);else cb(0);}},
-_showCG:function(src,dur,cb){var ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:10001;display:flex;align-items:center;justify-content:center';ov.innerHTML='<img src="'+src+'" style="max-width:90vw;max-height:90vh;border-radius:8px;animation:fadeIn 0.5s">';ov.onclick=function(){ov.remove();cb();};document.body.appendChild(ov);if(dur>0)setTimeout(function(){if(ov.parentNode)ov.remove();cb();},dur);},
-_updateSprite:function(name,emotion){if(_scriptEngine.characters[name])_scriptEngine.characters[name].currentEmotion=emotion;_scriptEngine._renderUI();},
-_renderUI:function(){_scriptEngine._renderSprites();},
-_renderSprites:function(){var c=document.getElementById('scriptSprites');if(!c){c=document.createElement('div');c.id='scriptSprites';c.style.cssText='position:fixed;bottom:0;left:50%;transform:translateX(-50%);display:flex;gap:20px;z-index:100;pointer-events:none';document.body.appendChild(c);}var h='';for(var name in _scriptEngine.characters){var ch=_scriptEngine.characters[name];var em=ch.currentEmotion||'normal';var src=ch[em]||ch['normal']||'';if(src)h+='<div style="text-align:center"><img src="'+src+'" style="max-height:60vh;animation:fadeIn 0.5s"><div style="font-size:0.7em;color:var(--dim);margin-top:2px">'+name+'</div></div>';}c.innerHTML=h;},
-_evalCond:function(cond){if(!cond)return true;try{for(var k in cond){var ex=cond[k],ac=_scriptEngine.vars[k];if(typeof ex==='boolean'){if(!!ac!==ex)return false;}else if(ac!=ex)return false;}return true;}catch(e){return true;}},
-_endChapter:function(){var n=_scriptEngine.chapter.next;if(n)_scriptEngine.startChapter(n);else{_scriptEngine.isRunning=false;var c=document.getElementById('scriptSprites');if(c)c.innerHTML='';}}};
-window._startStory=function(s,c){_scriptEngine.load(s);_scriptEngine.startChapter(c||'start');};
-window._stopStory=function(){_scriptEngine.isRunning=false;var c=document.getElementById('scriptSprites');if(c)c.remove();};
+// 默认桌宠配置模板 — 用户导入自己的PNG后覆盖
+var PET_DEFAULT_CONFIG = {
+  name: '默认桌宠', scale: 1.0, anchorX: 64, anchorY: 128,
+  gravity: 0.5, friction: 0.9, speed: 2, bounce: 0.4,
+  // 马尔可夫行为矩阵 — 6状态权重 [Idle,Sit,Sleep,MoveL,MoveR,Special]
+  markov: [
+    [40,20,10,10,10,10], // Idle → ?
+    [30,40,20,10,10,10], // Sit → ?
+    [20,20,60, 0, 0, 0], // Sleep → ?
+    [40,10, 0,20,20,10], // MoveL → ?
+    [40,10, 0,20,20,10], // MoveR → ?
+    [50,20,10,10,10, 0]  // Special → ?
+  ],
+  // 动画配置 — 对应shimeji命名规范 (shimeN.png)
+  animations: {
+    Idle:    {type:'stay',   frames:['shime1.png','shime1b.png'], durations:[200,2,48]},
+    Walk:    {type:'move',   frames:['shime1.png','shime2.png','shime1.png','shime3.png'], durations:[6,6,6,6], velocity:-2},
+    Run:     {type:'move',   frames:['shime1.png','shime2.png','shime1.png','shime3.png'], durations:[2,2,2,2], velocity:-4},
+    Sit:     {type:'stay',   frames:['shime11.png','shime11b.png'], durations:[200,2,48]},
+    Sleep:   {type:'stay',   frames:['shime18.png','shime21.png'], durations:[200,2,48]},
+    Falling: {type:'fall',   frames:['shime4.png','shime4b.png'], durations:[2,2]},
+    Dragged: {type:'drag',   frames:['shime5.png'], durations:[5]},
+    Special: {type:'animate',frames:['shime38.png','shime39.png','shime40.png','shime41.png'], durations:[40,40,40,2]}
+  },
+  // CP羁绊动画 — 两个指定角色靠近时触发
+  cpBond: {
+    partner: '', // CP角色名
+    range: 150,  // 触发距离(px)
+    anim: {type:'animate', frames:['shime15.png','shime27.png','shime16.png','shime28.png','shime17.png','shime29.png'], durations:[5,5,5,5,5,5]}
+  }
+};
 
-var _aiChat={emotions:{normal:'正常.png',happy:'高兴.png',sad:'悲伤.png',angry:'生气.png',surprise:'惊讶.png',shy:'害羞.png',blush:'脸红.png',thinking:'思考.png',excited:'兴奋.png',worried:'担心.png'},memory:[],maxMemory:50,
-detectEmotion:function(text){var map={happy:/(笑|开心|高兴|哈哈|嘿嘿)/,sad:/(哭|难过|伤心|悲伤|呜呜)/,angry:/(生气|愤怒|哼|混蛋|讨厌)/,surprise:/(啊|什么|居然|天哪|哇)/,shy:/(害羞|不好意思|脸红)/,blush:/(脸红|讨厌啦)/,thinking:/(嗯|让我想想|思考)/,excited:/(太棒了|好耶|冲啊)/,worried:/(担心|怎么办|会不会)/};for(var emo in map)if(map[emo].test(text))return emo;return'normal';},
-remember:function(role,text){_aiChat.memory.push({role:role,text:text,time:Date.now()});if(_aiChat.memory.length>_aiChat.maxMemory)_aiChat.memory.shift();},
-getContext:function(n){n=n||10;return _aiChat.memory.slice(-n).map(function(m){return m.role+': '+m.text;}).join('\n');},
-parseReply:function(raw){var m=raw.match(/^【(.+?)】/);var em=m?m[1]:'normal';var txt=raw.replace(/^【.+?】/,'').trim();if(!_aiChat.emotions[em])em=_aiChat.detectEmotion(txt);return{emotion:em,text:txt};},
-updateSprite:function(cn,em){if(_scriptEngine.characters[cn]){_scriptEngine.characters[cn].currentEmotion=em;_scriptEngine._renderUI();}},
-typewriter:function(text,onChar,onDone,speed){speed=speed||50;var i=0;var t=setInterval(function(){if(i<text.length){onChar(text[i]);i++;}else{clearInterval(t);if(onDone)onDone();}},speed);return{stop:function(){clearInterval(t);if(onDone)onDone();}};}};
-window._aiSpeak=function(cn,raw){var p=_aiChat.parseReply(raw);_aiChat.remember(cn,p.text);_aiChat.updateSprite(cn,p.emotion);return p;};
-window._aiGetContext=function(){return _aiChat.getContext();};
-window._aiRemember=function(role,text){_aiChat.remember(role,text);};
+// 🐾 桌宠实例类
+function PetSprite(config, imgBasePath){
+  var pet = this;
+  this.config = JSON.parse(JSON.stringify(config));
+  this.imgBase = imgBasePath || '';
+  this.x = Math.random() * (window.innerWidth - 200) + 100;
+  this.y = window.innerHeight - 300;
+  this.vx = 0; this.vy = 0;
+  this.scale = config.scale || 1.0;
+  this.facingRight = true;
+  this.anchorX = config.anchorX || 64;
+  this.anchorY = config.anchorY || 128;
+  // 状态机
+  this.state = 'Idle'; // Idle,Sit,Sleep,MoveL,MoveR,Special,Falling,Dragged
+  this.stateTimer = 0; this.stateDuration = 300 + Math.random() * 500;
+  this.animFrame = 0; this.animTimer = 0;
+  this.isDragging = false; this.dragOffX = 0; this.dragOffY = 0;
+  this.onFloor = false;
+  // CP羁绊
+  this.cpPartner = null; this.cpActive = false; this.cpAnimFrame = 0; this.cpAnimTimer = 0;
+
+  // 图片缓存
+  this.images = {};
+
+  this.loadImage = function(name){
+    if(pet.images[name] !== undefined) return;
+    var img = new Image();
+    img.src = pet.imgBase + '/' + name;
+    pet.images[name] = img;
+  };
+
+  // 预加载所有动画帧
+  this.preload = function(){
+    var anims = pet.config.animations;
+    for(var k in anims){
+      var frames = anims[k].frames;
+      for(var i = 0; i < frames.length; i++){ pet.loadImage(frames[i]); }
+    }
+    if(pet.config.cpBond && pet.config.cpBond.anim){
+      var cpf = pet.config.cpBond.anim.frames;
+      for(var j = 0; j < cpf.length; j++){ pet.loadImage(cpf[j]); }
+    }
+  };
+
+  // 马尔可夫转移 — 随机选择下一个状态
+  this.markovNext = function(){
+    var row = pet.config.markov;
+    var states = ['Idle','Sit','Sleep','MoveL','MoveR','Special'];
+    var idx = states.indexOf(pet.state);
+    if(idx < 0) idx = 0;
+    var weights = row[idx];
+    var total = 0;
+    for(var i = 0; i < weights.length; i++) total += weights[i];
+    var r = Math.random() * total;
+    var acc = 0;
+    for(var j = 0; j < weights.length; j++){ acc += weights[j]; if(r <= acc) return states[j]; }
+    return 'Idle';
+  };
+
+  // 获取当前动画配置
+  this.getAnim = function(){
+    var s = pet.state;
+    if(s === 'MoveL' || s === 'MoveR') s = (Math.abs(pet.vx) > 3 ? 'Run' : 'Walk');
+    if(s === 'Falling') s = 'Falling';
+    if(s === 'Dragged') s = 'Dragged';
+    return pet.config.animations[s] || pet.config.animations['Idle'];
+  };
+
+  // 物理更新
+  this.update = function(dt){
+    if(pet.isDragging) return;
+    // 重力
+    pet.vy += pet.config.gravity * dt * 60;
+    pet.vx *= pet.config.friction;
+    // 移动
+    if(pet.state === 'MoveL') pet.vx = -pet.config.speed;
+    if(pet.state === 'MoveR') pet.vx = pet.config.speed;
+    // 位置更新
+    pet.x += pet.vx * dt * 60;
+    pet.y += pet.vy * dt * 60;
+    // 地面碰撞
+    var groundY = window.innerHeight - 50;
+    if(pet.y >= groundY){
+      pet.y = groundY;
+      if(pet.vy > 2) pet.vy = -pet.vy * pet.config.bounce;
+      else { pet.vy = 0; pet.onFloor = true; }
+      if(pet.state === 'Falling') pet.state = 'Idle';
+    } else { pet.onFloor = false; }
+    // 墙壁反弹
+    if(pet.x < 50){ pet.x = 50; pet.vx = Math.abs(pet.vx) * 0.5; pet.facingRight = true; }
+    if(pet.x > window.innerWidth - 50){ pet.x = window.innerWidth - 50; pet.vx = -Math.abs(pet.vx) * 0.5; pet.facingRight = false; }
+    // 如果在地面上且没有水平速度，可能触发状态切换
+    if(pet.onFloor && Math.abs(pet.vx) < 0.5){
+      pet.vx = 0;
+      pet.stateTimer += dt;
+      if(pet.stateTimer >= pet.stateDuration){
+        pet.stateTimer = 0;
+        pet.stateDuration = 300 + Math.random() * 700;
+        pet.state = pet.markovNext();
+      }
+    }
+  };
+
+  // 渲染
+  this.render = function(ctx, scale){
+    var s = scale || pet.scale;
+    var anim = pet.getAnim();
+    if(!anim) return;
+    var frames = anim.frames;
+    // 动画帧更新
+    pet.animTimer++;
+    var totalDur = 0;
+    for(var i = 0; i <= pet.animFrame; i++) totalDur += (anim.durations[i] || 5);
+    if(pet.animTimer >= totalDur){
+      pet.animFrame = (pet.animFrame + 1) % frames.length;
+      if(pet.animFrame === 0) pet.animTimer = 0;
+    }
+    var img = pet.images[frames[pet.animFrame]];
+    if(!img || !img.complete) return;
+    var ax = pet.anchorX; var ay = pet.anchorY;
+    ctx.save();
+    ctx.translate(pet.x, pet.y);
+    if(!pet.facingRight){ ctx.scale(-1, 1); ctx.translate(-ax*2*s, 0); }
+    ctx.drawImage(img, -ax*s, -ay*s, ax*2*s, ay*2*s);
+    ctx.restore();
+  };
+
+  // 检查点击
+  this.hitTest = function(mx, my){
+    var s = pet.scale;
+    return mx >= pet.x - pet.anchorX*s && mx <= pet.x + pet.anchorX*s &&
+           my >= pet.y - pet.anchorY*s && my <= pet.y;
+  };
+
+  this.preload();
+}
+
+// 🐾 桌宠管理器 — 管理所有桌宠实例
+var _petManager = {
+  pets: [], canvas: null, ctx: null, animId: null, lastTime: 0,
+
+  init: function(){
+    if(_petManager.canvas) return;
+    var cv = document.createElement('canvas');
+    cv.id = 'petCanvas';
+    cv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;pointer-events:none';
+    document.body.appendChild(cv);
+    _petManager.canvas = cv;
+    _petManager.ctx = cv.getContext('2d');
+    cv.width = window.innerWidth; cv.height = window.innerHeight;
+    window.addEventListener('resize', function(){ cv.width = window.innerWidth; cv.height = window.innerHeight; });
+
+    // 鼠标交互
+    cv.style.pointerEvents = 'auto';
+    cv.addEventListener('mousedown', _petManager.onMouseDown);
+    window.addEventListener('mousemove', _petManager.onMouseMove);
+    window.addEventListener('mouseup', _petManager.onMouseUp);
+    // 触摸
+    cv.addEventListener('touchstart', function(e){ var t = e.touches[0]; _petManager.onMouseDown({clientX:t.clientX, clientY:t.clientY}); });
+    window.addEventListener('touchmove', function(e){ var t = e.touches[0]; _petManager.onMouseMove({clientX:t.clientX, clientY:t.clientY}); });
+    window.addEventListener('touchend', _petManager.onMouseUp);
+
+    _petManager.lastTime = performance.now();
+    _petManager.loop();
+  },
+
+  // 添加桌宠
+  add: function(config, imgBasePath){
+    var pet = new PetSprite(config, imgBasePath);
+    _petManager.pets.push(pet);
+    if(!_petManager.canvas) _petManager.init();
+    // 检测CP羁绊
+    _petManager.checkCPBond(pet);
+    return pet;
+  },
+
+  // CP羁绊检测
+  checkCPBond: function(newPet){
+    if(!newPet.config.cpBond || !newPet.config.cpBond.partner) return;
+    for(var i = 0; i < _petManager.pets.length; i++){
+      var other = _petManager.pets[i];
+      if(other === newPet) continue;
+      if(other.config.name === newPet.config.cpBond.partner){
+        newPet.cpPartner = other;
+        other.cpPartner = newPet;
+      }
+    }
+  },
+
+  // 鼠标事件
+  dragTarget: null,
+  onMouseDown: function(e){
+    var mx = e.clientX, my = e.clientY;
+    // 从上层开始检测
+    for(var i = _petManager.pets.length - 1; i >= 0; i--){
+      var pet = _petManager.pets[i];
+      if(pet.hitTest(mx, my)){
+        _petManager.dragTarget = pet;
+        pet.isDragging = true;
+        pet.dragOffX = pet.x - mx;
+        pet.dragOffY = pet.y - my;
+        pet.state = 'Dragged';
+        break;
+      }
+    }
+  },
+  onMouseMove: function(e){
+    if(!_petManager.dragTarget) return;
+    var pet = _petManager.dragTarget;
+    pet.x = e.clientX + pet.dragOffX;
+    pet.y = e.clientY + pet.dragOffY;
+    pet.vy = 0;
+  },
+  onMouseUp: function(){
+    if(_petManager.dragTarget){
+      _petManager.dragTarget.isDragging = false;
+      _petManager.dragTarget.state = 'Falling';
+      _petManager.dragTarget.vy = 2;
+    }
+    _petManager.dragTarget = null;
+  },
+
+  // 主循环
+  loop: function(){
+    var now = performance.now();
+    var dt = Math.min((now - _petManager.lastTime) / 1000, 0.1);
+    _petManager.lastTime = now;
+
+    var ctx = _petManager.ctx;
+    var cv = _petManager.canvas;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+
+    for(var i = 0; i < _petManager.pets.length; i++){
+      var pet = _petManager.pets[i];
+      pet.update(dt);
+
+      // CP羁绊：检测距离
+      if(pet.cpPartner && !pet.isDragging && !pet.cpPartner.isDragging){
+        var dx = pet.x - pet.cpPartner.x;
+        var dy = pet.y - pet.cpPartner.y;
+        var dist = Math.sqrt(dx*dx + dy*dy);
+        var range = pet.config.cpBond.range || 150;
+        if(dist < range && pet.onFloor && pet.cpPartner.onFloor){
+          // 靠近触发羁绊动画
+          if(!pet.cpActive){
+            pet.cpActive = true; pet.cpPartner.cpActive = true;
+            pet.cpAnimFrame = 0; pet.cpPartner.cpAnimFrame = 0;
+            pet.state = 'Idle'; pet.cpPartner.state = 'Idle';
+            pet.vx = 0; pet.cpPartner.vx = 0;
+          }
+          pet.cpAnimTimer++;
+          pet.cpPartner.cpAnimTimer++;
+          // 羁绊动画持续5秒
+          if(pet.cpAnimTimer > 300){
+            pet.cpActive = false; pet.cpPartner.cpActive = false;
+            pet.cpAnimTimer = 0; pet.cpPartner.cpAnimTimer = 0;
+          }
+        } else {
+          pet.cpActive = false; pet.cpPartner.cpActive = false;
+        }
+      }
+
+      // 渲染CP羁绊动画
+      if(pet.cpActive && pet.config.cpBond && pet.config.cpBond.anim){
+        var cpa = pet.config.cpBond.anim;
+        var cpIdx = Math.floor(pet.cpAnimTimer / 40) % cpa.frames.length;
+        var cpImg = pet.images[cpa.frames[cpIdx]];
+        if(cpImg && cpImg.complete){
+          ctx.save();
+          ctx.globalAlpha = 0.6;
+          var midX = (pet.x + pet.cpPartner.x) / 2;
+          var midY = Math.min(pet.y, pet.cpPartner.y) - 80;
+          if(!pet.facingRight){ ctx.scale(-1,1); ctx.translate(-pet.anchorX*2*pet.scale, 0); }
+          ctx.drawImage(cpImg, midX - pet.anchorX*pet.scale, midY - pet.anchorY*pet.scale, pet.anchorX*2*pet.scale, pet.anchorY*2*pet.scale);
+          ctx.restore();
+        }
+      }
+
+      pet.render(ctx);
+    }
+    _petManager.animId = requestAnimationFrame(_petManager.loop);
+  },
+
+  // 清除所有桌宠
+  clear: function(){
+    if(_petManager.animId) cancelAnimationFrame(_petManager.animId);
+    if(_petManager.canvas){ _petManager.canvas.remove(); _petManager.canvas = null; }
+    _petManager.pets = [];
+  }
+};
+
+// 全局API — 导入自定义桌宠
+// 使用方式: window._addPet({name:'雷狮', animations:{...}, ...}, '/img/Leishi')
+window._addPet = function(config, imgPath){
+  var cfg = JSON.parse(JSON.stringify(PET_DEFAULT_CONFIG));
+  if(config) Object.assign(cfg, config);
+  if(config && config.animations){
+    cfg.animations = JSON.parse(JSON.stringify(PET_DEFAULT_CONFIG.animations));
+    for(var k in config.animations){ cfg.animations[k] = config.animations[k]; }
+  }
+  if(config && config.markov) cfg.markov = config.markov;
+  if(config && config.cpBond) cfg.cpBond = config.cpBond;
+  return _petManager.add(cfg, imgPath);
+};
+window._clearPets = function(){ _petManager.clear(); };
+window._getPets = function(){ return _petManager.pets; };
+
+// ═══ 📜 Galgame剧本引擎 v1.0 ═══
+// 基于 LingChat YAML剧本 + ZcChat 立绘系统 融合设计
+// JSON驱动，支持16种事件类型 + 选择分支 + 立绘表情 + 存档
+
+var _scriptEngine = {
+  story: null,        // 当前剧本
+  chapter: null,      // 当前章节
+  eventIdx: 0,        // 当前事件索引
+  vars: {},           // 全局变量
+  characters: {},     // 角色立绘映射 {name: {emotion: imgSrc}}
+  bgImage: null,      // 当前背景
+  bgm: null,          // 当前BGM
+  isRunning: false,
+  waitForChoice: false,
+  choiceCallback: null,
+
+  // 加载剧本
+  load: function(storyJSON){
+    _scriptEngine.story = storyJSON;
+    _scriptEngine.vars = storyJSON.variables || {};
+    _scriptEngine.characters = storyJSON.characters || {};
+    _scriptEngine.eventIdx = 0;
+    _scriptEngine.isRunning = true;
+    _scriptEngine.waitForChoice = false;
+  },
+
+  // 开始章节
+  startChapter: function(chapterName){
+    var ch = _scriptEngine.story.chapters[chapterName];
+    if(!ch){ console.warn('Chapter not found:', chapterName); return; }
+    _scriptEngine.chapter = ch;
+    _scriptEngine.eventIdx = 0;
+    _scriptEngine._next();
+  },
+
+  // 处理下一个事件
+  _next: function(){
+    if(!_scriptEngine.chapter || !_scriptEngine.isRunning) return;
+    if(_scriptEngine.waitForChoice) return;
+    var events = _scriptEngine.chapter.events;
+    if(_scriptEngine.eventIdx >= events.length){
+      _scriptEngine._endChapter();
+      return;
+    }
+    var ev = events[_scriptEngine.eventIdx];
+    _scriptEngine.eventIdx++;
+    _scriptEngine._execEvent(ev);
+  },
+
+  // 执行单个事件
+  _execEvent: function(ev){
+    if(!ev) return;
+    // 条件检查
+    if(ev.condition && !_scriptEngine._evalCond(ev.condition)){
+      _scriptEngine._next(); // 跳过
+      return;
+    }
+    var type = ev.type;
+    switch(type){
+      case 'dialog': _scriptEngine._doDialog(ev); break;
+      case 'narration': _scriptEngine._doNarration(ev); break;
+      case 'choice': _scriptEngine._doChoice(ev); break;
+      case 'background': _scriptEngine._doBackground(ev); break;
+      case 'music': _scriptEngine._doMusic(ev); break;
+      case 'sound': _scriptEngine._doSound(ev); break;
+      case 'sprite': _scriptEngine._doSprite(ev); break;       // 修改立绘
+      case 'present': _scriptEngine._doPresent(ev); break;     // 展示CG
+      case 'wait': _scriptEngine._doWait(ev); break;           // 等待
+      case 'jump': _scriptEngine._doJump(ev); break;           // 跳转章节
+      case 'set': _scriptEngine._doSet(ev); break;             // 设置变量
+      case 'input': _scriptEngine._doInput(ev); break;         // 玩家输入
+      case 'ai_dialog': _scriptEngine._doAIDialog(ev); break;  // AI对话
+      case 'effect': _scriptEngine._doEffect(ev); break;       // 背景特效
+      case 'ambient': _scriptEngine._doAmbient(ev); break;     // 环境音
+      default: _scriptEngine._next();
+    }
+  },
+
+  // --- 事件处理器 ---
+  _doDialog: function(ev){
+    var name = ev.character || '';
+    var emotion = ev.emotion || 'normal';
+    var text = ev.text || '';
+    // 切换立绘表情
+    if(name && emotion) _scriptEngine._updateSprite(name, emotion);
+    // 显示对话框
+    _scriptEngine._showDialog(name, text, function(){ _scriptEngine._next(); });
+  },
+
+  _doNarration: function(ev){
+    _scriptEngine._showDialog('', ev.text || '', function(){ _scriptEngine._next(); }, true);
+  },
+
+  _doChoice: function(ev){
+    _scriptEngine.waitForChoice = true;
+    var options = ev.options || [];
+    _scriptEngine._showChoices(options, ev.text || '', function(idx){
+      _scriptEngine.waitForChoice = false;
+      var opt = options[idx];
+      if(opt && opt.jump) _scriptEngine.startChapter(opt.jump);
+      else if(opt && opt.set) _scriptEngine._doSet({variables: opt.set});
+      else _scriptEngine._next();
+    });
+  },
+
+  _doBackground: function(ev){
+    _scriptEngine.bgImage = ev.image || '';
+    _scriptEngine._renderUI();
+    _scriptEngine._next();
+  },
+
+  _doMusic: function(ev){
+    _scriptEngine.bgm = ev.file || '';
+    _scriptEngine._next();
+  },
+
+  _doSound: function(ev){
+    // 播放音效（预留）
+    _scriptEngine._next();
+  },
+
+  _doSprite: function(ev){
+    var name = ev.character;
+    var emotion = ev.emotion || 'normal';
+    if(name && _scriptEngine.characters[name]){
+      _scriptEngine.characters[name].currentEmotion = emotion;
+    }
+    _scriptEngine._renderUI();
+    _scriptEngine._next();
+  },
+
+  _doPresent: function(ev){
+    // 展示CG图片
+    _scriptEngine._showCG(ev.image || '', ev.duration || 3000, function(){
+      _scriptEngine._next();
+    });
+  },
+
+  _doWait: function(ev){
+    var ms = ev.duration || 1000;
+    setTimeout(function(){ _scriptEngine._next(); }, ms);
+  },
+
+  _doJump: function(ev){
+    if(ev.chapter) _scriptEngine.startChapter(ev.chapter);
+  },
+
+  _doSet: function(ev){
+    var vars = ev.variables || {};
+    for(var k in vars){ _scriptEngine.vars[k] = vars[k]; }
+    _scriptEngine._next();
+  },
+
+  _doInput: function(ev){
+    _scriptEngine.waitForChoice = true;
+    var promptText = ev.prompt || '请输入...';
+    var val = prompt(promptText);
+    if(ev.variable) _scriptEngine.vars[ev.variable] = val || '';
+    _scriptEngine.waitForChoice = false;
+    _scriptEngine._next();
+  },
+
+  _doAIDialog: function(ev){
+    // AI对话（预留接口，后续接入LLM）
+    _scriptEngine._showDialog(ev.character || '', ev.text || '(AI对话中...)', function(){
+      _scriptEngine._next();
+    });
+  },
+
+  _doEffect: function(ev){
+    // 背景特效：shake/fade/flash（预留）
+    _scriptEngine._next();
+  },
+
+  _doAmbient: function(ev){
+    // 环境音（预留）
+    _scriptEngine._next();
+  },
+
+  // --- 条件求值 ---
+  _evalCond: function(cond){
+    if(!cond) return true;
+    try{
+      for(var k in cond){
+        var expected = cond[k];
+        var actual = _scriptEngine.vars[k];
+        if(typeof expected === 'boolean'){ if(!!actual !== expected) return false; }
+        else if(actual != expected) return false;
+      }
+      return true;
+    }catch(e){ return true; }
+  },
+
+  // --- UI渲染 ---
+  _overlay: null,
+  _dialogBox: null,
+
+  _showDialog: function(name, text, callback, isNarration){
+    _scriptEngine._renderUI();
+    // 复用引擎Dialog或显示在自定义UI
+    var displayName = name ? name : '';
+    var fullText = displayName ? '【' + displayName + '】\n' + text : text;
+    if(typeof Dialog !== 'undefined'){
+      Dialog.show('', fullText, [{text:'继续', type:'primary', callback:callback}], true);
+    } else {
+      if(confirm(fullText)) callback();
+    }
+  },
+
+  _showChoices: function(options, promptText, callback){
+    var btns = options.map(function(opt, i){
+      return {text: opt.text, type: 'primary', callback: function(){ callback(i); }};
+    });
+    if(typeof Dialog !== 'undefined'){
+      Dialog.show('', promptText || '请选择', btns, true);
+    } else {
+      var choice = prompt(promptText + '\n' + options.map(function(o,i){ return (i+1)+'. '+o.text; }).join('\n'));
+      var idx = parseInt(choice) - 1;
+      if(idx >= 0 && idx < options.length) callback(idx);
+      else callback(0);
+    }
+  },
+
+  _showCG: function(imgSrc, duration, callback){
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:10001;display:flex;align-items:center;justify-content:center';
+    overlay.innerHTML = '<img src="'+imgSrc+'" style="max-width:90vw;max-height:90vh;border-radius:8px;animation:fadeIn 0.5s">';
+    overlay.onclick = function(){ overlay.remove(); callback(); };
+    document.body.appendChild(overlay);
+    if(duration > 0) setTimeout(function(){ if(overlay.parentNode) overlay.remove(); callback(); }, duration);
+  },
+
+  _updateSprite: function(name, emotion){
+    if(_scriptEngine.characters[name]){
+      _scriptEngine.characters[name].currentEmotion = emotion;
+    }
+    _scriptEngine._renderUI();
+  },
+
+  _renderUI: function(){
+    _scriptEngine._renderSprites();
+  },
+
+  _renderSprites: function(){
+    // 渲染立绘到 app 容器
+    var container = document.getElementById('scriptSprites');
+    if(!container){
+      container = document.createElement('div');
+      container.id = 'scriptSprites';
+      container.style.cssText = 'position:fixed;bottom:0;left:50%;transform:translateX(-50%);display:flex;gap:20px;z-index:100;pointer-events:none';
+      document.body.appendChild(container);
+    }
+    var h = '';
+    for(var name in _scriptEngine.characters){
+      var ch = _scriptEngine.characters[name];
+      var emotion = ch.currentEmotion || 'normal';
+      var imgSrc = ch[emotion] || ch['normal'] || '';
+      if(imgSrc){
+        h += '<div style="text-align:center"><img src="'+imgSrc+'" style="max-height:60vh;animation:fadeIn 0.5s" onerror="this.style.display=\'none\'"><div style="font-size:0.7em;color:var(--dim);margin-top:2px">'+name+'</div></div>';
+      }
+    }
+    container.innerHTML = h;
+  },
+
+  _endChapter: function(){
+    var next = _scriptEngine.chapter.next;
+    if(next){
+      _scriptEngine.startChapter(next);
+    } else {
+      _scriptEngine.isRunning = false;
+      // 清理立绘
+      var container = document.getElementById('scriptSprites');
+      if(container) container.innerHTML = '';
+    }
+  }
+};
+
+// 全局API
+window._startStory = function(storyJSON, chapterName){
+  _scriptEngine.load(storyJSON);
+  _scriptEngine.startChapter(chapterName || 'start');
+};
+window._stopStory = function(){
+  _scriptEngine.isRunning = false;
+  var c = document.getElementById('scriptSprites'); if(c) c.remove();
+};
+
+// ═══ 🤖 AI对话增强 v1.0 ═══
+// 情绪→立绘联动 + 对话记忆 + 流式输出接口
+
+var _aiChat = {
+  // 角色情绪配置 — 20种情绪 → 立绘文件名
+  emotions: {
+    normal:'正常.png', happy:'高兴.png', sad:'悲伤.png', angry:'生气.png',
+    surprise:'惊讶.png', shy:'害羞.png', proud:'得意.png', worried:'担心.png',
+    blush:'脸红.png', panic:'慌张.png', serious:'认真.png', tired:'疲惫.png',
+    thinking:'思考.png', excited:'兴奋.png', disappointed:'失望.png',
+    tsundere:'傲娇.png', gentle:'温柔.png', mischievous:'恶作剧.png',
+    pain:'痛苦.png', laugh:'大笑.png'
+  },
+
+  // 对话记忆 — 最近50轮
+  memory: [],
+  maxMemory: 50,
+
+  // 情绪关键词匹配
+  detectEmotion: function(text){
+    var map = {
+      'happy': /(笑|开心|高兴|哈哈|嘿嘿|嘻嘻|愉快)/,
+      'sad': /(哭|难过|伤心|悲伤|呜呜|泪)/,
+      'angry': /(生气|愤怒|哼|混蛋|可恶|讨厌)/,
+      'surprise': /(啊|什么|居然|竟然|天哪|哇)/,
+      'shy': /(害羞|不好意思|脸红|扭捏)/,
+      'blush': /(脸红|讨厌啦|才不是)/,
+      'thinking': /(嗯|让我想想|思考|考虑)/,
+      'excited': /(太棒了|好耶|冲啊|加油)/,
+      'worried': /(担心|怎么办|会不会|万一)/,
+      'serious': /(认真|严肃|重要|听我说)/,
+      'gentle': /(温柔|没关系|慢慢来|乖)/,
+      'tsundere': /(哼|才不|笨蛋|随便你)/
+    };
+    for(var emo in map){
+      if(map[emo].test(text)) return emo;
+    }
+    return 'normal';
+  },
+
+  // 添加记忆
+  remember: function(role, text){
+    _aiChat.memory.push({role:role, text:text, time:Date.now()});
+    if(_aiChat.memory.length > _aiChat.maxMemory) _aiChat.memory.shift();
+  },
+
+  // 获取上下文（最近N轮对话）
+  getContext: function(n){
+    n = n || 10;
+    return _aiChat.memory.slice(-n).map(function(m){
+      return m.role + ': ' + m.text;
+    }).join('\n');
+  },
+
+  // 解析AI回复 — 支持【情绪】标签
+  parseReply: function(rawText){
+    var match = rawText.match(/^【(.+?)】/);
+    var emotion = match ? match[1] : 'normal';
+    var text = rawText.replace(/^【.+?】/, '').trim();
+    // 验证情绪
+    if(!_aiChat.emotions[emotion]) emotion = _aiChat.detectEmotion(text);
+    return {emotion: emotion, text: text};
+  },
+
+  // 更新角色立绘（联动游戏角色系统）
+  updateSprite: function(characterName, emotion){
+    if(_scriptEngine.characters[characterName]){
+      _scriptEngine.characters[characterName].currentEmotion = emotion;
+      _scriptEngine._renderUI();
+    }
+  },
+
+  // 流式输出模拟 — 逐字显示
+  typewriter: function(text, onChar, onDone, speed){
+    speed = speed || 50;
+    var i = 0;
+    var timer = setInterval(function(){
+      if(i < text.length){ onChar(text[i]); i++; }
+      else{ clearInterval(timer); if(onDone) onDone(); }
+    }, speed);
+    return {stop: function(){ clearInterval(timer); if(onDone) onDone(); }};
+  }
+};
+
+// 全局API
+window._aiSpeak = function(characterName, rawReply){
+  var parsed = _aiChat.parseReply(rawReply);
+  _aiChat.remember(characterName, parsed.text);
+  _aiChat.updateSprite(characterName, parsed.emotion);
+  return parsed; // {emotion, text}
+};
+window._aiGetContext = function(){ return _aiChat.getContext(); };
+window._aiRemember = function(role, text){ _aiChat.remember(role, text); };
 
 // 🏆 成就计算
 function _dreamCalcBadges(posts,totalLikes){
@@ -9413,35 +10191,16 @@ window._acEnemyPlaceSlot=function(si){var slots=window._acEnemySlots||[];var sel
 window._acEnemyAutoDeploy=function(){
   var enemy=window._acEnemy||[];
   if(enemy.length<5){window._acLastMsg='需要选择5名敌方角色';acPrepRender(document.getElementById('app'));return;}
-  // 角色专属最佳位置（严格按定位）
-  // 前排(row0-1): 坦克/战士/刺客 — 后排(row2-3): 射手/辅助/召唤
   var ENEMY_POS={
-    // 🛡️ 坦克 — 前排中央吸引火力
-    anmixiu:{row:0,col:2},    // 盾卫：最前线嘲讽
-    yinjue:{row:0,col:3},     // 光环坦：前排反伤光环覆盖全员
-    aimi:{row:1,col:2},       // 半坦：前排反伤
-    // ⚔️ 战士/强袭 — 前排输出+控制
-    jiadeluosi:{row:1,col:3}, // 强袭：前排全体眩晕
-    gerui:{row:1,col:2},      // 战士：前排整列控制
-    // 🗡️ 刺客/影刃 — 前排侧翼快速切入
-    kamier:{row:0,col:3},     // 刺客：前排侧翼单体爆发
-    peili:{row:0,col:2},      // 影刃：前排重力减益+偷强化
-    // 🏹 射手 — 后排安全输出
-    aibi:{row:3,col:2},       // 成长射：后排12箭随机
-    jin:{row:3,col:3},        // 收割射：后排单体收割
-    kaili:{row:2,col:3},      // 暴击射：后排整列暴击
-    leishi:{row:2,col:2},     // 双系：中排十字吸怒
-    // ✨ 辅助 — 后排保护队友
-    anlijie:{row:3,col:2},    // 辅助：后排冰冻+冰晶护盾
-    zuma:{row:3,col:3},       // 治愈：后排全体治疗
-    // 👾 召唤 — 后排安全铺场
-    zitanghuan:{row:2,col:2}, // 召唤：中排召唤斯巴达
-    paluosi:{row:2,col:3},    // 召唤：中排暗影分身
-    guihu:{row:3,col:2}       // 暗灵：后排降怒镜像
+    anmixiu:{row:0,col:2},yinjue:{row:0,col:3},aimi:{row:1,col:2},
+    jiadeluosi:{row:1,col:3},gerui:{row:1,col:2},
+    kamier:{row:0,col:3},peili:{row:0,col:2},
+    aibi:{row:3,col:2},jin:{row:3,col:3},kaili:{row:2,col:3},leishi:{row:2,col:2},
+    anlijie:{row:3,col:2},zuma:{row:3,col:3},
+    zitanghuan:{row:2,col:2},paluosi:{row:2,col:3},guihu:{row:3,col:2}
   };
   var slots=[null,null,null,null,null,null,null,null];
   var usedSlots={};
-  // 按定位排序: 近战>远程>辅助
   var roleOrder={melee:0,tank:0,warrior:1,assassin:2,ranged:3,support:4,summon:5};
   var sorted=enemy.slice().sort(function(a,b){
     var archA=AC_ARCHETYPES[a]||{range:1,role:'melee'};
@@ -9465,7 +10224,6 @@ window._acEnemyAutoDeploy=function(){
         if(nr>=0&&nr<4&&nc>=2&&nc<4&&!usedSlots[nr+','+nc]){pos={row:nr,col:nc};slotKey=nr+','+nc;found=true;break;}
       }
       if(!found){
-        // 所有相邻位置都满了 → 扫描所有8个空位
         for(var si=0;si<8;si++){
           var checkCol=(si%2)+2,checkRow=Math.floor(si/2);
           if(!usedSlots[checkRow+','+checkCol]){pos={row:checkRow,col:checkCol};slotKey=checkRow+','+checkCol;found=true;break;}
@@ -9484,7 +10242,6 @@ window._acEnemyAutoDeploy=function(){
   }
   window._acLastMsg='✅ 敌方已自动部署';
   acPrepRender(document.getElementById('app'));
-  // 直接启动战斗
   setTimeout(function(){window._acStart();},150);
 };
 window._acPickArtifact=function(){
@@ -9594,7 +10351,7 @@ window._acStart=function(){
   if(acState._lucky&&Math.random()<0.1){var ranked=Object.keys(CH).filter(function(k){return CH[k]&&CH[k].c!=='教师';}).sort(function(a,b){return(G.aff[b]||0)-(G.aff[a]||0);});var ep=ranked.slice(0,12);var ex=ep[Math.floor(Math.random()*ep.length)];var ecx=AC_OFFX+0*AC_CELL_W+AC_CELL_W/2,ecy=AC_OFFY+0*AC_CELL_H+AC_CELL_H/2;playerPieces.push(acMakePiece(CH[ex],G.aff[ex]||0,'player',ecx,ecy,0));}
   acState.player=playerPieces;acState.enemy=enemyPieces;
 
-  app.innerHTML='<div id="ultBg" style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:0;opacity:0;transition:opacity 0.2s"></div><canvas id="acCanvas" style="border:2px solid var(--gold);border-radius:12px 12px 0 0;background:rgba(10,10,18,0.85);display:block;margin:10px auto 0;cursor:default;position:relative;z-index:2"></canvas><div style="text-align:center;margin:0 auto 10px;max-width:800px;padding:8px;background:rgba(10,10,18,0.9);border:2px solid var(--gold);border-top:none;border-radius:0 0 12px 12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn btn-s" onclick="acState.speedMul=acState.speedMul===1?4:1;this.textContent=acState.speedMul===4?\'⏩ 4x\':\'▶ 1x\'" style="font-size:0.75em;padding:6px 12px">⏩ 4x</button><button class="btn btn-s" onclick="acForceEnd()" style="font-size:0.75em;padding:6px 12px;color:#f0c040">⏭ 跳过</button><button class="btn btn-s" onclick="acState.over=true;acState.winner=\'enemy\'" style="font-size:0.75em;padding:6px 12px;color:#e94560">🏳 认输</button></div>';
+  app.innerHTML='<div id="ultBg" style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:0;opacity:0;transition:opacity 0.2s"></div><canvas id="acCanvas" style="border:2px solid var(--gold);border-radius:12px 12px 0 0;background:rgba(10,10,18,0.85);display:block;margin:10px auto 0;cursor:default;position:relative;z-index:2"></canvas><div style="text-align:center;margin:0 auto 10px;max-width:800px;padding:8px;background:rgba(10,10,18,0.9);border:2px solid var(--gold);border-top:none;border-radius:0 0 12px 12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn btn-s" onclick="acState.speedMul=acState.speedMul===1?4:1;this.textContent=acState.speedMul===4?\'⏩ 4x\':\'▶ 1x\'" style="font-size:0.75em;padding:6px 12px">⏩ 4x</button><button class="btn btn-s" onclick="acForceEnd()" style="font-size:0.75em;padding:6px 12px;color:#f0c040">⏭ 跳过</button><button class="btn btn-s" onclick="acState.winner=\'enemy\';acForceEnd()" style="font-size:0.75em;padding:6px 12px;color:#e94560">🏳 认输</button></div>';
   acCanvas=document.getElementById('acCanvas');acCtx=acCanvas.getContext('2d');
   window._ultBgEl=document.getElementById('ultBg');
   acCanvas.width=Math.floor(800*dpr);acCanvas.height=Math.floor(500*dpr);
@@ -9603,6 +10360,13 @@ window._acStart=function(){
   acCtx.setTransform(dpr,0,0,dpr,0,0);
   document.removeEventListener('keydown',acKeyDown);document.addEventListener('keydown',acKeyDown);acState._rageBoosts=3;acState._focusTarget=null;acState._focusTimer=0;acCanvas.onclick=function(e){var rect=acCanvas.getBoundingClientRect();var mx=(e.clientX-rect.left)*(800/rect.width),my=(e.clientY-rect.top)*(500/rect.height);var all=acState.player.concat(acState.enemy);var clicked=null,cd=22;for(var i=0;i<all.length;i++){if(!all[i].alive)continue;var d=acDist({x:mx,y:my},all[i]);if(d<cd){cd=d;clicked=all[i];}}if(clicked&&clicked.side==='enemy'){acState._focusTarget=clicked.id;acState._focusTimer=4;acFloatTexts.push(FloatingText.spawn(acCtx,clicked.x,clicked.y-25,'🎯集火!','#ff0'));}else if(clicked&&clicked.side==='player'&&acState._rageBoosts>0){acState._rageBoosts--;clicked._rage=Math.min(clicked._rageMax,clicked._rage+50);acFloatTexts.push(FloatingText.spawn(acCtx,clicked.x,clicked.y-25,'⚡鼓舞!+50','#ffd700'));}};acLastTime=performance.now();
   acAnim=requestAnimationFrame(acBattleLoop);
+  // 🐕 看门狗 — 每5秒检查，帧数停滞30秒则强制结束
+  var lastFrames=0,stuckCount=0;
+  window._acWatchdog=setInterval(function(){
+    if(acState._ended){clearInterval(window._acWatchdog);return;}
+    if(acState._frameCount===lastFrames){stuckCount++;if(stuckCount>=6){acForceEnd();}} // 30秒无帧→杀
+    else{stuckCount=0;lastFrames=acState._frameCount;}
+  },5000);
 };
 
 function acKeyDown(e){if(e.key===' '){e.preventDefault();acState.speedMul=acState.speedMul===1?4:1;}if(e.key==='Escape'||e.key==='s'){e.preventDefault();acState.over=true;}}
@@ -9811,6 +10575,7 @@ Array.from({length:4},function(_,i){var m=[[0,-15],[0,15],[-15,0],[15,0]];return
   acState._screenFlash=1.0;acState._flashColor='#33dd55';acShake.trigger(7,0.9);
 }
 // ═══ 战斗循环 v6.13 — 护盾/灼烧/嘲讽/格挡/怒气 + 安迷修专属 ═══
+// 💣 核弹级强制结束 — 任何情况下都能杀死战斗
 function acForceEnd(){
   if(acState._ended)return;acState._ended=true;acState.over=true;
   if(acAnim){cancelAnimationFrame(acAnim);acAnim=null;}
@@ -9822,6 +10587,7 @@ function acForceEnd(){
 }
 
 function acBattleLoop(){
+  // 顶层异常捕获 — 任何崩溃都会安全结束
   try{
   if(acState.over||acState._frameCount>20000||acState.battleTime>240){acForceEnd();return;}
   var now=performance.now(),dt=(now-acLastTime)/1000;acLastTime=now;
