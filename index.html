@@ -9437,7 +9437,7 @@ function PetSprite(config, imgBasePath){
     var img = pet.images[frames[pet.animFrame]];
     if(!img || !img.complete || !img.naturalWidth) return;
     // 按原图长宽比绘制：size=显示尺寸上限(CSS px)，底部中心锚定在(pet.x, pet.y)
-    var size = pet.config.size || 200; // 默认显示尺寸(帧源256px，≤256均为缩小渲染保持锐利)
+    var size = pet.config.size || 220; // 默认显示尺寸(帧源256px，≤256均为缩小渲染保持锐利)
     var sc = size / Math.max(img.naturalWidth, img.naturalHeight) * s;
     var dw = img.naturalWidth * sc, dh = img.naturalHeight * sc;
     pet._dw = dw; pet._dh = dh;
