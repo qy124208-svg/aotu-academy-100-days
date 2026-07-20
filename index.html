@@ -11396,7 +11396,7 @@ render('title');
 // 🐾 默认开启安迷修桌宠（触屏检测优先，窄窗仅作后备）
 (function(){
   var isMobile = _isMobileDevice() || window.innerWidth < 480;
-  var petSize = isMobile ? 120 : 225;
+  var petSize = isMobile ? 160 : 225;
   setTimeout(function(){
     _addPet({name:'安迷修', size: petSize}, 'img/anmicius');
     console.log('🐾 安迷修桌宠已就绪 (size:' + petSize + (isMobile ? ' 移动端' : ' 桌面端') + ')');
