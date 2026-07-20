@@ -9978,14 +9978,31 @@ var _aiChat = {
     }).join('\n');
   },
 
-  // 解析AI回复 — 支持【情绪】标签
+  // 解析AI回复 — 支持【情绪】标签 (中英文均可)
   parseReply: function(rawText){
     var match = rawText.match(/^【(.+?)】/);
     var emotion = match ? match[1] : 'normal';
     var text = rawText.replace(/^【.+?】/, '').trim();
-    // 验证情绪
+    // 如果不是英文key，尝试中文→英文反向映射
+    if(!_aiChat.emotions[emotion]){
+      var en = _aiChat._chineseToKey(emotion);
+      if(en) emotion = en;
+    }
+    // still unknown → detect from text
     if(!_aiChat.emotions[emotion]) emotion = _aiChat.detectEmotion(text);
     return {emotion: emotion, text: text};
+  },
+
+  // 中文情绪名 → 英文key (从emotions的filename反向查)
+  _chineseToKey: function(chineseName){
+    for(var key in _aiChat.emotions){
+      if(!_aiChat.emotions.hasOwnProperty(key)) continue;
+      var file = _aiChat.emotions[key];
+      if(typeof file === 'string' && file.replace('.png','') === chineseName){
+        return key;
+      }
+    }
+    return null;
   },
 
   // 注册角色立绘 — 把所有情绪映射到img/sprites/下的文件
